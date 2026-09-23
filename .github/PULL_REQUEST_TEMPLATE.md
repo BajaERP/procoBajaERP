@@ -9,9 +9,9 @@ Descreva brevemente o que foi desenvolvido ou alterado neste PR.
 - 
 - 
 
-## 📸 Prints ou vídeos
+## 📸 Evidências
 
-Adicione imagens ou vídeos demonstrando as alterações, se necessário.
+Adicione imagens ou vídeos demonstrando as alterações.
 
 ## 🧪 Como testar
 
