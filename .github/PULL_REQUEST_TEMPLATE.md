@@ -13,13 +13,6 @@ Descreva brevemente o que foi desenvolvido ou alterado neste PR.
 
 Adicione imagens ou vídeos demonstrando as alterações.
 
-## 🧪 Como testar
-
-Descreva os passos necessários para testar as alterações.
-
-1. 
-2. 
-3. 
 
 ## ✅ Checklist
 
