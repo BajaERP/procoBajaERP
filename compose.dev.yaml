@@ -1,0 +1,38 @@
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  backend:
+    build:
+      target: development
+    command: ["./mvnw", "-B", "spring-boot:run"]
+    volumes:
+      - ./backend:/app
+      - backend_maven_cache:/root/.m2
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "${FRONTEND_DEV_PORT:-5173}:5173"
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?PGADMIN_DEFAULT_EMAIL must be set in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD must be set in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+
+volumes:
+  backend_maven_cache:
+  frontend_node_modules:
