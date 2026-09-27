@@ -4,6 +4,7 @@ import { Sidebar } from '../components/Sidebar'
 import { TopBar } from '../components/TopBar'
 import {
   GridIcon,
+  ShieldIcon,
   UsersIcon,
   TaskIcon,
   WalletIcon,
@@ -12,7 +13,10 @@ import {
   GearIcon,
 } from '../components/icons'
 
+// Ordem reflete importância para gestores — Gestão fica no topo porque
+// é a landing default após login e crescerá em mais responsabilidades.
 const NAV = [
+  { id: 'gestao', label: 'Gestão', to: '/app/gestao', icon: 'Shield' },
   { id: 'dashboard', label: 'Dashboard', to: '/app/dashboard', icon: 'Grid' },
   { id: 'equipe', label: 'Equipe', to: '/app/equipe', icon: 'Users' },
   { id: 'atividades', label: 'Atividades', to: '/app/atividades', icon: 'Task' },
@@ -23,6 +27,7 @@ const NAV = [
 ] as const
 
 const ICON_MAP: Record<string, React.ComponentType> = {
+  Shield: ShieldIcon,
   Grid: GridIcon,
   Users: UsersIcon,
   Task: TaskIcon,
@@ -33,6 +38,7 @@ const ICON_MAP: Record<string, React.ComponentType> = {
 }
 
 const ROUTE_LABELS: Record<string, string> = {
+  gestao: 'Gestão',
   dashboard: 'Dashboard',
   equipe: 'Equipe',
   atividades: 'Atividades',
@@ -68,7 +74,7 @@ export function Shell() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <div className="flex h-screen bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
       <Sidebar
         appName="Proco Baja"
         appAbbr="PB"
@@ -83,7 +89,7 @@ export function Shell() {
           title={pageLabel}
         />
 
-        <main className="flex-1 overflow-y-auto bg-slate-50">
+        <main className="flex-1 overflow-y-auto bg-surface-soft dark:bg-surface-dark transition-colors">
           <Outlet />
         </main>
       </div>

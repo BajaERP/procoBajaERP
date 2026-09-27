@@ -2,19 +2,64 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* ---------------------------------------------------------------- *
+ * Design system tokens — Pinterest-aligned, red-led:
+ *
+ *   • Brand red scale with multiple variants (tint → deep) so red
+ *     can appear as bg wash, hover state, border, primary CTA, or
+ *     deep accent without ever colliding with neutrals.
+ *   • Surfaces: warm cream wash in light mode; pure-black dominant
+ *     in dark mode (#0a0a0a page, #141414 cards). Sidebar/TopBar
+ *     sit one notch deeper than the page so chrome feels anchored.
+ *   • Text: ink / body / mute / ash tier — exact Pinterest discipline.
+ *   • Cards have NO shadow — hairlines only. Shadows reserved for popovers.
+ * ---------------------------------------------------------------- */
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --color-navy-950: #0a0f1e;
-  --color-navy-900: #0f1729;
-  --color-navy-800: #162040;
-  --color-navy-700: #1e2d57;
-  --color-navy-600: #253670;
-  --color-navy-400: #4a6299;
-  --color-navy-200: #a8b8d8;
-  --color-navy-100: #d4dcea;
-  --color-accent: #2563eb;
-  --color-accent-light: #eff6ff;
+
+  /* Brand red — multiple variants for hierarchy */
+  --color-red-tint: #fff1f2;       /* lightest wash, empty-state bg */
+  --color-red-soft: #fee2e2;       /* light hover bg, chip fill */
+  --color-red-light: #fca5a5;      /* decorative mid-light */
+  --color-red: #e60023;            /* brand primary */
+  --color-red-pressed: #cc001f;    /* pressed/active */
+  --color-red-deep: #7c0511;       /* deep accent (border, heavy emphasis) */
+
+  /* Surfaces (light — warm cream Pinterest palette) */
+  --color-canvas: #ffffff;
+  --color-surface-soft: #fbfbf9;
+  --color-surface-card: #f6f6f3;
+  --color-secondary-bg: #e5e5e0;
+
+  /* Text tiers (Pinterest ink/body/mute/ash) */
+  --color-ink: #000000;
+  --color-body: #33332e;
+  --color-mute: #62625b;
+  --color-ash: #91918c;
+
+  /* Hairlines (Pinterest hairline / hairline-soft) */
+  --color-hairline: #dadad3;
+  --color-hairline-soft: #e5e5e0;
+
+  /* Dark mode (pure-black dominant) */
+  --color-surface-dark: #0a0a0a;          /* page bg */
+  --color-surface-card-dark: #141414;     /* card bg */
+  --color-surface-chrome-dark: #050505;   /* sidebar / topbar — deeper than page */
+  --color-hairline-dark: #262626;         /* borders on dark */
+}
+
+/* Base background and text color so the page never flashes the wrong theme
+   between the inline bootstrap script (index.html) and React mount. */
+html,
+body {
+  background-color: var(--color-surface-soft);
+  color: var(--color-ink);
+}
+html.dark,
+html.dark body {
+  background-color: var(--color-surface-dark);
+  color: #ffffff;
 }
 
 * {
@@ -40,6 +85,6 @@
 }
 
 *:hover::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-hairline);
   border-radius: 2px;
 }
