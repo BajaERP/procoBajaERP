@@ -3,8 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#850305" />
     <title>Proco Baja ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Theme bootstrap. Mirrors src/contexts/ThemeContext.tsx so the first
+         paint already matches the user's preference (no white flash in dark). -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('proco.theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored ? stored === 'dark' : prefersDark;
+          var root = document.documentElement;
+          if (dark) root.classList.add('dark');
+          root.style.backgroundColor = dark ? '#0a0a0a' : '#fbfbf9';
+          root.style.color = dark ? '#ffffff' : '#000000';
+        } catch (e) {
+          /* localStorage may be blocked — fall back to light. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

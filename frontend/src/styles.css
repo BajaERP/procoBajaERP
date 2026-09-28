@@ -1,81 +1,91 @@
-:root {
-  color: #e2e8f0;
-  background: #0f172a;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+@import 'tailwindcss';
+
+@variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------- *
+ * Design system tokens — procoBaja-aligned, red-led:
+ *
+ *   • Brand red scale derived from procobaja-logo.svg (#850305 deep,
+ *     #e33738 accent). Six variants so red can show up as pale wash,
+ *     hover state, primary CTA, deep brand strip without colliding
+ *     with neutrals.
+ *   • Surfaces: warm cream wash in light mode (canvas / surface-soft /
+ *     surface-card); pure-black dominant in dark mode (#0a0a0a page,
+ *     #141414 cards). Sidebar/TopBar sit one notch deeper than page.
+ *   • Text: ink / body / mute / ash tier.
+ *   • Cards have NO shadow — hairlines only. Shadows reserved for popovers.
+ * ---------------------------------------------------------------- */
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Brand red — derived from procobaja-logo.svg (#850305 bg + #e33738 accent) */
+  --color-red-tint: #fdf2f3;       /* palest wash, empty-state bg */
+  --color-red-soft: #fbd9dc;       /* light hover bg, chip fill */
+  --color-red-light: #e33738;      /* mid accent (logo secondary curve) */
+  --color-red: #850305;            /* brand primary (logo bg) */
+  --color-red-pressed: #6b0304;    /* pressed/active (one notch deeper) */
+  --color-red-deep: #4a0203;       /* deepest brand strip, heavy emphasis */
+
+  /* Surfaces (light — warm cream Pinterest palette) */
+  --color-canvas: #ffffff;
+  --color-surface-soft: #fbfbf9;
+  --color-surface-card: #f6f6f3;
+  --color-secondary-bg: #e5e5e0;
+
+  /* Text tiers (Pinterest ink/body/mute/ash) */
+  --color-ink: #000000;
+  --color-body: #33332e;
+  --color-mute: #62625b;
+  --color-ash: #91918c;
+
+  /* Hairlines (Pinterest hairline / hairline-soft) */
+  --color-hairline: #dadad3;
+  --color-hairline-soft: #e5e5e0;
+
+  /* Dark mode (pure-black dominant) */
+  --color-surface-dark: #0a0a0a;          /* page bg */
+  --color-surface-card-dark: #141414;     /* card bg */
+  --color-surface-chrome-dark: #050505;   /* sidebar / topbar — deeper than page */
+  --color-hairline-dark: #262626;         /* borders on dark */
+}
+
+/* Base background and text color so the page never flashes the wrong theme
+   between the inline bootstrap script (index.html) and React mount. */
+html,
+body {
+  background-color: var(--color-surface-soft);
+  color: var(--color-ink);
+}
+html.dark,
+html.dark body {
+  background-color: var(--color-surface-dark);
+  color: #ffffff;
 }
 
 * {
-  box-sizing: border-box;
+  scrollbar-width: none;
 }
 
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
+*::-webkit-scrollbar {
+  display: none;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+*:hover {
+  scrollbar-width: thin;
 }
 
-.app-shell {
-  display: grid;
-  min-height: 100vh;
-  place-items: center;
-  padding: 2rem;
-  background:
-    radial-gradient(circle at top left, #1e3a8a 0, transparent 36%),
-    #0f172a;
+*:hover::-webkit-scrollbar {
+  display: block;
+  width: 4px;
+  height: 4px;
 }
 
-.app-card {
-  width: min(100%, 38rem);
-  padding: clamp(2rem, 6vw, 4rem);
-  border: 1px solid rgb(148 163 184 / 24%);
-  border-radius: 1.5rem;
-  background: rgb(15 23 42 / 82%);
-  box-shadow: 0 1.5rem 4rem rgb(2 6 23 / 35%);
+*:hover::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.app-eyebrow {
-  margin: 0 0 0.75rem;
-  color: #93c5fd;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: 0;
-  color: #f8fafc;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  line-height: 1.05;
-}
-
-.app-description {
-  max-width: 32rem;
-  margin: 1.25rem 0 0;
-  color: #cbd5e1;
-  font-size: 1.05rem;
-  line-height: 1.7;
-}
-
-.app-status {
-  width: fit-content;
-  margin-top: 2rem;
-  padding: 0.65rem 0.9rem;
-  border: 1px solid rgb(74 222 128 / 28%);
-  border-radius: 999px;
-  color: #bbf7d0;
-  background: rgb(22 101 52 / 24%);
-  font-size: 0.9rem;
-  font-weight: 600;
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 2px;
 }
