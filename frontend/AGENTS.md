@@ -79,13 +79,13 @@ The visual language is aligned with the Pinterest design patterns documented in 
 
 Red is the brand. Use it boldly but with discipline — red scale + monochrome everything else.
 
-- **Red scale** — multiple variants so red can show up as a primary CTA, a hover wash, a brand border, or a deep accent without colliding with neutrals:
-  - `red-tint` (`#fff1f2`) — lightest wash, empty-state bg
-  - `red-soft` (`#fee2e2`) — light hover bg, chip fill
-  - `red-light` (`#fca5a5`) — decorative mid-light (rare)
-  - `red` (`#e60023`) — brand primary
-  - `red-pressed` (`#cc001f`) — pressed/active state
-  - `red-deep` (`#7c0511`) — deep accent (brand strip, heavy emphasis)
+- **Red scale** — derived from `procobaja-logo.svg` (`#850305` bg + `#e33738` accent). Multiple variants so red can show up as a primary CTA, a hover wash, a brand border, or a deep accent without colliding with neutrals:
+  - `red-tint` (`#fdf2f3`) — palest wash, empty-state bg
+  - `red-soft` (`#fbd9dc`) — light hover bg, chip fill
+  - `red-light` (`#e33738`) — mid accent (the lighter curve in the logo)
+  - `red` (`#850305`) — brand primary (the deep red from the logo bg)
+  - `red-pressed` (`#6b0304`) — pressed/active state
+  - `red-deep` (`#4a0203`) — deepest brand strip, heavy emphasis
 - **Brand presence** — the brand is felt across the chrome, not just on buttons:
   - Sidebar carries a 4px red `border-l-4 border-red` strip (always visible)
   - TopBar + Sidebar user avatars use `bg-red` (always visible)

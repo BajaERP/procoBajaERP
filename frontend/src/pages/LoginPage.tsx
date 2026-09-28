@@ -43,9 +43,9 @@ export default function LoginPage() {
     }
   }
 
-  // tone: describes background tone. Login card stays white in both modes
-  // for visual focus; only the page wash and text colors shift.
-  const tone = theme === 'dark' ? 'dark' : 'light'
+  // The login card stays in light surface for visual focus in both modes;
+  // only the page wash and text colors shift. The logo carries its own
+  // brand-red bg so it reads cleanly on any backdrop.
   const cardBg =
     theme === 'dark'
       ? 'bg-canvas border-hairline-soft text-ink'
@@ -62,7 +62,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <LogoMark size={72} tone={tone} />
+          <LogoMark size={72} />
           <p className={`text-xs tracking-widest uppercase ${labelDim} transition-colors`}>
             Acesse sua conta
           </p>

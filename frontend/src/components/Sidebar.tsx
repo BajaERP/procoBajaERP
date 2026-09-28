@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from './icons'
+import { LogoMark } from './Logo'
 import { useAuth } from '../contexts/AuthContext'
 
 export interface NavItem {
@@ -10,7 +11,6 @@ export interface NavItem {
 
 export interface SidebarProps {
   appName?: string
-  appAbbr?: string
   nav?: NavItem[]
   activeId?: string
   onNavChange?: (id: string) => void
@@ -28,7 +28,6 @@ const ROLE_LABEL: Record<string, string> = {
 
 export function Sidebar({
   appName = 'Proco Baja',
-  appAbbr = 'PB',
   nav = [],
   activeId,
   onNavChange,
@@ -37,7 +36,6 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
   const { user } = useAuth()
 
-  const initials = user?.initials ?? '?'
   const name = user?.name ?? 'Visitante'
   const role = user ? ROLE_LABEL[user.role] ?? user.role : 'Sem sessão'
 
@@ -48,10 +46,8 @@ export function Sidebar({
     >
       {/* Logo */}
       <div className="flex items-center h-14 px-4 border-b border-hairline shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-red">
-            <span className="text-white font-bold text-xs tracking-tight">{appAbbr}</span>
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <LogoMark size={28} className="shrink-0" />
           {!collapsed && (
             <span className="text-ink font-semibold text-sm tracking-wide truncate">
               {appName}
@@ -106,11 +102,12 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* User */}
+      {/* User footer — boar logo anchors the user row to the team brand.
+          The wordmark and the user identity live in the same chip; the
+          red square already carries the brand, so we don't need a second
+          colored block behind the initials. */}
       <div className="shrink-0 border-t border-hairline px-4 py-3 flex items-center gap-3">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 bg-red">
-          {initials}
-        </div>
+        <LogoMark size={28} className="shrink-0" />
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="text-ink text-xs font-medium truncate">{name}</p>

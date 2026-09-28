@@ -1,112 +1,70 @@
-// Placeholder logo. Replace with the official mark once the brand assets land.
-// Flat-top hexagon SVG with PB monogram — adapts to light/dark backgrounds via `tone`.
+import procobajaLogo from '../assets/procobaja-logo.svg'
+import procobajaLogoTransparent from '../assets/procobaja-transparente.svg'
+
+// procoBaja logo. The boar mark on a deep-red square (procobaja-logo.svg,
+// viewBox 733x733) is the canonical standalone mark — it carries its own
+// background so it sits cleanly on any surface. The transparent variant
+// (procobaja-transparente.svg, viewBox 565x443) drops the red square and
+// keeps only the white boar path — for use on dark chrome where the red
+// square would clash with the surrounding bg.
 
 interface LogoMarkProps {
+  /** Height in px. For 'solid' the mark is square so width == height.
+   *  For 'transparent' the boar is wider than tall — width auto-derives. */
   size?: number
-  tone?: 'light' | 'dark'
+  variant?: 'solid' | 'transparent'
   className?: string
 }
 
-export function LogoMark({ size = 64, tone = 'light', className }: LogoMarkProps) {
-  const s = size
-  const cx = s / 2
-  const cy = s / 2
-  const r = s * 0.44
-
-  // 6 vertices starting at top (-90 deg), stepping 60 deg
-  const pts = Array.from({ length: 6 }, (_, i) => {
-    const a = (Math.PI / 3) * i - Math.PI / 2
-    return `${+(cx + r * Math.cos(a)).toFixed(2)},${+(cy + r * Math.sin(a)).toFixed(2)}`
-  }).join(' ')
-
-  const id = `clip-${size}`
-  const fs = s * 0.3 // monogram font size
-  const stripe = s * 0.11
-
-  const fill = tone === 'dark' ? '#ffffff' : '#000000'
-  const mono = tone === 'dark' ? '#000000' : '#ffffff'
+export function LogoMark({
+  size = 64,
+  variant = 'solid',
+  className,
+}: LogoMarkProps) {
+  const src =
+    variant === 'transparent' ? procobajaLogoTransparent : procobajaLogo
+  // Native aspect of the transparent boar (565/443 ≈ 1.276).
+  const width =
+    variant === 'transparent' ? Math.round(size * (565 / 443)) : size
 
   return (
-    <svg
-      width={s}
-      height={s}
-      viewBox={`0 0 ${s} ${s}`}
+    <img
+      src={src}
+      alt="procoBaja"
+      width={width}
+      height={size}
       className={className}
-      aria-label="Proco Baja (logo placeholder)"
-      role="img"
-    >
-      <defs>
-        <clipPath id={id}>
-          <polygon points={pts} />
-        </clipPath>
-      </defs>
-      {/* Hexagon body */}
-      <polygon points={pts} fill={fill} />
-      {/* Diagonal speed stripe */}
-      <rect
-        x={cx - stripe * 0.6}
-        y={0}
-        width={stripe}
-        height={s}
-        fill="#e60023"
-        opacity={0.18}
-        clipPath={`url(#${id})`}
-      />
-      {/* Border */}
-      <polygon points={pts} fill="none" stroke="#e60023" strokeWidth={s * 0.028} />
-      {/* Monogram */}
-      <text
-        x={cx}
-        y={cy + fs * 0.36}
-        textAnchor="middle"
-        fill={mono}
-        fontSize={fs}
-        fontWeight="700"
-        fontFamily="DM Sans, ui-sans-serif, sans-serif"
-        letterSpacing={-s * 0.008}
-      >
-        PB
-      </text>
-    </svg>
+      draggable={false}
+      decoding="async"
+    />
   )
 }
 
 interface LogoFullProps {
   markSize?: number
-  tone?: 'light' | 'dark'
+  variant?: 'solid' | 'transparent'
   className?: string
 }
 
-export function LogoFull({ markSize = 48, tone = 'light', className }: LogoFullProps) {
-  const textColor = tone === 'dark' ? '#ffffff' : '#000000'
-  const subColor = tone === 'dark' ? '#a3a3a3' : '#62625b'
-
+/** Mark + "PROCO BAJA" wordmark stacked beside it. */
+export function LogoFull({
+  markSize = 48,
+  variant = 'solid',
+  className,
+}: LogoFullProps) {
   return (
     <div className={`flex items-center gap-3 ${className ?? ''}`}>
-      <LogoMark size={markSize} tone={tone} />
-      <div>
+      <LogoMark size={markSize} variant={variant} />
+      <div className="leading-none">
         <p
-          style={{
-            color: textColor,
-            fontFamily: 'DM Sans, sans-serif',
-            fontWeight: 700,
-            fontSize: markSize * 0.35,
-            lineHeight: 1.1,
-            letterSpacing: '-0.02em',
-          }}
+          className="text-ink dark:text-white font-bold tracking-tight"
+          style={{ fontSize: markSize * 0.36 }}
         >
           PROCO BAJA
         </p>
         <p
-          style={{
-            color: subColor,
-            fontFamily: 'DM Sans, sans-serif',
-            fontWeight: 500,
-            fontSize: markSize * 0.22,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            marginTop: 1,
-          }}
+          className="text-mute dark:text-white/40 font-medium uppercase mt-1"
+          style={{ fontSize: markSize * 0.22, letterSpacing: '0.08em' }}
         >
           Sistema de Gestão
         </p>
