@@ -77,7 +77,6 @@ export function Shell() {
     <div className="flex h-screen bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
       <Sidebar
         appName="Proco Baja"
-        appAbbr="PB"
         nav={navItems}
         activeId={segment}
         onNavChange={handleNavChange}

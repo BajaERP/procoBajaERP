@@ -24,10 +24,9 @@ export default function WelcomePage() {
     return () => window.removeEventListener('keydown', go)
   }, [navigate])
 
-  // `tone` describes the background tone, not the logo fill:
-  //   tone="light"  -> dark fill, used on light backgrounds
-  //   tone="dark"   -> light fill, used on dark backgrounds
-  const tone = theme === 'dark' ? 'dark' : 'light'
+  // The real boar logo carries its own brand-red background, so it reads
+  // on either light or dark wallpaper without a tone swap. Hint color still
+  // depends on the page bg for contrast.
   const hintColor =
     theme === 'dark' ? 'text-white/20' : 'text-mute'
 
@@ -37,7 +36,7 @@ export default function WelcomePage() {
       className="min-h-screen flex flex-col items-center justify-center cursor-pointer select-none font-sans bg-canvas dark:bg-surface-dark transition-colors"
     >
       <div className="relative flex flex-col items-center gap-5">
-        <LogoMark size={120} tone={tone} />
+        <LogoMark size={120} />
         <div className="text-center">
           <p className="text-ink dark:text-white text-2xl font-bold tracking-[0.15em] transition-colors">
             PROCO BAJA

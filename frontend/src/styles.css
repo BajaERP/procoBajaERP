@@ -3,28 +3,29 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------- *
- * Design system tokens — Pinterest-aligned, red-led:
+ * Design system tokens — procoBaja-aligned, red-led:
  *
- *   • Brand red scale with multiple variants (tint → deep) so red
- *     can appear as bg wash, hover state, border, primary CTA, or
- *     deep accent without ever colliding with neutrals.
- *   • Surfaces: warm cream wash in light mode; pure-black dominant
- *     in dark mode (#0a0a0a page, #141414 cards). Sidebar/TopBar
- *     sit one notch deeper than the page so chrome feels anchored.
- *   • Text: ink / body / mute / ash tier — exact Pinterest discipline.
+ *   • Brand red scale derived from procobaja-logo.svg (#850305 deep,
+ *     #e33738 accent). Six variants so red can show up as pale wash,
+ *     hover state, primary CTA, deep brand strip without colliding
+ *     with neutrals.
+ *   • Surfaces: warm cream wash in light mode (canvas / surface-soft /
+ *     surface-card); pure-black dominant in dark mode (#0a0a0a page,
+ *     #141414 cards). Sidebar/TopBar sit one notch deeper than page.
+ *   • Text: ink / body / mute / ash tier.
  *   • Cards have NO shadow — hairlines only. Shadows reserved for popovers.
  * ---------------------------------------------------------------- */
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Brand red — multiple variants for hierarchy */
-  --color-red-tint: #fff1f2;       /* lightest wash, empty-state bg */
-  --color-red-soft: #fee2e2;       /* light hover bg, chip fill */
-  --color-red-light: #fca5a5;      /* decorative mid-light */
-  --color-red: #e60023;            /* brand primary */
-  --color-red-pressed: #cc001f;    /* pressed/active */
-  --color-red-deep: #7c0511;       /* deep accent (border, heavy emphasis) */
+  /* Brand red — derived from procobaja-logo.svg (#850305 bg + #e33738 accent) */
+  --color-red-tint: #fdf2f3;       /* palest wash, empty-state bg */
+  --color-red-soft: #fbd9dc;       /* light hover bg, chip fill */
+  --color-red-light: #e33738;      /* mid accent (logo secondary curve) */
+  --color-red: #850305;            /* brand primary (logo bg) */
+  --color-red-pressed: #6b0304;    /* pressed/active (one notch deeper) */
+  --color-red-deep: #4a0203;       /* deepest brand strip, heavy emphasis */
 
   /* Surfaces (light — warm cream Pinterest palette) */
   --color-canvas: #ffffff;
