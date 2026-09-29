@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { LogoMark } from '../components/Logo'
-import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 
 // Default AFK screen — full-bleed wallpaper + center logo.
@@ -9,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext'
 // users skip straight to /app/gestao.
 export default function WelcomePage() {
   const navigate = useNavigate()
-  const { theme } = useTheme()
   const { isAuthenticated } = useAuth()
 
   // Skip welcome for signed-in users
@@ -17,31 +15,20 @@ export default function WelcomePage() {
     if (isAuthenticated) navigate('/app/gestao', { replace: true })
   }, [isAuthenticated, navigate])
 
-  // Any click or keypress goes to login
-  useEffect(() => {
-    const go = () => navigate('/login')
-    window.addEventListener('keydown', go)
-    return () => window.removeEventListener('keydown', go)
-  }, [navigate])
-
-  // The real boar logo carries its own brand-red background, so it reads
-  // on either light or dark wallpaper without a tone swap. Hint color still
-  // depends on the page bg for contrast.
-  const hintColor =
-    theme === 'dark' ? 'text-white/20' : 'text-mute'
-
   return (
-    <div
-      onClick={() => navigate('/login')}
-      className="min-h-screen flex flex-col items-center justify-center cursor-pointer select-none font-sans bg-canvas dark:bg-surface-dark transition-colors"
-    >
+    <main className="min-h-dvh w-full bg-canvas dark:bg-surface-dark font-sans transition-colors">
+      <Link
+        to="/login"
+        aria-label="Abrir acesso de demonstração"
+        className="relative flex min-h-dvh w-full flex-col items-center justify-center cursor-pointer select-none text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red"
+      >
       <div className="relative flex flex-col items-center gap-5">
         <LogoMark size={120} />
         <div className="text-center">
-          <p className="text-ink dark:text-white text-2xl font-bold tracking-[0.15em] transition-colors">
+          <h1 className="text-ink dark:text-white text-2xl font-bold tracking-[0.15em] transition-colors">
             PROCO BAJA
-          </p>
-          <p className="text-mute dark:text-white/40 text-sm tracking-widest uppercase mt-1 font-medium transition-colors">
+          </h1>
+          <p className="text-mute text-sm tracking-widest uppercase mt-1 font-medium transition-colors">
             Sistema de Gestão
           </p>
         </div>
@@ -49,10 +36,11 @@ export default function WelcomePage() {
 
       {/* Tap hint — kept minimal per spec. */}
       <p
-        className={`absolute bottom-10 text-xs tracking-widest uppercase animate-pulse transition-colors ${hintColor}`}
+        className="absolute bottom-10 text-xs tracking-widest uppercase text-mute transition-colors"
       >
         Toque para continuar
       </p>
-    </div>
+      </Link>
+    </main>
   )
 }

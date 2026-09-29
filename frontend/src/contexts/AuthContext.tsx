@@ -17,7 +17,7 @@ export type UserRole =
 export interface AuthUser {
   id: string
   name: string
-  email: string
+  ra: string
   role: UserRole
   initials: string
 }
@@ -25,7 +25,7 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<AuthUser>
+  login: (ra: string, password: string) => Promise<AuthUser>
   logout: () => void
 }
 
@@ -46,23 +46,35 @@ function loadStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as AuthUser) : null
+    if (!raw) return null
+    const stored: unknown = JSON.parse(raw)
+    if (
+      typeof stored !== 'object' || stored === null ||
+      !('id' in stored) || stored.id !== 'demo' ||
+      !('name' in stored) || stored.name !== 'Usuário de demonstração' ||
+      !('ra' in stored) || typeof stored.ra !== 'string' || !stored.ra.trim() ||
+      !('role' in stored) || stored.role !== 'gestor'
+    ) return null
+    return {
+      id: 'demo',
+      name: 'Usuário de demonstração',
+      ra: stored.ra,
+      role: 'gestor',
+      initials: 'UD',
+    }
   } catch {
     return null
   }
 }
 
-// No backend yet — derive a stub user from the email. Will be replaced
-// when the Spring Boot auth endpoint lands (see AGENTS.md backend integration).
-function stubUserFromEmail(email: string): AuthUser {
-  const local = email.split('@')[0] || 'gestor'
-  const display = local.charAt(0).toUpperCase() + local.slice(1)
+// This is a local demonstration session, not an authentication mechanism.
+function demoUserFromRa(ra: string): AuthUser {
   return {
-    id: 'stub',
-    name: display,
-    email,
+    id: 'demo',
+    name: 'Usuário de demonstração',
+    ra,
     role: 'gestor',
-    initials: initialsFromName(display) || 'GE',
+    initials: initialsFromName('Usuário demonstração') || 'UD',
   }
 }
 
@@ -74,13 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else window.localStorage.removeItem(STORAGE_KEY)
   }, [user])
 
-  async function login(email: string, password: string): Promise<AuthUser> {
-    // Simulated auth — replace with real API call once backend is wired.
-    if (!email || !password) {
-      throw new Error('E-mail e senha são obrigatórios.')
+  async function login(ra: string, password: string): Promise<AuthUser> {
+    // Any non-empty values enter the local demo; there is no server auth.
+    const normalizedRa = ra.trim()
+    if (!normalizedRa || !password) {
+      throw new Error('RA e senha são obrigatórios.')
     }
     await new Promise((r) => setTimeout(r, 250))
-    const next = stubUserFromEmail(email)
+    const next = demoUserFromRa(normalizedRa)
     setUser(next)
     return next
   }
