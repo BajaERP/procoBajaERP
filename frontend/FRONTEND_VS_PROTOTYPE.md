@@ -1,73 +1,30 @@
-# Frontend vs Figma Prototype — Quick Diff
+# Frontend integrado e protótipo de referência
 
-Concise comparison of the real frontend (`/frontend/src/`) against the Figma-driven reference prototype (`/frontend/prototipacao_erp_procobaja/`).
+Este documento compara o app em `src/` com o protótipo empacotado em
+`prototipacao_erp_procobaja/Prototipação ERP ProcoBaja.zip`.
 
-The real implementation is intentionally minimal — it ships the layout shell first and adds features as the Spring Boot backend lands. The prototype is a design exploration spike; it is not the production reference.
+## Frontend integrado
 
-## 1. Scope
+- O shell tem navegação responsiva, barra superior e páginas Welcome/Login.
+- A tela Gestão apresenta dados fictícios em memória e abas de membros,
+  presenças, reuniões e subsistemas.
+- Configurações permite escolher tema claro, escuro ou acompanhar o sistema.
+- Dashboard, Equipe, Atividades, Financeiro, Competições e Documentação
+  continuam como páginas “Em construção”.
+- O login aceita RA e senha não vazios apenas para demonstração local. Não há
+  API conectada, autenticação real nem controle de acesso no backend.
 
-| | Real | Prototype |
-|---|---|---|
-| Pages | 7 placeholder stubs | 18 pages |
-| Page types | One generic stub layout | 6 role dashboards + 8 feature pages + Welcome + Login + Components showcase |
-| Auth flow | none | Welcome → Login → role-based dashboard |
+## Protótipo de referência
 
-## 2. Nav Structure
+O ZIP contém uma exploração visual mais ampla, com páginas por perfil e módulos
+de negócio. Essas telas ajudam a entender possibilidades de navegação e
+conteúdo, mas não estão ligadas ao router nem ao backend do app integrado. O
+guia `AGENTS.md` marca o protótipo como somente leitura.
 
-| | Real | Prototype |
-|---|---|---|
-| Items | 7 flat items | 6 roles × `NAV_BY_ROLE` grouped configs |
-| Source of truth | `NAV` const in `src/app/Shell.tsx` | `NAV_BY_ROLE` in `src/app/Shell.tsx` |
-| DEV role-switcher bar | absent | amber bar across the top |
+## Como usar a referência
 
-## 3. User State
-
-| | Real | Prototype |
-|---|---|---|
-| Source | hardcoded `PLACEHOLDER_USER` const inside `Sidebar.tsx` and `TopBar.tsx` | `AppContext` (language + theme) drives the same hardcoded look |
-| Duplication risk | none (single source) | yes — `AppContext.tsx` exists twice (root + `contexts/`) |
-
-## 4. i18n
-
-| | Real | Prototype |
-|---|---|---|
-| Setup | none — labels are hardcoded Portuguese strings | `useT()` hook + pt/en dictionary in `src/i18n/index.ts` |
-| Duplicate dict | n/a | yes — `src/translations.ts` is a near-duplicate missing some `common.*` keys |
-
-## 5. Theming
-
-| | Real | Prototype |
-|---|---|---|
-| Mode | light only | light + dark via `<html class="dark">` toggle in `AppContext` |
-| Dark tokens | defined but unused (`@variant dark` in `src/styles.css`) | fully wired, used by all 18 pages |
-| Toggle UI | none | present in TopBar |
-
-## 6. Routing
-
-| | Real | Prototype |
-|---|---|---|
-| Router | `createHashRouter` | same |
-| Routes | 7 under `/app/*` | 13 (6 role dashboards + 8 features + index redirect) |
-| Welcome/Login | not implemented | full flow with zoom animation between them |
-
-## 7. Orphans in the Prototype
-
-These files exist in the prototype but are **not** wired into its router:
-
-- `src/pages/DashboardPage.tsx` — generic English KPI page (`Total Revenue` etc.), leftover from a pre-router era.
-- `src/pages/RHPage.tsx` — Portuguese HR page, also unrouted.
-
-If you want either as a starting point for a real page, copy the file into `/frontend/src/pages/` and wire it up properly. Do NOT delete them from the prototype.
-
-## 8. Intent
-
-| Real | Prototype |
-|---|---|
-| Ship the layout shell first, wire features incrementally as backend lands. | Design exploration / Figma-Make spike. Useful for visual fidelity, not for production behavior. |
-
-## When to Use Which
-
-- **Need the layout structure, design tokens, or icon SVGs?** Both have them. Prefer the real implementation — it's what you'll ship.
-- **Need a worked example of a page with tables, filters, modals?** Look in the prototype (e.g. `CapitaoDashboard.tsx` for table CRUD).
-- **Need a role-based nav config?** The prototype's `NAV_BY_ROLE` is the reference, but only reintroduce role logic when the backend has actual roles.
-- **Need dark mode?** The CSS is ready; add a toggle button. The prototype's `AppContext` is the pattern to copy.
+- Prefira os componentes e tokens de `src/` ao implementar correções no app.
+- Consulte o protótipo para contexto visual, sem assumir que seus dados ou
+  fluxos já funcionam no app principal.
+- Não copie controles de perfil como se fossem segurança; autorização real
+  depende de implementação no backend.

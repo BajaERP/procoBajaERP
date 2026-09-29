@@ -100,6 +100,11 @@ pure white.
 | `surface-chrome-dark` | `#050505` | Sidebar / TopBar. Deeper than page so chrome anchors. |
 | `hairline-dark` | `#262626` | 1px borders on dark surfaces. |
 
+In dark mode, `styles.css` remaps the semantic text, surface and hairline
+tokens (`ink`, `body`, `mute`, `ash`, `canvas`, `surface-soft`, `surface-card`,
+`secondary-bg`, `hairline`, `hairline-soft`) to readable dark equivalents.
+Status chips still need explicit `dark:` background and foreground variants.
+
 ### Text tier (ink → ash)
 
 | Token | Hex | Use |
@@ -109,6 +114,9 @@ pure white.
 | `mute` | `#62625b` | Captions, helper text, metadata. |
 | `ash` | `#91918c` | Placeholders, disabled text, least-emphasis hints. |
 | `white` | `#ffffff` | Primary text on red / dark surfaces. |
+
+Dark mode maps `ink` to `#f5f5f5`, `body` to `#e5e5e5`, `mute` to `#a3a3a3`
+and `ash` to `#8a8a8a` for readable contrast against dark surfaces.
 
 ### Semantic colors
 
@@ -181,16 +189,20 @@ Card padding:
 
 ### Grid & container
 
-- App shell: flexbox, `h-screen`, Sidebar (left) + main column (TopBar + Outlet).
+- App shell: viewport-height flexbox, desktop Sidebar + main column (TopBar + Outlet).
+  On narrow screens the Sidebar becomes an overlay drawer opened from the TopBar.
+- Minimum supported layout width: 320px. The main column must not create page-level
+  horizontal scrolling.
 - Main content: max-width depends on the page; no global container wrapper
   — each page owns its own width.
 - KPI row: 4-column flex / grid at desktop, 2-up at tablet, 1-up at mobile.
-- Data tables: full-width, fixed layout, no horizontal scroll until content
-  forces it.
+- Data tables: full-width on desktop; on narrow screens, preserve readable
+  column widths and scroll inside a labeled, keyboard-focusable table region.
 
 ### Chrome dimensions
 
-- Sidebar: `width: collapsed ? 64 : 240` (px). Transition 200ms ease.
+- Sidebar: desktop `width: collapsed ? 64 : 240` (px). On mobile, a modal
+  drawer up to 288px wide closes on Escape, backdrop click or route selection.
 - TopBar: `height: 56px` (`h-14`).
 - Sidebar header: `h-14`, same as TopBar so vertical alignment reads clean.
 
@@ -305,7 +317,7 @@ subtitle. Optional composite, currently unused.
 
 **KPI tile** — metric card on GestaoPage
 - `bg-canvas dark:bg-surface-card-dark border border-hairline rounded-lg p-5`.
-- Big number (text-3xl font-bold text-ink) + label (text-xs text-mute uppercase).
+- Big number (text-2xl font-semibold text-ink) + label (text-xs text-mute uppercase).
 - 4-up at desktop, 2-up at tablet, 1-up at mobile.
 
 **Section panel** — content grouping
@@ -326,7 +338,7 @@ subtitle. Optional composite, currently unused.
 ### Forms
 
 **Text input**
-- `w-full px-4 py-2.5 rounded-xl border bg-surface-soft`.
+- `w-full px-4 py-2.5 rounded-md border bg-surface-soft`.
 - Focus: `border-red ring-2 ring-red/30` — red focus signal.
 - Disabled: `opacity-50`.
 
@@ -357,9 +369,10 @@ subtitle. Optional composite, currently unused.
   notification badges, active state. Never decorative.
 - Use `text-red` for active sidebar items, focus rings, and the Sair button.
   Pair with a background surface that has enough contrast (cream or white).
-- Apply `dark:` variants on every colored utility (bg, text, border, divide)
-  in new components. Card pattern: `bg-canvas dark:bg-surface-card-dark
-  border-hairline dark:border-hairline-dark`.
+- Semantic text, surface and hairline utilities map to readable dark values
+  in `styles.css`; status colors still need explicit `dark:` variants.
+  Card pattern: `bg-canvas dark:bg-surface-card-dark border-hairline
+  dark:border-hairline-dark`.
 - Reach for `rounded-lg` (8px) on every card / panel by default;
   `rounded-2xl` only for modal-style cards.
 - Keep DM Sans for UI and JetBrains Mono for codes / IDs / numbers. Do
