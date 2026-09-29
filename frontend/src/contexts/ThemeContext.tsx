@@ -7,39 +7,68 @@ import {
 } from 'react'
 
 export type Theme = 'light' | 'dark'
+export type ThemePreference = Theme | 'auto'
 
 interface ThemeContextValue {
   theme: Theme
-  setTheme: (t: Theme) => void
+  preference: ThemePreference
+  setPreference: (preference: ThemePreference) => void
   toggleTheme: () => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 const STORAGE_KEY = 'proco.theme'
 
-function getInitialTheme(): Theme {
+function getInitialPreference(): ThemePreference {
+  if (typeof window === 'undefined') return 'auto'
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    // Storage may be unavailable; follow the operating system in memory.
+  }
+  return 'auto'
+}
+
+function getSystemTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  const [preference, setPreference] = useState<ThemePreference>(getInitialPreference)
+  const [systemTheme, setSystemTheme] = useState<Theme>(getSystemTheme)
+  const theme = preference === 'auto' ? systemTheme : preference
 
   useEffect(() => {
-    const root = document.documentElement
-    if (theme === 'dark') root.classList.add('dark')
-    else root.classList.remove('dark')
-    window.localStorage.setItem(STORAGE_KEY, theme)
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const updateSystemTheme = () => setSystemTheme(media.matches ? 'dark' : 'light')
+    media.addEventListener('change', updateSystemTheme)
+    return () => media.removeEventListener('change', updateSystemTheme)
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
+
+  useEffect(() => {
+    try {
+      if (preference === 'auto') window.localStorage.removeItem(STORAGE_KEY)
+      else window.localStorage.setItem(STORAGE_KEY, preference)
+    } catch {
+      // Theme selection still works for this session when storage is blocked.
+    }
+  }, [preference])
+
+  function toggleTheme() {
+    setPreference(theme === 'dark' ? 'light' : 'dark')
+  }
 
   const value: ThemeContextValue = {
     theme,
-    setTheme: setThemeState,
-    toggleTheme: () => setThemeState((t) => (t === 'dark' ? 'light' : 'dark')),
+    preference,
+    setPreference,
+    toggleTheme,
   }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

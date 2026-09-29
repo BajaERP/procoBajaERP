@@ -1,34 +1,15 @@
 import { useNavigate } from 'react-router-dom'
-import { useTheme } from '../contexts/ThemeContext'
+import { useTheme, type ThemePreference } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import { LogoutIcon, MoonIcon, SunIcon } from '../components/icons'
 
-type ThemeChoice = 'light' | 'dark' | 'auto'
-
-function resolveStoredTheme(): ThemeChoice {
-  if (typeof window === 'undefined') return 'auto'
-  const stored = window.localStorage.getItem('proco.theme')
-  return stored === 'light' || stored === 'dark' ? stored : 'auto'
-}
-
 export default function ConfiguracoesPage() {
-  const { theme, setTheme } = useTheme()
+  const { preference, setPreference } = useTheme()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  // 'auto' is the absence of a stored override; we surface that here as a
-  // 3rd option so the user can clear their override and follow the OS again.
-  const stored = resolveStoredTheme()
-  const choice: ThemeChoice = stored === 'auto' ? 'auto' : theme
-
-  function applyChoice(next: ThemeChoice) {
-    if (next === 'auto') {
-      window.localStorage.removeItem('proco.theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      setTheme(prefersDark ? 'dark' : 'light')
-    } else {
-      setTheme(next)
-    }
+  function applyChoice(next: ThemePreference) {
+    setPreference(next)
   }
 
   function handleLogout() {
@@ -37,7 +18,7 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl space-y-8">
+    <div className="w-full max-w-3xl min-w-0 p-4 sm:p-8 space-y-6 sm:space-y-8">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-ink">Configurações</h1>
         <p className="text-sm text-mute">
@@ -46,7 +27,7 @@ export default function ConfiguracoesPage() {
       </header>
 
       {/* Aparência */}
-      <section className="bg-canvas dark:bg-surface-card-dark rounded-xl border border-hairline p-6 space-y-4">
+      <section className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-6 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-ink">Aparência</h2>
           <p className="text-sm text-mute mt-1">
@@ -59,7 +40,7 @@ export default function ConfiguracoesPage() {
             label="Claro"
             description="Fundo claro, alto contraste."
             icon={<SunIcon />}
-            active={choice === 'light'}
+            active={preference === 'light'}
             onClick={() => applyChoice('light')}
             preview="light"
           />
@@ -67,7 +48,7 @@ export default function ConfiguracoesPage() {
             label="Escuro"
             description="Fundo escuro, menor cansaço visual."
             icon={<MoonIcon />}
-            active={choice === 'dark'}
+            active={preference === 'dark'}
             onClick={() => applyChoice('dark')}
             preview="dark"
           />
@@ -75,11 +56,11 @@ export default function ConfiguracoesPage() {
             label="Sistema"
             description="Segue a preferência do seu sistema operacional."
             icon={
-              <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] font-bold border border-current rounded">
+              <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] font-bold border border-current rounded-md">
                 A
               </span>
             }
-            active={choice === 'auto'}
+            active={preference === 'auto'}
             onClick={() => applyChoice('auto')}
             preview="auto"
           />
@@ -87,7 +68,7 @@ export default function ConfiguracoesPage() {
       </section>
 
       {/* Conta */}
-      <section className="bg-canvas dark:bg-surface-card-dark rounded-xl border border-hairline p-6 space-y-4">
+      <section className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-6 space-y-4">
         <div>
           <h2 className="text-base font-semibold text-ink">Conta</h2>
           <p className="text-sm text-mute mt-1">
@@ -97,14 +78,14 @@ export default function ConfiguracoesPage() {
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nome" value={user?.name ?? '—'} />
-          <Field label="E-mail" value={user?.email ?? '—'} />
-          <Field label="Função" value={user?.role ?? '—'} />
-          <Field label="Sessão" value="Local (stub)" />
+          <Field label="RA" value={user?.ra ?? '—'} />
+          <Field label="Função" value={user ? 'Gestor (demonstração)' : '—'} />
+          <Field label="Sessão" value="Demonstração local; sem autenticação no servidor" />
         </dl>
 
         <button
           onClick={handleLogout}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red/5 transition-colors"
+          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-sm font-medium hover:bg-red/5 transition-colors"
         >
           <LogoutIcon />
           Encerrar sessão
@@ -112,7 +93,7 @@ export default function ConfiguracoesPage() {
       </section>
 
       {/* Notificações — placeholder */}
-      <section className="bg-canvas dark:bg-surface-card-dark rounded-xl border border-hairline p-6 space-y-2">
+      <section className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-6 space-y-2">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-ink">Notificações</h2>
@@ -120,7 +101,7 @@ export default function ConfiguracoesPage() {
               Em breve — preferência por canal (e-mail, push, in-app).
             </p>
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-50 text-amber-700">
+          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
             Em construção
           </span>
         </div>
@@ -157,10 +138,10 @@ function ThemeCard({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`text-left rounded-xl border p-4 transition-all ${
+      className={`text-left rounded-lg border border-hairline dark:border-hairline-dark p-4 transition-all ${
         active
-          ? 'border-red ring-2 ring-red/30 bg-red/5'
-          : 'border-hairline hover:border-red/40'
+          ? 'border-red dark:border-red-400 ring-2 ring-red/30 bg-red/5 dark:bg-red/10'
+          : 'hover:border-red/40'
       }`}
     >
       <div className={`h-12 rounded-md mb-3 ${previewBg}`} />
@@ -168,7 +149,7 @@ function ThemeCard({
         <span className="text-ink">{icon}</span>
         <span className="text-sm font-semibold text-ink">{label}</span>
         {active && (
-          <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-red">
+          <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-red dark:text-red-300">
             Ativo
           </span>
         )}
