@@ -153,7 +153,8 @@ export function Sidebar({
             type="button"
             className="absolute inset-0 h-full w-full bg-black/50"
             onClick={onMobileClose}
-            aria-label="Fechar menu de navegação"
+            aria-hidden="true"
+            tabIndex={-1}
           />
           <aside
             ref={mobileDialogRef}

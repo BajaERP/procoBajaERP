@@ -125,7 +125,6 @@ export function Shell() {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden" inert={mobileNavOpen || undefined}>
         <TopBar
           breadcrumbs={[{ label: 'Proco Baja' }, { label: pageLabel }]}
-          title={pageLabel}
           onOpenMobileMenu={() => setMobileNavOpen(true)}
           mobileMenuOpen={mobileNavOpen}
           menuButtonRef={menuButtonRef}

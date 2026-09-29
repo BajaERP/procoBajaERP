@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
+import { CheckIcon, CloseIcon } from '../components/icons'
 
 // Tipos compartilhados pelo módulo de gestão
 type MembroStatus = 'Ativo' | 'Atenção' | 'Crítico'
@@ -230,18 +231,30 @@ export default function GestaoPage() {
 
       {/* KPIs */}
       <section aria-label="Indicadores da equipe" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Kpi label="Membros Ativos" value={kpis.total} tone="ink" />
+        <Kpi label="Total de membros" value={kpis.total} tone="ink" />
         <Kpi label="Média de Presença" value={`${kpis.mediaPresenca}%`} tone="red" />
         <Kpi label="Em Atenção" value={kpis.atencao} tone="amber" />
         <Kpi label="Situação Crítica" value={kpis.criticos} tone="red" />
       </section>
 
       {/* Tabs */}
-      <nav aria-label="Seções de gestão" className="flex min-w-0 gap-1 border-b border-hairline overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label="Seções de gestão"
+        aria-orientation="horizontal"
+        className="flex min-w-0 gap-1 border-b border-hairline overflow-x-auto overflow-y-hidden"
+      >
         {ABAS.map((a) => (
           <button
             key={a.id}
+            id={`aba-gestao-${a.id}`}
+            type="button"
+            role="tab"
+            aria-selected={aba === a.id}
+            aria-controls={`painel-gestao-${a.id}`}
+            tabIndex={aba === a.id ? 0 : -1}
             onClick={() => setAba(a.id)}
+            onKeyDown={(event) => navegarAbasPorTeclado(event, a.id, setAba)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               aba === a.id
                 ? 'border-red text-red dark:text-red-300'
@@ -251,9 +264,15 @@ export default function GestaoPage() {
             {a.label}
           </button>
         ))}
-      </nav>
+      </div>
 
-      {aba === 'membros' && (
+      <section
+        id="painel-gestao-membros"
+        role="tabpanel"
+        aria-labelledby="aba-gestao-membros"
+        tabIndex={aba === 'membros' ? 0 : -1}
+        hidden={aba !== 'membros'}
+      >
         <MembrosTab
           membros={membros}
           selecionado={membroSelecionado}
@@ -263,17 +282,59 @@ export default function GestaoPage() {
           setNovaObs={setNovaObs}
           onAdicionarObservacao={adicionarObservacao}
         />
-      )}
+      </section>
 
-      {aba === 'presencas' && <PresencasTab membros={membros} />}
+      <section
+        id="painel-gestao-presencas"
+        role="tabpanel"
+        aria-labelledby="aba-gestao-presencas"
+        tabIndex={aba === 'presencas' ? 0 : -1}
+        hidden={aba !== 'presencas'}
+      >
+        <PresencasTab membros={membros} />
+      </section>
 
-      {aba === 'reunioes' && <ReunioesTab reunioes={REUNIOES} membros={membros} />}
+      <section
+        id="painel-gestao-reunioes"
+        role="tabpanel"
+        aria-labelledby="aba-gestao-reunioes"
+        tabIndex={aba === 'reunioes' ? 0 : -1}
+        hidden={aba !== 'reunioes'}
+      >
+        <ReunioesTab reunioes={REUNIOES} membros={membros} />
+      </section>
 
-      {aba === 'subsistemas' && (
+      <section
+        id="painel-gestao-subsistemas"
+        role="tabpanel"
+        aria-labelledby="aba-gestao-subsistemas"
+        tabIndex={aba === 'subsistemas' ? 0 : -1}
+        hidden={aba !== 'subsistemas'}
+      >
         <SubsistemasTab stats={statsPorSubarea} />
-      )}
+      </section>
     </div>
   )
+}
+
+function navegarAbasPorTeclado(
+  event: KeyboardEvent<HTMLButtonElement>,
+  atual: Aba,
+  selecionar: (aba: Aba) => void,
+) {
+  const indice = ABAS.findIndex((aba) => aba.id === atual)
+  let proximoIndice: number | null = null
+
+  if (event.key === 'ArrowRight') proximoIndice = (indice + 1) % ABAS.length
+  if (event.key === 'ArrowLeft') proximoIndice = (indice - 1 + ABAS.length) % ABAS.length
+  if (event.key === 'Home') proximoIndice = 0
+  if (event.key === 'End') proximoIndice = ABAS.length - 1
+  if (proximoIndice === null) return
+
+  event.preventDefault()
+  const proximaAba = ABAS[proximoIndice].id
+  selecionar(proximaAba)
+  document.getElementById(`aba-gestao-${proximaAba}`)?.focus()
 }
 
 // ============== Subcomponentes locais ==============
@@ -325,68 +386,64 @@ function MembrosTab({
     <div className="grid min-w-0 grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       <div className="min-w-0 lg:col-span-2 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark overflow-hidden">
         <div className="max-w-full overflow-x-auto overscroll-x-contain" role="region" aria-label="Tabela de membros; deslize horizontalmente para ver todas as colunas" tabIndex={0}>
-        <table className="w-full min-w-[720px] text-sm">
-          <thead>
-            <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
-              <th className="px-5 py-3 text-left">Membro</th>
-              <th className="px-5 py-3 text-left">Subsistema</th>
-              <th className="px-5 py-3 text-center">Presença</th>
-              <th className="px-5 py-3 text-center">Horas</th>
-              <th className="px-5 py-3 text-left">Status</th>
-              <th className="relative px-5 py-3">
-                <span className="sr-only">Selecionar membro</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {membros.map((m) => {
-              const pct = Math.round(percentualPresenca(m))
-              const ativo = selecionado === m.id
-              return (
-                <tr
-                  key={m.id}
-                  onClick={() => onSelecionar(ativo ? null : m.id)}
-                  className={`border-b border-hairline-soft hover:bg-surface-soft cursor-pointer ${
-                    ativo ? 'bg-red/5' : ''
-                  }`}
-                >
-                  <td className="px-5 py-3">
-                    <button
-                      type="button"
-                      aria-pressed={ativo}
-                      aria-label={`Selecionar ${m.nome}`}
-                      className="flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-secondary-bg flex items-center justify-center text-[11px] font-semibold text-ink shrink-0">
-                        {iniciais(m.nome)}
-                      </div>
-                      <span className="font-medium text-ink text-xs">
-                        {m.nome}
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
+                <th scope="col" className="px-5 py-3 text-left">Membro</th>
+                <th scope="col" className="px-5 py-3 text-left">Subsistema</th>
+                <th scope="col" className="px-5 py-3 text-center">Presença</th>
+                <th scope="col" className="px-5 py-3 text-center">Horas</th>
+                <th scope="col" className="px-5 py-3 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {membros.map((m) => {
+                const pct = Math.round(percentualPresenca(m))
+                const ativo = selecionado === m.id
+                return (
+                  <tr
+                    key={m.id}
+                    onClick={() => onSelecionar(ativo ? null : m.id)}
+                    className={`border-b border-hairline-soft hover:bg-surface-soft cursor-pointer ${
+                      ativo ? 'bg-red/5' : ''
+                    }`}
+                  >
+                    <td className="px-5 py-3">
+                      <button
+                        type="button"
+                        aria-pressed={ativo}
+                        aria-label={`Selecionar ${m.nome}`}
+                        className="flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-secondary-bg flex items-center justify-center text-[11px] font-semibold text-ink shrink-0">
+                          {iniciais(m.nome)}
+                        </div>
+                        <span className="font-medium text-ink text-xs">
+                          {m.nome}
+                        </span>
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 text-xs text-mute">
+                      {m.subarea}
+                    </td>
+                    <td className="px-5 py-3 text-center text-xs font-mono text-body">
+                      {pct}%
+                    </td>
+                    <td className="px-5 py-3 text-center text-xs font-mono text-body">
+                      {m.horasRegistradas}h
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
+                      >
+                        {m.status}
                       </span>
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-xs text-mute">
-                    {m.subarea}
-                  </td>
-                  <td className="px-5 py-3 text-center text-xs font-mono text-body">
-                    {pct}%
-                  </td>
-                  <td className="px-5 py-3 text-center text-xs font-mono text-body">
-                    {m.horasRegistradas}h
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                  className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
-                    >
-                      {m.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-xs text-red dark:text-red-300">{ativo ? '▲' : '▼'}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -414,7 +471,11 @@ function MembrosTab({
               ))}
             </div>
             <div className="flex gap-2 pt-2 border-t border-hairline-soft">
+              <label htmlFor={`nova-observacao-${membro.id}`} className="sr-only">
+                Nova observação para {membro.nome}
+              </label>
               <input
+                id={`nova-observacao-${membro.id}`}
                 value={novaObs}
                 onChange={(e) => setNovaObs(e.target.value)}
                 onKeyDown={(e) =>
@@ -427,7 +488,8 @@ function MembrosTab({
                 type="button"
                 onClick={() => onAdicionarObservacao(membro.id)}
                 aria-label="Adicionar observação"
-                className="min-h-10 min-w-10 text-xs px-3 py-1.5 rounded-md bg-red hover:bg-red-pressed text-white transition-colors"
+                disabled={!novaObs.trim()}
+                className="min-h-10 min-w-10 text-xs px-3 py-1.5 rounded-md bg-red hover:bg-red-pressed text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 +
               </button>
@@ -447,62 +509,62 @@ function PresencasTab({ membros }: { membros: Membro[] }) {
   return (
     <div className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark overflow-hidden">
       <div className="max-w-full overflow-x-auto overscroll-x-contain" role="region" aria-label="Tabela de presenças; deslize horizontalmente para ver todas as colunas" tabIndex={0}>
-      <table className="w-full min-w-[680px] text-sm">
-        <thead>
-          <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
-            <th className="px-5 py-3 text-left">Membro</th>
-            <th className="px-5 py-3 text-left">Subsistema</th>
-            <th className="px-5 py-3 text-center">Presenças</th>
-            <th className="px-5 py-3 text-center">Reuniões</th>
-            <th className="px-5 py-3 text-left">Taxa</th>
-            <th className="px-5 py-3 text-left">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {membros.map((m) => {
-            const pct = Math.round(percentualPresenca(m))
-            return (
-              <tr
-                key={m.id}
-                className="border-b border-hairline-soft hover:bg-surface-soft"
-              >
-                <td className="px-5 py-3 font-medium text-ink text-xs">
-                  {m.nome}
-                </td>
-                <td className="px-5 py-3 text-xs text-mute">
-                  {m.subarea}
-                </td>
-                <td className="px-5 py-3 text-center font-mono text-xs text-body">
-                  {m.presencas}
-                </td>
-                <td className="px-5 py-3 text-center font-mono text-xs text-mute">
-                  {m.totalReunioes}
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-1.5 bg-secondary-bg rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${corPresenca(pct)}`}
-                        style={{ width: `${pct}%` }}
-                      />
+        <table className="w-full min-w-[680px] text-sm">
+          <thead>
+            <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
+              <th scope="col" className="px-5 py-3 text-left">Membro</th>
+              <th scope="col" className="px-5 py-3 text-left">Subsistema</th>
+              <th scope="col" className="px-5 py-3 text-center">Presenças</th>
+              <th scope="col" className="px-5 py-3 text-center">Reuniões</th>
+              <th scope="col" className="px-5 py-3 text-left">Taxa</th>
+              <th scope="col" className="px-5 py-3 text-left">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {membros.map((m) => {
+              const pct = Math.round(percentualPresenca(m))
+              return (
+                <tr
+                  key={m.id}
+                  className="border-b border-hairline-soft hover:bg-surface-soft"
+                >
+                  <td className="px-5 py-3 font-medium text-ink text-xs">
+                    {m.nome}
+                  </td>
+                  <td className="px-5 py-3 text-xs text-mute">
+                    {m.subarea}
+                  </td>
+                  <td className="px-5 py-3 text-center font-mono text-xs text-body">
+                    {m.presencas}
+                  </td>
+                  <td className="px-5 py-3 text-center font-mono text-xs text-mute">
+                    {m.totalReunioes}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-secondary-bg rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${corPresenca(pct)}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-mono text-mute">
+                        {pct}%
+                      </span>
                     </div>
-                    <span className="text-xs font-mono text-mute">
-                      {pct}%
+                  </td>
+                  <td className="px-5 py-3">
+                    <span
+                      className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
+                    >
+                      {m.status}
                     </span>
-                  </div>
-                </td>
-                <td className="px-5 py-3">
-                  <span
-                    className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
-                  >
-                    {m.status}
-                  </span>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
@@ -524,17 +586,17 @@ function ReunioesTab({
         >
           <div className="flex items-start justify-between mb-3 gap-3">
             <div>
-              <p className="text-sm font-semibold text-ink">
+              <h2 className="text-sm font-semibold text-ink">
                 {r.titulo}
-              </p>
+              </h2>
               <p className="text-xs text-mute mt-0.5">
                 {formatarData(r.data)} · {r.hora}
               </p>
             </div>
             <span
-                    className={`shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${
+              className={`shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${
                 r.tipo === 'Obrigatória'
-                ? 'bg-red/10 text-red dark:text-red-300'
+                  ? 'bg-red/10 text-red dark:text-red-300'
                   : 'bg-secondary-bg text-mute'
               }`}
             >
@@ -547,13 +609,16 @@ function ReunioesTab({
               return (
                 <span
                   key={m.id}
-                  className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                  role="img"
+                  aria-label={`${m.nome}: ${presente ? 'presente' : 'ausente'}`}
+                  className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${
                     presente
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                  : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300'
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300'
                   }`}
                 >
-                  {m.nome.split(' ')[0]} {presente ? '✓' : '✗'}
+                  <span>{m.nome.split(' ')[0]}</span>
+                  {presente ? <CheckIcon /> : <CloseIcon />}
                 </span>
               )
             })}
@@ -584,10 +649,10 @@ function SubsistemasTab({
           key={s.subarea}
           className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-5 space-y-3"
         >
-          <div className="flex items-start justify-between">
-            <p className="text-sm font-semibold text-ink">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink">
               {s.subarea}
-            </p>
+            </h2>
             {s.criticos > 0 && (
               <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">
                 {s.criticos} crítico{s.criticos > 1 ? 's' : ''}

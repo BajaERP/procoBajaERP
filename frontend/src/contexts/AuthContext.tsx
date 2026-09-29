@@ -82,8 +82,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadStoredUser)
 
   useEffect(() => {
-    if (user) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    else window.localStorage.removeItem(STORAGE_KEY)
+    try {
+      if (user) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+      else window.localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // The current session remains usable in memory if storage is unavailable.
+    }
   }, [user])
 
   async function login(ra: string, password: string): Promise<AuthUser> {

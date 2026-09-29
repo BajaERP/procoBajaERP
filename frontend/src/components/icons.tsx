@@ -167,6 +167,13 @@ export function CloseIcon() {
     </svg>
   )
 }
+export function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="m3 8 3.2 3.2L13 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 export function ChevronLeftIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">

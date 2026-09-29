@@ -37,7 +37,7 @@
   --color-ink: #000000;
   --color-body: #33332e;
   --color-mute: #62625b;
-  --color-ash: #91918c;
+  --color-ash: #70706a;
 
   /* Hairlines (Pinterest hairline / hairline-soft) */
   --color-hairline: #dadad3;
@@ -87,6 +87,17 @@ body {
   margin: 0;
 }
 
+button {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+select,
+textarea {
+  min-block-size: 44px;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-red-light);
   outline-offset: 2px;
@@ -104,28 +115,20 @@ body {
 }
 
 * {
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ash) transparent;
 }
 
 *::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+  height: 6px;
 }
 
-*:hover {
-  scrollbar-width: thin;
-}
-
-*:hover::-webkit-scrollbar {
-  display: block;
-  width: 4px;
-  height: 4px;
-}
-
-*:hover::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-*:hover::-webkit-scrollbar-thumb {
-  background: var(--color-hairline);
-  border-radius: 2px;
+*::-webkit-scrollbar-thumb {
+  background: var(--color-ash);
+  border-radius: 3px;
 }
