@@ -44,7 +44,10 @@ protection for financial or personal data.
 
 - Preserve the ProcoBaja logo, red palette, DM Sans and JetBrains Mono.
 - Support layouts from 320 px upward. The sidebar becomes a keyboard-operable
-  drawer on narrow screens; dense tables scroll inside their own region.
+  drawer on narrow screens; dense tables scroll inside their own region with a
+  visible scrollbar where the platform supports it.
+- Keep button and text-entry targets at least 44 px high; icon-only buttons
+  should also be at least 44 px wide.
 - Use one KPI column on mobile, two on tablet and four on desktop.
 - Keep light/dark colors legible through the semantic tokens in `styles.css`;
   add explicit dark variants to semantic status colors.

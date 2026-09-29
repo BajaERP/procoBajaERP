@@ -60,7 +60,7 @@ colliding with neutrals. Defined in `@theme` of `src/styles.css`.
 | `red-tint` | `#fdf2f3` | Palest pink wash. Empty-state backgrounds, very-light tinted panels. |
 | `red-soft` | `#fbd9dc` | Light hover backgrounds, chip fills, "selected" pill bg. |
 | `red-light` | `#e33738` | Mid accent — the lighter curve in the logo. Decorative use only. |
-| `red` | `#850305` | **Brand primary** — the deep red from the logo bg. Primary CTAs, brand strip, notification badges, active-state text/icons. |
+| `red` | `#850305` | **Brand primary** — the deep red from the logo bg. Primary CTAs, brand strip, semantic badges, active-state text/icons. |
 | `red-pressed` | `#6b0304` | Pressed / active state for red CTAs (one notch deeper than primary). |
 | `red-deep` | `#4a0203` | Deepest brand strip. Heavy emphasis, deep brand border. |
 
@@ -68,7 +68,8 @@ colliding with neutrals. Defined in `@theme` of `src/styles.css`.
 buttons:
 
 - Sidebar carries a 4px `border-l-4 border-red` strip (always visible).
-- TopBar / Sidebar user footer / notification badge all use `bg-red`.
+- TopBar and Sidebar user footer use neutral surfaces; red is reserved for the
+  Sidebar brand strip, active navigation, primary actions, and semantic badges.
 - Active sidebar item: red text on `bg-red/5` wash with a small red dot
   indicator on the right edge.
 - Primary CTAs and active tabs use `bg-red`.
@@ -112,7 +113,7 @@ Status chips still need explicit `dark:` background and foreground variants.
 | `ink` | `#000000` | Primary headings, table data, button text on light bg. |
 | `body` | `#33332e` | Secondary body text, table cells. |
 | `mute` | `#62625b` | Captions, helper text, metadata. |
-| `ash` | `#91918c` | Placeholders, disabled text, least-emphasis hints. |
+| `ash` | `#70706a` | Placeholders and least-emphasis hints; at least 4.5:1 on canvas, surface-soft and surface-card. |
 | `white` | `#ffffff` | Primary text on red / dark surfaces. |
 
 Dark mode maps `ink` to `#f5f5f5`, `body` to `#e5e5e5`, `mute` to `#a3a3a3`
@@ -193,6 +194,8 @@ Card padding:
   On narrow screens the Sidebar becomes an overlay drawer opened from the TopBar.
 - Minimum supported layout width: 320px. The main column must not create page-level
   horizontal scrolling.
+- Buttons and text-entry controls have a 44px minimum target height; icon-only
+  buttons also have a 44px minimum target width.
 - Main content: max-width depends on the page; no global container wrapper
   — each page owns its own width.
 - KPI row: 4-column flex / grid at desktop, 2-up at tablet, 1-up at mobile.
@@ -272,7 +275,7 @@ subtitle. Optional composite, currently unused.
 
 **Primary CTA** — universal brand action
 - `bg-red hover:bg-red-pressed` text-white.
-- `rounded-lg` for inline buttons, `rounded-2xl` for full-width form CTAs.
+- `rounded-lg` for actions, including full-width form submission.
 - `text-sm font-semibold` standard; `text-base` for hero CTAs.
 - Used for: "Entrar" (login submit), future primary actions on
   formulário pages.
@@ -285,9 +288,14 @@ subtitle. Optional composite, currently unused.
 - `bg-transparent text-ink hover:bg-surface-soft`.
 - Used for low-emphasis actions inside dialogs ("Read the docs", "Learn more →").
 
-**Icon button** — circular
-- `p-2 rounded-md text-mute hover:bg-surface-soft`.
-- Used in TopBar (notifications, help).
+**Icon button**
+- At least 44px × 44px, `rounded-md text-mute hover:bg-surface-soft`.
+- Keep a visible focus ring and do not render controls without an action.
+
+### Scrollbars
+
+- Keep scrollbars thin and visible instead of revealing them only on hover.
+- Use the semantic `ash` token for the thumb so it remains visible in both themes.
 
 ### Sidebar (`src/components/Sidebar.tsx`)
 
@@ -304,14 +312,11 @@ subtitle. Optional composite, currently unused.
 ### TopBar (`src/components/TopBar.tsx`)
 
 - `h-14 border-b border-hairline bg-canvas dark:bg-surface-chrome-dark`.
-- Left: breadcrumbs (text-xs text-mute, slash separators) + page title
-  (text-sm font-semibold text-ink).
-- Center: search input (visual only, no logic yet). `w-60 rounded-md
-  bg-surface-soft border-hairline`.
-- Right: notification bell (`bg-red` badge with count) + help + profile
-  menu trigger (28px `rounded-full bg-red` with user initials).
+- Left: breadcrumbs (text-xs text-mute, slash separators). The page owns its
+  single `<h1>` in the main content.
+- Right: profile menu trigger with a 28px red avatar inside a 44px hit target.
 - Profile menu: 240px wide (`w-60`) dropdown with user info, Configurações
-  link, Sair button (`text-red hover:bg-red/5`).
+  action, and Sair action (`text-red hover:bg-red/5`). It uses normal tab order.
 
 ### Cards & surfaces
 
@@ -366,7 +371,7 @@ subtitle. Optional composite, currently unused.
 ### Do
 
 - Use `bg-red` (the brand primary) sparingly — primary CTAs, brand strip,
-  notification badges, active state. Never decorative.
+  semantic badges, active state. Never decorative.
 - Use `text-red` for active sidebar items, focus rings, and the Sair button.
   Pair with a background surface that has enough contrast (cream or white).
 - Semantic text, surface and hairline utilities map to readable dark values
