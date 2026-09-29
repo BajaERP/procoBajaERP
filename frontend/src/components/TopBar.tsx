@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { RefObject } from 'react'
 import {
   BellIcon,
   HelpIcon,
+  MenuIcon,
   SearchIcon,
   LogoutIcon,
 } from './icons'
@@ -17,12 +19,18 @@ export interface TopBarProps {
   breadcrumbs?: TopBarBreadcrumb[]
   title?: string
   searchPlaceholder?: string
+  onOpenMobileMenu?: () => void
+  mobileMenuOpen?: boolean
+  menuButtonRef?: RefObject<HTMLButtonElement | null>
 }
 
 export function TopBar({
   breadcrumbs = [],
   title,
   searchPlaceholder = 'Buscar…',
+  onOpenMobileMenu,
+  mobileMenuOpen = false,
+  menuButtonRef,
 }: TopBarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -57,10 +65,21 @@ export function TopBar({
 
   const initials = user?.initials ?? '?'
   const name = user?.name ?? 'Visitante'
-  const email = user?.email ?? ''
+  const ra = user?.ra ?? ''
 
   return (
-    <header className="h-14 border-b border-hairline dark:border-hairline-dark bg-canvas dark:bg-surface-chrome-dark flex items-center px-6 gap-4 shrink-0 transition-colors">
+    <header className="h-14 border-b border-hairline dark:border-hairline-dark bg-canvas dark:bg-surface-chrome-dark flex items-center px-3 sm:px-4 md:px-6 gap-2 sm:gap-4 shrink-0 transition-colors">
+      <button
+        ref={menuButtonRef}
+        type="button"
+        onClick={onOpenMobileMenu}
+        className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-body dark:text-white hover:bg-surface-soft dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+        aria-label="Abrir menu de navegação"
+        aria-controls={mobileMenuOpen ? 'mobile-navigation-panel' : undefined}
+        aria-expanded={mobileMenuOpen}
+      >
+        <MenuIcon />
+      </button>
       {/* Title area */}
       <div className="flex-1 min-w-0">
         {breadcrumbs.length > 0 && (
@@ -92,7 +111,8 @@ export function TopBar({
         <input
           type="text"
           placeholder={searchPlaceholder}
-            className="w-60 pl-8 pr-3 py-1.5 rounded-md border border-hairline dark:border-hairline-dark bg-surface-soft dark:bg-surface-card-dark text-sm text-ink dark:text-white placeholder-ash focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red transition-all"
+          aria-label={searchPlaceholder}
+          className="w-60 pl-8 pr-3 py-1.5 rounded-md border border-hairline dark:border-hairline-dark bg-surface-soft dark:bg-surface-card-dark text-sm text-ink dark:text-white placeholder-ash focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red transition-all"
         />
       </div>
 
@@ -100,6 +120,7 @@ export function TopBar({
       <div className="flex items-center gap-1">
         <button
           title="Notificações"
+          aria-label="Notificações, 3 não lidas"
           className="relative p-2 rounded-md text-mute hover:bg-surface-soft dark:hover:bg-white/5 transition-colors"
         >
           <BellIcon />
@@ -110,6 +131,7 @@ export function TopBar({
 
         <button
           title="Ajuda"
+          aria-label="Ajuda"
           className="p-2 rounded-md text-mute hover:bg-surface-soft dark:hover:bg-white/5 transition-colors"
         >
           <HelpIcon />
@@ -120,6 +142,7 @@ export function TopBar({
           <button
             onClick={() => setMenuOpen((o) => !o)}
             title={name}
+            aria-label="Abrir menu da conta"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             className="w-7 h-7 rounded-full bg-red flex items-center justify-center text-white text-xs font-semibold hover:opacity-80 transition-opacity"
@@ -130,16 +153,16 @@ export function TopBar({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-2 w-60 rounded-xl border border-hairline dark:border-hairline-dark bg-canvas dark:bg-surface-chrome-dark overflow-hidden z-50"
+              className="absolute right-0 top-full mt-2 w-60 max-w-[calc(100vw-1rem)] rounded-lg border border-hairline dark:border-hairline-dark bg-canvas dark:bg-surface-chrome-dark overflow-hidden z-50"
             >
               {/* User info */}
-                <div className="px-4 py-3 border-b border-hairline-soft dark:border-hairline-dark">
+              <div className="px-4 py-3 border-b border-hairline-soft dark:border-hairline-dark">
                 <p className="text-sm font-semibold text-ink dark:text-white truncate">
                   {name}
                 </p>
-                {email && (
+                {ra && (
                   <p className="text-xs text-mute truncate">
-                    {email}
+                    RA {ra}
                   </p>
                 )}
               </div>
@@ -152,14 +175,14 @@ export function TopBar({
                 }}
                 className="w-full px-4 py-2.5 flex items-center gap-2.5 text-sm text-body dark:text-white hover:bg-surface-soft dark:hover:bg-white/5 transition-colors border-t border-hairline-soft dark:border-hairline-dark"
               >
-                <span className="text-xs px-1.5 py-0.5 rounded bg-surface-card dark:bg-white/10 font-mono">⚙</span>
+                <span className="text-xs px-1.5 py-0.5 rounded-md bg-surface-card dark:bg-white/10 font-mono">⚙</span>
                 <span>Configurações</span>
               </button>
 
               <button
                 role="menuitem"
                 onClick={handleLogout}
-                className="w-full px-4 py-2.5 flex items-center gap-2.5 text-sm text-red hover:bg-red/5 transition-colors border-t border-hairline-soft dark:border-hairline-dark"
+                className="w-full px-4 py-2.5 flex items-center gap-2.5 text-sm text-red dark:text-red-300 hover:bg-red/5 transition-colors border-t border-hairline-soft dark:border-hairline-dark"
               >
                 <LogoutIcon />
                 <span>Sair</span>

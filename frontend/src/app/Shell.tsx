@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Sidebar } from '../components/Sidebar'
 import { TopBar } from '../components/TopBar'
 import {
@@ -51,6 +51,10 @@ const ROUTE_LABELS: Record<string, string> = {
 export function Shell() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const mobileDialogRef = useRef<HTMLElement>(null)
 
   const segment = location.pathname.replace('/app/', '')
 
@@ -66,6 +70,38 @@ export function Shell() {
     []
   )
 
+  const closeMobileNav = useCallback(() => {
+    setMobileNavOpen(false)
+    requestAnimationFrame(() => menuButtonRef.current?.focus())
+  }, [])
+
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    closeButtonRef.current?.focus()
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeMobileNav()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = mobileDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], input:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [mobileNavOpen, closeMobileNav])
+
   function handleNavChange(id: string) {
     const item = NAV.find((n) => n.id === id)
     if (item) {
@@ -74,21 +110,28 @@ export function Shell() {
   }
 
   return (
-    <div className="flex h-screen bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
+    <div className="flex h-dvh min-h-0 bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
       <Sidebar
         appName="Proco Baja"
         nav={navItems}
         activeId={segment}
         onNavChange={handleNavChange}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={closeMobileNav}
+        closeButtonRef={closeButtonRef}
+        mobileDialogRef={mobileDialogRef}
       />
 
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden" inert={mobileNavOpen || undefined}>
         <TopBar
           breadcrumbs={[{ label: 'Proco Baja' }, { label: pageLabel }]}
           title={pageLabel}
+          onOpenMobileMenu={() => setMobileNavOpen(true)}
+          mobileMenuOpen={mobileNavOpen}
+          menuButtonRef={menuButtonRef}
         />
 
-        <main className="flex-1 overflow-y-auto bg-surface-soft dark:bg-surface-dark transition-colors">
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-surface-soft dark:bg-surface-dark transition-colors">
           <Outlet />
         </main>
       </div>
