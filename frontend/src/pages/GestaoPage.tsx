@@ -95,21 +95,21 @@ const MEMBROS_INICIAIS: Membro[] = [
 const REUNIOES: Reuniao[] = [
   {
     titulo: 'Reunião Semanal Geral',
-    data: 'Ter, 23 set 2026',
+    data: '2026-09-23',
     hora: '19h00',
     tipo: 'Obrigatória',
     presentes: ['M001', 'M002', 'M003', 'M004', 'M006'],
   },
   {
     titulo: 'Review Sprint 4',
-    data: 'Sex, 20 set 2026',
+    data: '2026-09-20',
     hora: '18h30',
     tipo: 'Obrigatória',
     presentes: ['M001', 'M003', 'M004', 'M005', 'M006'],
   },
   {
     titulo: 'Workshop Chassis',
-    data: 'Qua, 18 set 2026',
+    data: '2026-09-18',
     hora: '18h00',
     tipo: 'Opcional',
     presentes: ['M001', 'M003'],
@@ -131,15 +131,31 @@ const ABAS: Array<{ id: Aba; label: string }> = [
 // Status chips — semantic only (Ativo=emerald, Atenção=amber, Crítico=red).
 // These are not the brand accent; they communicate member health.
 const STATUS_CHIP: Record<MembroStatus, string> = {
-  Ativo: 'bg-emerald-50 text-emerald-700',
-  Atenção: 'bg-amber-50 text-amber-700',
-  Crítico: 'bg-red-50 text-red-700',
+  Ativo: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  Atenção: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  Crítico: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
 }
 
 function corPresenca(pct: number): string {
   if (pct >= 80) return 'bg-emerald-500'
   if (pct >= 60) return 'bg-amber-500'
   return 'bg-red-500'
+}
+
+function percentualPresenca(membro: Pick<Membro, 'presencas' | 'totalReunioes'>): number {
+  if (membro.totalReunioes <= 0) return 0
+  return (membro.presencas / membro.totalReunioes) * 100
+}
+
+function formatarData(data: string): string {
+  const [ano, mes, dia] = data.split('-').map(Number)
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(ano, mes - 1, dia)))
 }
 
 function iniciais(nome: string): string {
@@ -179,10 +195,7 @@ export default function GestaoPage() {
       total === 0
         ? 0
         : Math.round(
-            membros.reduce(
-              (acc, m) => acc + (m.presencas / m.totalReunioes) * 100,
-              0,
-            ) / total,
+            membros.reduce((acc, m) => acc + percentualPresenca(m), 0) / total,
           )
     return { total, criticos, atencao, mediaPresenca }
   }, [membros])
@@ -194,10 +207,7 @@ export default function GestaoPage() {
         lista.length === 0
           ? 0
           : Math.round(
-              lista.reduce(
-                (acc, m) => acc + (m.presencas / m.totalReunioes) * 100,
-                0,
-              ) / lista.length,
+              lista.reduce((acc, m) => acc + percentualPresenca(m), 0) / lista.length,
             )
       return {
         subarea: sub,
@@ -209,17 +219,17 @@ export default function GestaoPage() {
   }, [membros])
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-w-0 space-y-6 p-4 sm:p-6">
       {/* Header */}
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-ink">Gestão de Equipe e Subsistemas</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-ink">Gestão de Equipe e Subsistemas</h1>
         <p className="text-sm text-mute">
           Visão geral da equipe, presenças, reuniões e saúde dos subsistemas do veículo.
         </p>
       </header>
 
       {/* KPIs */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section aria-label="Indicadores da equipe" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Kpi label="Membros Ativos" value={kpis.total} tone="ink" />
         <Kpi label="Média de Presença" value={`${kpis.mediaPresenca}%`} tone="red" />
         <Kpi label="Em Atenção" value={kpis.atencao} tone="amber" />
@@ -227,14 +237,14 @@ export default function GestaoPage() {
       </section>
 
       {/* Tabs */}
-      <nav className="flex gap-1 border-b border-hairline overflow-x-auto">
+      <nav aria-label="Seções de gestão" className="flex min-w-0 gap-1 border-b border-hairline overflow-x-auto">
         {ABAS.map((a) => (
           <button
             key={a.id}
             onClick={() => setAba(a.id)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               aba === a.id
-                ? 'border-red text-red'
+                ? 'border-red text-red dark:text-red-300'
                 : 'border-transparent text-mute hover:text-ink'
             }`}
           >
@@ -279,12 +289,12 @@ function Kpi({
 }) {
   const toneClasses: Record<typeof tone, string> = {
     ink: 'text-ink',
-    red: 'text-red',
-    amber: 'text-amber-600',
+    red: 'text-red dark:text-red-300',
+    amber: 'text-amber-600 dark:text-amber-300',
   }
   return (
-    <div className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline p-5">
-      <p className="text-xs font-medium text-mute uppercase tracking-wide">
+    <div className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-5">
+      <p className="text-xs font-medium text-mute uppercase tracking-wide break-words">
         {label}
       </p>
       <p className={`text-2xl font-semibold mt-2 font-mono ${toneClasses[tone]}`}>
@@ -312,9 +322,10 @@ function MembrosTab({
   onAdicionarObservacao: (id: string) => void
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline overflow-hidden">
-        <table className="w-full text-sm">
+    <div className="grid min-w-0 grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="min-w-0 lg:col-span-2 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark overflow-hidden">
+        <div className="max-w-full overflow-x-auto overscroll-x-contain" role="region" aria-label="Tabela de membros; deslize horizontalmente para ver todas as colunas" tabIndex={0}>
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
               <th className="px-5 py-3 text-left">Membro</th>
@@ -322,12 +333,14 @@ function MembrosTab({
               <th className="px-5 py-3 text-center">Presença</th>
               <th className="px-5 py-3 text-center">Horas</th>
               <th className="px-5 py-3 text-left">Status</th>
-              <th className="px-5 py-3"></th>
+              <th className="relative px-5 py-3">
+                <span className="sr-only">Selecionar membro</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {membros.map((m) => {
-              const pct = Math.round((m.presencas / m.totalReunioes) * 100)
+              const pct = Math.round(percentualPresenca(m))
               const ativo = selecionado === m.id
               return (
                 <tr
@@ -338,14 +351,19 @@ function MembrosTab({
                   }`}
                 >
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      aria-pressed={ativo}
+                      aria-label={`Selecionar ${m.nome}`}
+                      className="flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red"
+                    >
                       <div className="w-7 h-7 rounded-full bg-secondary-bg flex items-center justify-center text-[11px] font-semibold text-ink shrink-0">
                         {iniciais(m.nome)}
                       </div>
                       <span className="font-medium text-ink text-xs">
                         {m.nome}
                       </span>
-                    </div>
+                    </button>
                   </td>
                   <td className="px-5 py-3 text-xs text-mute">
                     {m.subarea}
@@ -358,23 +376,24 @@ function MembrosTab({
                   </td>
                   <td className="px-5 py-3">
                     <span
-                      className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
+                  className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
                     >
                       {m.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-xs text-red">{ativo ? '▲' : '▼'}</td>
+                  <td className="px-5 py-3 text-xs text-red dark:text-red-300">{ativo ? '▲' : '▼'}</td>
                 </tr>
               )
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
-      <aside className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline p-5 flex flex-col gap-3">
-        <h3 className="text-sm font-semibold text-ink">
+      <aside className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-5 flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-ink">
           {membro ? `Observações — ${membro.nome}` : 'Selecione um membro'}
-        </h3>
+        </h2>
         {membro ? (
           <>
             <div className="flex-1 space-y-2 min-h-[120px]">
@@ -386,7 +405,7 @@ function MembrosTab({
               {membro.observacoes.map((obs, i) => (
                 <div
                   key={i}
-                  className="bg-surface-soft rounded p-2.5"
+                  className="bg-surface-soft dark:bg-surface-card rounded-md p-2.5"
                 >
                   <p className="text-xs text-body leading-snug">
                     {obs}
@@ -402,11 +421,13 @@ function MembrosTab({
                   e.key === 'Enter' && onAdicionarObservacao(membro.id)
                 }
                 placeholder="Nova observação…"
-                className="flex-1 px-3 py-1.5 rounded border border-hairline bg-surface-soft text-xs text-ink placeholder-ash focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red"
+                className="min-w-0 flex-1 px-3 py-2 rounded-md border border-hairline dark:border-hairline-dark bg-surface-soft dark:bg-surface-dark text-xs text-ink placeholder-ash focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red"
               />
               <button
+                type="button"
                 onClick={() => onAdicionarObservacao(membro.id)}
-                className="text-xs px-3 py-1.5 rounded bg-red hover:bg-red-pressed text-white transition-colors"
+                aria-label="Adicionar observação"
+                className="min-h-10 min-w-10 text-xs px-3 py-1.5 rounded-md bg-red hover:bg-red-pressed text-white transition-colors"
               >
                 +
               </button>
@@ -424,8 +445,9 @@ function MembrosTab({
 
 function PresencasTab({ membros }: { membros: Membro[] }) {
   return (
-    <div className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark overflow-hidden">
+      <div className="max-w-full overflow-x-auto overscroll-x-contain" role="region" aria-label="Tabela de presenças; deslize horizontalmente para ver todas as colunas" tabIndex={0}>
+      <table className="w-full min-w-[680px] text-sm">
         <thead>
           <tr className="text-[11px] text-mute font-semibold uppercase tracking-wide border-b border-hairline-soft">
             <th className="px-5 py-3 text-left">Membro</th>
@@ -438,7 +460,7 @@ function PresencasTab({ membros }: { membros: Membro[] }) {
         </thead>
         <tbody>
           {membros.map((m) => {
-            const pct = Math.round((m.presencas / m.totalReunioes) * 100)
+            const pct = Math.round(percentualPresenca(m))
             return (
               <tr
                 key={m.id}
@@ -471,7 +493,7 @@ function PresencasTab({ membros }: { membros: Membro[] }) {
                 </td>
                 <td className="px-5 py-3">
                   <span
-                    className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
+                    className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${STATUS_CHIP[m.status]}`}
                   >
                     {m.status}
                   </span>
@@ -481,6 +503,7 @@ function PresencasTab({ membros }: { membros: Membro[] }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
@@ -497,7 +520,7 @@ function ReunioesTab({
       {reunioes.map((r, i) => (
         <div
           key={i}
-          className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline p-5"
+          className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-5"
         >
           <div className="flex items-start justify-between mb-3 gap-3">
             <div>
@@ -505,13 +528,13 @@ function ReunioesTab({
                 {r.titulo}
               </p>
               <p className="text-xs text-mute mt-0.5">
-                {r.data} · {r.hora}
+                {formatarData(r.data)} · {r.hora}
               </p>
             </div>
             <span
-              className={`shrink-0 text-[11px] font-medium px-2 py-0.5 rounded ${
+                    className={`shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${
                 r.tipo === 'Obrigatória'
-                  ? 'bg-red/10 text-red'
+                ? 'bg-red/10 text-red dark:text-red-300'
                   : 'bg-secondary-bg text-mute'
               }`}
             >
@@ -526,8 +549,8 @@ function ReunioesTab({
                   key={m.id}
                   className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                     presente
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-red-50 text-red-600'
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300'
                   }`}
                 >
                   {m.nome.split(' ')[0]} {presente ? '✓' : '✗'}
@@ -559,14 +582,14 @@ function SubsistemasTab({
       {stats.map((s) => (
         <div
           key={s.subarea}
-          className="bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline p-5 space-y-3"
+          className="min-w-0 bg-canvas dark:bg-surface-card-dark rounded-lg border border-hairline dark:border-hairline-dark p-4 sm:p-5 space-y-3"
         >
           <div className="flex items-start justify-between">
             <p className="text-sm font-semibold text-ink">
               {s.subarea}
             </p>
             {s.criticos > 0 && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-red-50 text-red-700">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">
                 {s.criticos} crítico{s.criticos > 1 ? 's' : ''}
               </span>
             )}
