@@ -21,7 +21,3 @@ Adicione imagens ou vídeos demonstrando as alterações.
 - [ ] Não foram adicionados arquivos desnecessários.
 - [ ] A documentação foi atualizada, se necessário.
 - [ ] O PR está direcionado para a branch correta.
-
-## 🔗 Issue relacionada
-
-Closes #
