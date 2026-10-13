@@ -5,3 +5,10 @@ backups/
 node_modules/
 dist/
 *.local
+
+# IntelliJ IDEA
+**/.idea/
+*.iml
+*.ipr
+*.iws
+out/
