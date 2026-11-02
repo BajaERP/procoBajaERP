@@ -1,46 +1,44 @@
-import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { LogoMark } from '../components/Logo'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { LogoMark } from '../components/shared/Logo'
 import { useAuth } from '../contexts/AuthContext'
 
-// Default AFK screen — full-bleed wallpaper + center logo.
-// Any click or keypress sends the user to /login. Already-authenticated
-// users skip straight to /app/gestao.
 export default function WelcomePage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const [leaving, setLeaving] = useState(false)
 
-  // Skip welcome for signed-in users
   useEffect(() => {
-    if (isAuthenticated) navigate('/app/gestao', { replace: true })
+    if (isAuthenticated) {
+      navigate('/app/dashboard', { replace: true })
+      return
+    }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const fadeTimer = window.setTimeout(() => setLeaving(true), 800)
+    const navigationTimer = window.setTimeout(() => {
+      navigate('/login', { replace: true, state: { fromIntroduction: true } })
+    }, reducedMotion ? 800 : 1100)
+
+    return () => {
+      window.clearTimeout(fadeTimer)
+      window.clearTimeout(navigationTimer)
+    }
   }, [isAuthenticated, navigate])
 
   return (
-    <main className="min-h-dvh w-full bg-canvas dark:bg-surface-dark font-sans transition-colors">
-      <Link
-        to="/login"
-        aria-label="Abrir acesso de demonstração"
-        className="relative flex min-h-dvh w-full flex-col items-center justify-center cursor-pointer select-none text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red"
-      >
-      <div className="relative flex flex-col items-center gap-5">
-        <LogoMark size={120} />
-        <div className="text-center">
-          <h1 className="text-ink dark:text-white text-2xl font-bold tracking-[0.15em] transition-colors">
-            PROCO BAJA
+    <main className={`flex min-h-dvh w-full items-center justify-center bg-canvas text-center font-sans transition-opacity duration-300 dark:bg-surface-dark ${leaving ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="flex flex-col items-center gap-5">
+        <LogoMark size={120} className="intro-enter" />
+        <div>
+          <h1 className="intro-enter intro-title text-2xl font-bold tracking-[0.15em] text-ink dark:text-white">
+            ProcoBaja ERP
           </h1>
-          <p className="text-mute text-sm tracking-widest uppercase mt-1 font-medium transition-colors">
+          <p className="intro-enter intro-caption mt-1 text-sm font-medium uppercase tracking-widest text-mute">
             Sistema de Gestão
           </p>
         </div>
       </div>
-
-      {/* Tap hint — kept minimal per spec. */}
-      <p
-        className="absolute bottom-10 text-xs tracking-widest uppercase text-mute transition-colors"
-      >
-        Toque para continuar
-      </p>
-      </Link>
     </main>
   )
 }

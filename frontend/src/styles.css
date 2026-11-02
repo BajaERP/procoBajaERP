@@ -33,6 +33,10 @@
   --color-surface-card: #f6f6f3;
   --color-secondary-bg: #e5e5e0;
 
+  /* Fixed preview colors remain representative in either active theme. */
+  --color-theme-preview-light: #e5e5e0;
+  --color-theme-preview-dark: #141414;
+
   /* Text tiers (Pinterest ink/body/mute/ash) */
   --color-ink: #000000;
   --color-body: #33332e;
@@ -42,6 +46,18 @@
   /* Hairlines (Pinterest hairline / hairline-soft) */
   --color-hairline: #dadad3;
   --color-hairline-soft: #e5e5e0;
+  --color-selected: #fdf2f3;
+  --color-link: #850305;
+  --color-surface-raised: #ffffff;
+  --color-icon-muted: #62625b;
+  --color-state-success: #15803d;
+  --color-state-warning: #b45309;
+  --color-state-error: #b91c1c;
+  --color-state-info: #2563eb;
+  --color-state-success-bg: #f0fdf4;
+  --color-state-warning-bg: #fffbeb;
+  --color-state-error-bg: #fef2f2;
+  --color-state-info-bg: #eff6ff;
 
   /* Dark mode (pure-black dominant) */
   --color-surface-dark: #0a0a0a;          /* page bg */
@@ -67,13 +83,25 @@ html.dark {
   --color-canvas: #141414;
   --color-surface-soft: #0a0a0a;
   --color-surface-card: #1b1b1b;
-  --color-secondary-bg: #262626;
+  --color-secondary-bg: #323238;
   --color-ink: #f5f5f5;
   --color-body: #e5e5e5;
-  --color-mute: #a3a3a3;
+  --color-mute: #adadb4;
   --color-ash: #8a8a8a;
   --color-hairline: #303030;
   --color-hairline-soft: #262626;
+  --color-selected: #37171d;
+  --color-link: #ff858a;
+  --color-surface-raised: #212126;
+  --color-icon-muted: #b1b1bb;
+  --color-state-success: #7deba7;
+  --color-state-warning: #ffd379;
+  --color-state-error: #ffa8ae;
+  --color-state-info: #8ebfff;
+  --color-state-success-bg: #10291a;
+  --color-state-warning-bg: #30240e;
+  --color-state-error-bg: #34191d;
+  --color-state-info-bg: #15283b;
 }
 
 html,
@@ -131,4 +159,24 @@ textarea {
 *::-webkit-scrollbar-thumb {
   background: var(--color-ash);
   border-radius: 3px;
+}
+
+@keyframes login-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.login-enter {
+  animation: login-enter 350ms ease-out both;
+}
+
+@keyframes intro-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro-enter { animation: intro-enter 400ms ease-out both; }
+  .intro-title { animation-delay: 100ms; }
+  .intro-caption { animation-delay: 200ms; }
 }
