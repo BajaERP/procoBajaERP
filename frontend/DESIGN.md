@@ -1,432 +1,66 @@
-# procoBaja ERP — Design System
+# ProcoBaja ERP — Design do frontend
 
-> Authoritative source for visual decisions in this codebase. Reflects the
-> real brand tokens (derived from `procobaja-logo.svg`) and the components
-> actually in use. Update here first; treat code as the second source of truth.
+Este documento descreve os padrões visuais do frontend integrado e orienta novas interfaces. O [Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1) é a referência visual; `src/styles.css` contém os valores efetivamente usados. Ao encontrar diferenças, considere as decisões já solicitadas para o projeto e confira a implementação antes de alterar qualquer um deles. Nem todas as telas e estados do Figma estão implementados.
 
-## Overview
+## Princípios
 
-procoBaja is a Baja SAE racing team. The ERP is an internal tool for
-gestores (managers) to coordinate the team across subsistemas (powertrain,
-suspension, electronics, finances, etc.), presenças (attendance), reuniões
-(meetings), and members. The visual language is disciplined and
-brand-led — red is the only saturated color, everything else is monochrome
-neutral — so the chrome never competes with operational data.
+- Priorize clareza, hierarquia e leitura rápida para tarefas de gestão.
+- Use o vermelho da marca para ações principais e navegação selecionada; use cores semânticas para estados.
+- Separe superfícies por bordas discretas. Reserve sombras para elementos flutuantes, como menus e drawers.
+- Mantenha textos em português brasileiro e adapte o layout a telas pequenas, temas claro e escuro e preferência por movimento reduzido.
 
-The system has three surface modes:
+## Marca, tipografia e ícones
 
-- **Welcome / Login** — full-bleed wallpaper + centered boar logo. No
-  chrome. Brand-first, content-empty.
-- **Authenticated app** — Sidebar (collapsible 64↔240px) + TopBar (56px)
-  + main content. Cream wash in light mode (`bg-surface-soft`), pure-black
-  dominant in dark mode (`bg-surface-dark`). Cards sit on `bg-canvas` with
-  1px hairlines, no shadows.
-- **Modals / popovers** — `bg-canvas` cards on top of a scrim, with shadow
-  reserved exclusively for floating UI.
+A interface usa **DM Sans**; **JetBrains Mono** é reservada a identificadores, códigos e valores quando necessário. As fontes e seus fallbacks são definidos em `src/styles.css` e carregados em `index.html`.
 
-The signature gesture is the **boar logo mark** — a white boar silhouette
-on a deep-red square (`#850305`). It anchors every chrome moment (welcome,
-login card, sidebar header, sidebar footer). It is never decorative chrome
-over data.
+- `src/assets/procobaja-logo.svg`: marca sobre fundo vermelho, usada na introdução e no topo da sidebar.
+- `src/assets/procobaja-sem-fundo.svg`: marca usada no painel institucional do login.
+- `src/assets/procobaja-transparente.svg`: versão transparente usada no rodapé da sidebar; sua proporção é preservada por `LogoMark` em `src/components/shared/Logo.tsx`.
+- Use `lucide-react` para ícones de interface. Ícones decorativos devem ser ocultados de tecnologias assistivas; botões com apenas ícone precisam de nome acessível.
 
-**Key characteristics:**
-- **Single-accent palette**: procoBaja red leads every primary action;
-  everything else is monochrome neutral.
-- **Flat with hairlines**: cards and panels carry visual weight through
-  1px borders, never drop shadows. Shadows are reserved for floating UI.
-- **Pure-black dark mode**: `#0a0a0a` page → `#141414` cards → `#050505`
-  chrome — a deliberate depth stack that anchors Sidebar/TopBar.
-- **DM Sans typography** across every text role from 11px captions to
-  30px display headlines. JetBrains Mono for codes, IDs, financial values.
-- **Boar logo as the brand chip**: a deep-red square with the white boar
-  silhouette. Replaces the red PB-monogram square that this codebase
-  used as a placeholder.
+## Cores e superfícies
 
-## Colors
+Use os tokens semânticos de `src/styles.css` em vez de repetir valores em componentes. Os valores abaixo documentam os principais papéis; o CSS é a referência completa.
 
-> **Source:** `procobaja-logo.svg` (viewBox 733×733). Three colors: deep
-> red bg `#850305`, mid-red accent curves `#e33738`, white boar `#ffffff`.
-> Everything else in the system derives from these.
-
-### Brand & Accent
-
-The red scale is a six-step ramp from pale wash to deepest brand strip,
-derived directly from the logo so red can show up as a pale wash, a hover
-state, a brand border, a primary CTA, or a deep accent without ever
-colliding with neutrals. Defined in `@theme` of `src/styles.css`.
-
-| Token | Hex | Use |
-|---|---|---|
-| `red-tint` | `#fdf2f3` | Palest pink wash. Empty-state backgrounds, very-light tinted panels. |
-| `red-soft` | `#fbd9dc` | Light hover backgrounds, chip fills, "selected" pill bg. |
-| `red-light` | `#e33738` | Mid accent — the lighter curve in the logo. Decorative use only. |
-| `red` | `#850305` | **Brand primary** — the deep red from the logo bg. Primary CTAs, brand strip, semantic badges, active-state text/icons. |
-| `red-pressed` | `#6b0304` | Pressed / active state for red CTAs (one notch deeper than primary). |
-| `red-deep` | `#4a0203` | Deepest brand strip. Heavy emphasis, deep brand border. |
-
-**Brand presence rules.** Red shows up across the chrome, not just on
-buttons:
-
-- Sidebar carries a 4px `border-l-4 border-red` strip (always visible).
-- TopBar and Sidebar user footer use neutral surfaces; red is reserved for the
-  Sidebar brand strip, active navigation, primary actions, and semantic badges.
-- Active sidebar item: red text on `bg-red/5` wash with a small red dot
-  indicator on the right edge.
-- Primary CTAs and active tabs use `bg-red`.
-- The boar logo IS the brand chip — it carries `#850305` natively, so
-  every chrome moment that displays the logo inherits the brand red
-  automatically.
-
-### Surfaces (light mode — warm cream Pinterest-derived neutrals)
-
-The neutral palette is deliberately warm-cream so the page never looks
-sterile-corporate. Reds against cream reads warmer than reds against
-pure white.
-
-| Token | Hex | Use |
-|---|---|---|
-| `canvas` | `#ffffff` | True white. Primary card / panel surface. Modal bg. |
-| `surface-soft` | `#fbfbf9` | Faintly cream-tinted off-white. Page body wash, table row hover, input field bg. |
-| `surface-card` | `#f6f6f3` | Warm-cream secondary cards / chips / category tiles. |
-| `secondary-bg` | `#e5e5e0` | Secondary button fill, progress-bar track, badge bg. |
-| `hairline` | `#dadad3` | 1px card / panel border — the dominant surface treatment. |
-| `hairline-soft` | `#e5e5e0` | 1px inline divider inside cards. Doubles as the secondary-button bg. |
-
-### Surfaces (dark mode — pure-black dominant)
-
-| Token | Hex | Use |
-|---|---|---|
-| `surface-dark` | `#0a0a0a` | Page bg. |
-| `surface-card-dark` | `#141414` | Card bg — slightly elevated from page. |
-| `surface-chrome-dark` | `#050505` | Sidebar / TopBar. Deeper than page so chrome anchors. |
-| `hairline-dark` | `#262626` | 1px borders on dark surfaces. |
-
-In dark mode, `styles.css` remaps the semantic text, surface and hairline
-tokens (`ink`, `body`, `mute`, `ash`, `canvas`, `surface-soft`, `surface-card`,
-`secondary-bg`, `hairline`, `hairline-soft`) to readable dark equivalents.
-Status chips still need explicit `dark:` background and foreground variants.
-
-### Text tier (ink → ash)
-
-| Token | Hex | Use |
-|---|---|---|
-| `ink` | `#000000` | Primary headings, table data, button text on light bg. |
-| `body` | `#33332e` | Secondary body text, table cells. |
-| `mute` | `#62625b` | Captions, helper text, metadata. |
-| `ash` | `#70706a` | Placeholders and least-emphasis hints; at least 4.5:1 on canvas, surface-soft and surface-card. |
-| `white` | `#ffffff` | Primary text on red / dark surfaces. |
-
-Dark mode maps `ink` to `#f5f5f5`, `body` to `#e5e5e5`, `mute` to `#a3a3a3`
-and `ash` to `#8a8a8a` for readable contrast against dark surfaces.
-
-### Semantic colors
-
-Status colors are Tailwind built-ins, not custom tokens — they stay
-disconnected from brand red so a "high priority" badge and a "primary
-CTA" don't visually collide.
-
-| Role | Tailwind class | Notes |
-|---|---|---|
-| Error | `text-red-600` | Inline error messages. |
-| Severity / status badges | `bg-red-50 text-red-700`, `bg-red-500` | Crítico badge, severidade chips. Reserved for semantic state, never for brand. |
-| Success | Tailwind `green-*` family | Reserved for future use. |
-| Warning | Tailwind `amber-*` family | Reserved for future use. |
-
-## Typography
-
-### Font family
-
-**DM Sans** is the UI face across every text role — geometric sans,
-weights 400 / 500 / 600 / 700. Loaded in `index.html` via Google Fonts
-along with `JetBrains Mono` (weights 400 / 500). JetBrains Mono is reserved
-for codes, IDs, financial values, and any monospace context.
-
-The CSS `@theme` block defines `--font-sans` and `--font-mono`, used by
-Tailwind's `font-sans` and `font-mono` utilities.
-
-### Hierarchy
-
-The system is intentionally narrow — this is an ERP, not a marketing site.
-No 70px display headlines. Hierarchy lives between 11px captions and 30px
-page titles, with body sitting at 14–16px.
-
-| Role | Size | Weight | Use |
+| Papel | Token | Claro | Escuro |
 |---|---|---|---|
-| `text-3xl` | 30px | 600 | Page title (welcome "PROCO BAJA" lockup). |
-| `text-2xl` | 24px | 700 | Welcome wordmark. |
-| `text-xl` | 20px | 600 | Section heading inside a page. |
-| `text-lg` | 18px | 600 | Card title. |
-| `text-base` | 16px | 400 | Body copy, default paragraph. |
-| `text-base` strong | 16px | 600 | Form label, primary nav link. |
-| `text-sm` | 14px | 400 | In-grid metadata, table cells, helper text. |
-| `text-sm` strong | 14px | 700 | Search-result count, table-header text. |
-| `text-xs` | 12px | 500 | Caption text, badge label. |
-| `text-xs` strong | 12px | 700 | Compact pill button label. |
-| `text-[11px]` | 11px | 600 | Field label (uppercase, tracking-wide). |
-| `text-[10px]` | 10px | 700 | Microcopy (e.g., badge count). |
+| Página | `surface-soft` | `#fbfbf9` | `#0a0a0a` |
+| Superfície principal | `canvas` | `#ffffff` | `#141414` |
+| Superfície secundária | `surface-card` | `#f6f6f3` | `#1b1b1b` |
+| Texto principal | `ink` | `#000000` | `#f5f5f5` |
+| Texto secundário | `body` | `#33332e` | `#e5e5e5` |
+| Texto auxiliar | `mute` | `#62625b` | `#adadb4` |
+| Borda | `hairline` | `#dadad3` | `#303030` |
+| Fundo selecionado | `selected` | `#fdf2f3` | `#37171d` |
+| Texto de destaque | `link` | `#850305` | `#ff858a` |
 
-### Tracking & uppercase
+A escala institucional inclui `red-tint` (`#fdf2f3`), `red-soft` (`#fbd9dc`), `red-light` (`#e33738`), `red` (`#850305`), `red-pressed` (`#6b0304`) e `red-deep` (`#4a0203`). Para estados, prefira os pares `state-success`, `state-warning`, `state-error` e `state-info` com seus respectivos `-bg`; eles possuem valores para os dois temas. Ao usar cores de estado fora desses tokens, defina e verifique as variantes de ambos os temas.
 
-- Uppercase + tracking-wide (`tracking-widest` = 0.1em) is reserved for
-  microcopy that wants institutional gravitas — the welcome subtitle,
-  login "ACESSE SUA CONTA" prompt, field labels, sidebar footer role label.
-- Body copy sits at default tracking. Do not add letter-spacing on body.
-- Display wordmarks ("PROCO BAJA") use `tracking-[0.15em]` so the
-  all-caps treatment feels weighted.
+As prévias de aparência usam `theme-preview-light` (`#e5e5e0`) e `theme-preview-dark` (`#141414`): são fixos para representar cada opção independentemente do tema ativo.
 
-## Layout
+## Estrutura e responsividade
 
-### Spacing
+- A introdução apresenta a marca e avança automaticamente para o login. A animação é breve e respeita `prefers-reduced-motion`.
+- O login usa um painel institucional vermelho e uma área de formulário. No mobile, a composição é centralizada; o formulário mantém rótulos alinhados à esquerda.
+- O shell autenticado tem sidebar e barra superior de 56 px. A sidebar desktop tem 240 px expandida e 64 px recolhida; abaixo de 768 px torna-se um drawer de até 240 px.
+- O drawer deve permitir fechamento por botão, fundo e Escape, conter o foco enquanto aberto e devolvê-lo ao controle de abertura. A mudança para desktop deve liberar o conteúdo.
+- Suporte larguras a partir de 320 px e telas baixas. Controles de toque e teclado têm alvo mínimo de 44 px; tabelas densas devem rolar em sua própria região.
+- Para futuros indicadores, use uma coluna no mobile, duas no tablet e quatro no desktop. Esses padrões não significam que as telas já estejam implementadas.
 
-4 / 8 / 12 / 16 / 24 / 32 rhythm — Tailwind defaults. Page-internal
-gaps: `space-y-6` (24px) or `space-y-8` (32px). Tighter only inside
-dense tables (`space-y-1`).
+## Navegação e componentes
 
-Card padding:
-- KPI tile: `p-5` (20px)
-- Section panel: `p-6` (24px)
-- Full-page form / login card: `p-8` (32px)
-- Modal / popover card: `p-4` or `p-6` depending on density
+- **Sidebar:** faixa institucional vermelha à esquerda, borda neutra à direita, grupos de navegação e estado ativo com `bg-selected text-link`. Módulos com subitens usam expansão; somente um fica expandido por vez. Mantenha ícones centralizados e com nome acessível no modo recolhido.
+- **Barra superior:** breadcrumbs e avatar com menu de conta. O header não possui alternador de tema; a preferência é acessível em Configurações e no login.
+- **Campos:** rótulo associado ao controle, borda e foco visível. Preserve tamanhos de toque e mensagens de erro legíveis nos dois temas.
+- **Erros:** use os tokens semânticos de erro e uma mensagem clara. Não simule validação de credenciais enquanto a autenticação real não estiver conectada.
+- **Botões e superfícies:** prefira `rounded-md`, `rounded-lg` e `rounded-full`; `rounded-2xl` fica reservado a cartões de login quando usados. Preserve as exceções já presentes quando forem necessárias à fidelidade do design.
+- **Menus flutuantes:** use fundo e bordas adequados ao tema, com sombra discreta, foco visível e fechamento por Escape quando aplicável.
 
-### Grid & container
+A navegação por perfil e vários módulos ainda são protótipos. Os estados visuais não substituem autorização no backend; não invente dados de usuário ou permissões para completar uma tela.
 
-- App shell: viewport-height flexbox, desktop Sidebar + main column (TopBar + Outlet).
-  On narrow screens the Sidebar becomes an overlay drawer opened from the TopBar.
-- Minimum supported layout width: 320px. The main column must not create page-level
-  horizontal scrolling.
-- Buttons and text-entry controls have a 44px minimum target height; icon-only
-  buttons also have a 44px minimum target width.
-- Main content: max-width depends on the page; no global container wrapper
-  — each page owns its own width.
-- KPI row: 4-column flex / grid at desktop, 2-up at tablet, 1-up at mobile.
-- Data tables: full-width on desktop; on narrow screens, preserve readable
-  column widths and scroll inside a labeled, keyboard-focusable table region.
+## Ao criar ou alterar uma interface
 
-### Chrome dimensions
-
-- Sidebar: desktop `width: collapsed ? 64 : 240` (px). On mobile, a modal
-  drawer up to 288px wide closes on Escape, backdrop click or route selection.
-- TopBar: `height: 56px` (`h-14`).
-- Sidebar header: `h-14`, same as TopBar so vertical alignment reads clean.
-
-## Elevation & Depth
-
-| Level | Treatment | Use |
-|---|---|---|
-| 0 — Flat | No border, no shadow | Default for cards, panels, KPI tiles, table containers, sidebar/TopBar chrome. |
-| 1 — Hairline border | 1px solid `hairline` (light) or `hairline-dark` (dark) | Inputs, in-list rows, in-card dividers, modal cards. |
-| 2 — Modal scrim + soft shadow | Modal sits on a soft scrim over the page content with a soft shadow | Login modal, future modals. |
-
-The system has **effectively no shadow elevation on content surfaces**.
-Cards sit flat on the canvas; the only shadow appears on the modal layer.
-
-### Floating UI only
-
-Shadows are reserved exclusively for:
-- The TopBar profile menu dropdown
-- Future popovers, modals, tooltips
-- Notification dropdown (when added)
-
-**Forbidden** on: cards, panels, KPI tiles, table containers, sidebar /
-TopBar chrome, button rest states. If a card needs visual weight, add a
-border — don't raise it.
-
-## Shapes
-
-### Border radius
-
-Four values in active use. Pick from the list; don't invent new ones.
-
-| Class | Value | Use |
-|---|---|---|
-| `rounded-md` | 6px | Small controls — icon buttons, chips, search field, divider dots. |
-| `rounded-lg` | 8px | Default card / panel / section radius. KPI tiles, table containers, sidebar items. |
-| `rounded-2xl` | 16px | Modal-style cards only — login form card. |
-| `rounded-full` | 9999px | Pills, avatars, notification badge, profile menu trigger. |
-
-### Geometry notes
-
-- The logo is **always square**. Render at the height requested and let
-  width auto-derive. The transparent boar variant (used on dark chrome)
-  is wider than tall (native aspect 565:443); treat `size` as height for
-  that variant.
-- Avatar circles are 28px (`w-7 h-7`) at `rounded-full` in the sidebar
-  footer — used for the boar logo as a brand anchor.
-
-## Components
-
-### Logo (`src/components/shared/Logo.tsx`)
-
-**`LogoMark`** — the boar logo. Two variants:
-
-- `variant="solid"` (default): the boar on a deep-red square background.
-  Use standalone on welcome (120px), login card (72px), sidebar header
-  (28px), sidebar footer (28px). The logo carries its own `#850305` bg
-  so it reads on any backdrop — no `tone` swap needed.
-- `variant="transparent"`: the boar path only, white fill, transparent
-  background. Use when sitting on a dark chrome surface where the red
-  square would clash. Native aspect ratio 565:443 (wider than tall) is
-  preserved automatically.
-
-**`LogoFull`** — `LogoMark` + "PROCO BAJA" wordmark + "Sistema de Gestão"
-subtitle. Optional composite, currently unused.
-
-### Buttons
-
-**Primary CTA** — universal brand action
-- `bg-red hover:bg-red-pressed` text-white.
-- `rounded-lg` for actions, including full-width form submission.
-- `text-sm font-semibold` standard; `text-base` for hero CTAs.
-- Used for: "Entrar" (login submit), future primary actions on
-  formulário pages.
-
-**Secondary** — gray-cream alternative
-- `bg-secondary-bg text-ink hover:bg-hairline-soft`.
-- Same shape vocabulary as primary.
-
-**Tertiary / ghost** — link-like
-- `bg-transparent text-ink hover:bg-surface-soft`.
-- Used for low-emphasis actions inside dialogs ("Read the docs", "Learn more →").
-
-**Icon button**
-- At least 44px × 44px, `rounded-md text-mute hover:bg-surface-soft`.
-- Keep a visible focus ring and do not render controls without an action.
-
-### Scrollbars
-
-- Keep scrollbars thin and visible instead of revealing them only on hover.
-- Use the semantic `ash` token for the thumb so it remains visible in both themes.
-
-### Sidebar (`src/components/layout/Sidebar.tsx`)
-
-- 4px `border-l-4 border-red` strip on the left edge (always visible).
-- Header (56px): boar logo (28px) + "Proco Baja" wordmark when expanded;
-  just the logo when collapsed.
-- Nav items: full-width buttons, `gap-3 px-4 py-2.5`, text-sm font-medium.
-  Active state: `bg-red/5 text-red` wash + small `bg-red` dot on the right.
-- User footer (border-t): boar logo (28px) + name + role when expanded;
-  just the logo when collapsed.
-- Collapsed toggle: chevron sits in the header (when expanded) or as a
-  separate button below the header (when collapsed).
-
-### TopBar (`src/components/layout/TopBar.tsx`)
-
-- `h-14 border-b border-hairline bg-canvas dark:bg-surface-chrome-dark`.
-- Left: breadcrumbs (text-xs text-mute, slash separators). The page owns its
-  single `<h1>` in the main content.
-- Right: profile menu trigger with a 28px red avatar inside a 44px hit target.
-- Theme preference remains in Configurações; the header has no theme switcher.
-- Profile menu: 240px wide (`w-60`) dropdown with user info, Configurações
-  action, and Sair action (`text-red hover:bg-red/5`). It uses normal tab order.
-
-### Cards & surfaces
-
-**KPI tile** — metric card pattern
-- `bg-canvas dark:bg-surface-card-dark border border-hairline rounded-lg p-5`.
-- Big number (text-2xl font-semibold text-ink) + label (text-xs text-mute uppercase).
-- 4-up at desktop, 2-up at tablet, 1-up at mobile.
-
-**Section panel** — content grouping
-- `bg-canvas border border-hairline rounded-lg p-6`.
-- Hosts tab strips, tables, forms. The dominant content surface.
-
-**Tab strip** — section navigation
-- Underline-style: bottom border on active tab in `border-red text-red`.
-- Pill-style (alternative): `rounded-md bg-surface-card` inactive,
-  `bg-red text-white` active.
-
-**Data table**
-- `bg-canvas border border-hairline rounded-lg overflow-hidden`.
-- Header row: `text-xs font-bold uppercase text-mute`.
-- Body rows: `text-sm text-body`, hover `bg-surface-soft`.
-- Row dividers: `divide-y divide-hairline-soft`.
-
-### Forms
-
-**Text input**
-- `w-full px-4 py-2.5 rounded-md border bg-surface-soft`.
-- Focus: `border-red ring-2 ring-red/30` — red focus signal.
-- Disabled: `opacity-50`.
-
-**Label**
-- `text-[11px] font-semibold uppercase tracking-wide text-mute`.
-- Sits above the input with `space-y-1.5` gap.
-
-**Error message**
-- `text-xs text-red-600 font-medium` below the input.
-- Uses Tailwind built-in `red-600` (NOT custom `--color-red`) so error
-  text stays distinguishable from brand red.
-
-### Navigation chrome
-
-**Breadcrumbs** (TopBar)
-- Slash-separated, `text-xs text-mute`, hover `text-body` on links.
-
-**Nav items** (Sidebar)
-- Icon + label, full-width button, `text-sm font-medium`.
-- Active: `bg-red/5 text-red` + small red dot indicator.
-- Inactive hover: `bg-surface-soft text-ink`.
-
-## Do's and Don'ts
-
-### Do
-
-- Use `bg-red` (the brand primary) sparingly — primary CTAs, brand strip,
-  semantic badges, active state. Never decorative.
-- Use `text-red` for active sidebar items, focus rings, and the Sair button.
-  Pair with a background surface that has enough contrast (cream or white).
-- Semantic text, surface and hairline utilities map to readable dark values
-  in `styles.css`; status colors still need explicit `dark:` variants.
-  Card pattern: `bg-canvas dark:bg-surface-card-dark border-hairline
-  dark:border-hairline-dark`.
-- Reach for `rounded-lg` (8px) on every card / panel by default;
-  `rounded-2xl` only for modal-style cards.
-- Keep DM Sans for UI and JetBrains Mono for codes / IDs / numbers. Do
-  not introduce a third face without deliberate reason.
-- When a card needs visual weight, add a border. Do not raise with shadow.
-- Use the boar logo as the brand anchor. `LogoMark` size 28px in
-  Sidebar, 72px on Login, 120px on Welcome.
-- Build hierarchy from font weight (400 → 500 → 600 → 700) and size, not
-  from color tinting. Body stays `text-body` regardless of section context.
-
-### Don't
-
-- Don't introduce a new accent color. Red is the brand. Status colors
-  (success / warning / error) live in Tailwind built-ins (green / amber /
-  red-600) so they don't visually collide with brand red.
-- Don't add card shadows. The hairline border is enough.
-- Don't pad the TopBar profile menu beyond its current `w-60` width —
-  it fits the longest name without truncation.
-- Don't replace DM Sans with a different face without a deliberate reason.
-- Don't introduce a 5th brand red value outside the scale in `styles.css`.
-  The six steps are the entire ramp.
-- Don't lighten dark mode. The pure-black stack (`#0a0a0a` page →
-  `#141414` card → `#050505` chrome) is the contract. If a surface
-  feels too dark, add a border or accent — don't raise the bg value.
-- Don't use the placeholder hexagon (PB monogram on `#e60023`) anywhere.
-  It has been replaced by the boar logo.
-
-## Asset reference
-
-- `src/assets/procobaja-logo.svg` — boar on deep-red square (733×733).
-  Standalone use, sidebar chrome, welcome, login.
-- `src/assets/procobaja-transparente.svg` — boar path only, transparent
-  background (565×443, wider than tall). Use on dark chrome.
-- `index.html` `<meta name="theme-color">` is set to `#850305` to match
-  the brand primary.
-- Logo colors `#850305` / `#e33738` / `#ffffff` are baked into the SVGs —
-  no need to recolor at runtime.
-
-## Iteration guide
-
-1. New component → start from an existing card / panel / button pattern
-   in this doc. Match its surface, padding, radius, font weight.
-2. New color → extend the red scale in `@theme` of `styles.css` first,
-   document it here second. Don't introduce values outside the scale.
-3. New spacing → use Tailwind defaults (4 / 8 / 12 / 16 / 24 / 32).
-   No arbitrary values.
-4. New shadow → only on floating UI (modals, popovers, dropdowns).
-   Never on cards.
-5. When introducing a new component, ask whether it can be expressed
-   with the existing card + hairline + rounded-lg vocabulary before
-   adding new tokens.
+1. Consulte a seção relevante do Figma, os componentes existentes e os tokens antes de criar novos padrões.
+2. Reutilize componentes compartilhados quando o comportamento for realmente comum; mantenha componentes específicos em `src/components/pages/<pagina>/`.
+3. Verifique conteúdo real, estados vazio/erro, foco e contraste em temas claro e escuro. Teste também 320 px, desktop e movimento reduzido quando a alteração afetar esses casos.
+4. Execute as verificações descritas em `AGENTS.md`. Ao alterar tokens ou decisões visuais duradouras, atualize este documento junto com o código.

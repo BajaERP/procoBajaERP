@@ -1,67 +1,45 @@
-# ProcoBaja ERP — Frontend Guide
+# ProcoBaja ERP — Frontend
 
-Frontend React + Vite + TypeScript + Tailwind CSS v4. The integrated app is
-still a prototype: Gestão, Dashboard, Equipe, Atividades, Financeiro,
-Competições and Documentação are placeholders.
+## Working in this directory
 
-## Stack and commands
-
-| Layer | Choice |
-|---|---|
-| UI | React 19 + TypeScript 7 |
-| Build | Vite 8 |
-| Styles | Tailwind CSS v4 (`@tailwindcss/vite`) |
-| Routing | `react-router-dom` 6 with `createHashRouter` |
-
-Run commands from `frontend/`:
+React, TypeScript, Vite and Tailwind CSS v4; see `package.json` for versions and Node requirements. Run commands from `frontend/`:
 
 ```bash
-npm run dev
-npm run build
-npm run preview
-npm run format       # Apply Prettier to frontend source and configuration
-npm run format:check # Verify formatting without modifying files
+npm run dev           # local development server
+npm run build         # TypeScript check and production build
+npm run format        # apply Prettier
+npm run format:check  # check formatting without modifying files
+npm run preview       # preview the production build
 ```
 
-## App structure
+After code changes, run `npm run format:check` and `npm run build`. There is no configured test script; exercise affected interactions in the browser when appropriate. Prettier uses tabs displayed at four columns.
 
-- `src/app/`: hash routes, authenticated demo shell and mobile navigation.
-- `src/components/layout/`: sidebar and top bar shared by authenticated pages.
-- `src/components/shared/`: reusable logo and placeholder components.
-- `src/components/pages/login/` and `src/components/pages/configuracoes/`: page-specific sections.
-  Keep components near their page until reuse justifies moving them to `shared/`.
-- `src/pages/`: compose sections and coordinate route-level data and navigation.
-- `src/contexts/`: local demonstration session and theme preference.
-- `src/styles.css`: Tailwind v4 tokens, dark-mode tokens and global behavior.
+## Structure and ownership
 
-Routes live under `/app/*`. The default post-login destination is Dashboard;
-protected deep links are restored after the demonstration form is submitted.
+- `src/app/`: hash router, protected routes, authenticated shell and mobile navigation behavior.
+- `src/pages/`: route-level composition and navigation.
+- `src/components/pages/<page>/`: components specific to a page; move them to `shared/` when they are reused across pages.
+- `src/components/layout/`: shared application shell components, including sidebar and top bar.
+- `src/components/shared/`: reusable components such as the logo and placeholder.
+- `src/contexts/`: demonstration session and theme preference.
+- `src/styles.css`: Tailwind theme tokens, dark-mode values and global styles.
 
-## Current backend and session limits
+Routes are under `/app/*`; Dashboard is the default after login. Preserve protected deep-link restoration and the existing welcome-to-login transition when changing routing.
 
-The Spring Boot service has no application API or authentication endpoints yet.
-`AuthContext` accepts a numeric RA and any non-empty password and stores a local demo
-session. This is only for previewing the interface; it is not authentication,
-authorization or a security boundary. Do not present client-side state as
-protection for financial or personal data.
+## Data and authentication
 
-## UI conventions
+Most module pages are placeholders. The Spring Boot project has database migrations, but no application or authentication endpoints are connected to this frontend. `AuthContext` is a local demonstration: it accepts a numeric RA and any non-empty password. Do not treat this session or client-side state as authentication, authorization, or protection for financial or personal data. Do not present unavailable account data as real.
 
-- Format frontend source with Prettier: tabs with a display width of four columns.
+## UI and accessibility
 
-- Preserve the ProcoBaja logo, red palette, DM Sans and JetBrains Mono.
-- Support layouts from 320 px upward. The sidebar becomes a keyboard-operable
-  drawer on narrow screens; dense tables scroll inside their own region with a
-  visible scrollbar where the platform supports it.
-- Keep button and text-entry targets at least 44 px high; icon-only buttons
-  should also be at least 44 px wide.
-- Use one KPI column on mobile, two on tablet and four on desktop.
-- Keep light/dark colors legible through the semantic tokens in `styles.css`;
-  add explicit dark variants to semantic status colors.
-- Use `rounded-md`, `rounded-lg`, `rounded-2xl` only for the login card, and
-  `rounded-full`. Avoid arbitrary radii and card shadows.
-- Keep labels in Brazilian Portuguese. Use icons from `lucide-react`; preserve the ProcoBaja logo assets.
+- Preserve the ProcoBaja logo assets, red palette, DM Sans and JetBrains Mono. Use `lucide-react` for interface icons.
+- Support widths from 320 px upward, including short viewports. Keep the mobile sidebar operable by keyboard, with focus contained while open and restored on close.
+- Keep interactive controls at least 44 px high, and icon-only controls at least 44 px wide. Keep dense tables scrollable within their own region.
+- Use responsive layouts; KPI grids have one column on mobile, two on tablet and four on desktop.
+- Use semantic colors in `src/styles.css` and check light and dark modes, including status colors. Respect reduced-motion preferences.
+- Use `rounded-md`, `rounded-lg` and `rounded-full`; reserve `rounded-2xl` for the login card. Avoid arbitrary radii and card shadows.
+- Write user-facing labels in Brazilian Portuguese.
 
-## Figma reference
+## Design reference
 
-https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1
+For visual implementation or comparison, use the [Figma design system](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1), together with `DESIGN.md` and the actual implementation. Preserve explicit user-requested deviations from Figma.
