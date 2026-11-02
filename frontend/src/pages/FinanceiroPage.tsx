@@ -1,5 +1,5 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { PlaceholderPage } from '../components/shared/PlaceholderPage'
 
 export default function FinanceiroPage() {
-  return <PlaceholderPage title="Financeiro" />
+  return <PlaceholderPage title="Gestão Financeira" />
 }

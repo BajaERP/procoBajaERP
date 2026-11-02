@@ -1,4 +1,4 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { PlaceholderPage } from '../components/shared/PlaceholderPage'
 
 export default function DashboardPage() {
   return <PlaceholderPage title="Dashboard" />

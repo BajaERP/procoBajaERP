@@ -1,5 +1,5 @@
-import { PlaceholderPage } from '../components/PlaceholderPage'
+import { PlaceholderPage } from '../components/shared/PlaceholderPage'
 
 export default function AtividadesPage() {
-  return <PlaceholderPage title="Atividades" />
+  return <PlaceholderPage title="Atividades e Sprints" />
 }

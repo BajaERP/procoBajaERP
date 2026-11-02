@@ -1,52 +1,35 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Sidebar } from '../components/Sidebar'
-import { TopBar } from '../components/TopBar'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Sidebar } from '../components/layout/Sidebar'
+import { TopBar } from '../components/layout/TopBar'
 import {
-  GridIcon,
-  ShieldIcon,
-  UsersIcon,
-  TaskIcon,
-  WalletIcon,
-  TrophyIcon,
-  BookIcon,
-  GearIcon,
-} from '../components/icons'
+  LayoutGrid as GridIcon,
+  UsersRound as PeopleIcon,
+  Folder as FolderIcon,
+  Users as UsersIcon,
+  ListTodo as TaskIcon,
+  Wallet as WalletIcon,
+  Trophy as TrophyIcon,
+  BookText as BookIcon,
+  Settings as GearIcon,
+} from 'lucide-react'
 
-// Ordem reflete importância para gestores — Gestão fica no topo porque
-// é a landing default após login e crescerá em mais responsabilidades.
 const NAV = [
-  { id: 'gestao', label: 'Gestão', to: '/app/gestao', icon: 'Shield' },
-  { id: 'dashboard', label: 'Dashboard', to: '/app/dashboard', icon: 'Grid' },
-  { id: 'equipe', label: 'Equipe', to: '/app/equipe', icon: 'Users' },
-  { id: 'atividades', label: 'Atividades', to: '/app/atividades', icon: 'Task' },
-  { id: 'financeiro', label: 'Financeiro', to: '/app/financeiro', icon: 'Wallet' },
-  { id: 'competicoes', label: 'Competições', to: '/app/competicoes', icon: 'Trophy' },
-  { id: 'documentacao', label: 'Documentação', to: '/app/documentacao', icon: 'Book' },
-  { id: 'configuracoes', label: 'Configurações', to: '/app/configuracoes', icon: 'Gear' },
+  { id: 'dashboard', label: 'Dashboard', to: '/app/dashboard', icon: GridIcon, group: 'VISÃO GERAL' },
+  { id: 'equipe', label: 'Equipe e Subsistemas', to: '/app/equipe', icon: UsersIcon, group: 'GESTÃO DO PROJETO' },
+  { id: 'atividades', label: 'Atividades e Sprints', to: '/app/atividades', icon: TaskIcon, group: 'GESTÃO DO PROJETO' },
+  { id: 'pessoas', label: 'Pessoas e Participação', to: '/app/pessoas', icon: PeopleIcon, group: 'GESTÃO DO PROJETO' },
+  { id: 'competicoes', label: 'Competições e Eventos', to: '/app/competicoes', icon: TrophyIcon, group: 'GESTÃO DO PROJETO' },
+  { id: 'financeiro', label: 'Gestão Financeira', to: '/app/financeiro', icon: WalletIcon, group: 'ADMINISTRAÇÃO E REGISTROS' },
+  { id: 'documentacao', label: 'Documentação', to: '/app/documentacao', icon: FolderIcon, group: 'ADMINISTRAÇÃO E REGISTROS' },
+  { id: 'governanca', label: 'Governança', to: '/app/governanca', icon: BookIcon, group: 'ADMINISTRAÇÃO E REGISTROS' },
+  { id: 'configuracoes', label: 'Configurações', to: '/app/configuracoes', icon: GearIcon, group: '' },
 ] as const
 
-const ICON_MAP: Record<string, React.ComponentType> = {
-  Shield: ShieldIcon,
-  Grid: GridIcon,
-  Users: UsersIcon,
-  Task: TaskIcon,
-  Wallet: WalletIcon,
-  Trophy: TrophyIcon,
-  Book: BookIcon,
-  Gear: GearIcon,
-}
-
-const ROUTE_LABELS: Record<string, string> = {
-  gestao: 'Gestão',
-  dashboard: 'Dashboard',
-  equipe: 'Equipe',
-  atividades: 'Atividades',
-  financeiro: 'Financeiro',
-  competicoes: 'Competições',
-  documentacao: 'Documentação',
-  configuracoes: 'Configurações',
-}
+const ROUTE_LABELS: Record<string, string> = Object.fromEntries(
+  NAV.map(({ id, label }) => [id, label]),
+)
+ROUTE_LABELS.gestao = 'Gestão'
 
 export function Shell() {
   const navigate = useNavigate()
@@ -56,23 +39,31 @@ export function Shell() {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const mobileDialogRef = useRef<HTMLElement>(null)
 
-  const segment = location.pathname.replace('/app/', '')
+  const [segment, subsegment] = location.pathname.replace('/app/', '').split('/')
 
   const pageLabel = ROUTE_LABELS[segment] ?? segment
 
-  const navItems = useMemo(
-    () =>
-      NAV.map(({ id, label, icon }) => ({
-        id,
-        label,
-        icon: ICON_MAP[icon],
-      })),
-    []
-  )
+  const submenus: Record<string, readonly { id: string; label: string }[]> = {
+    equipe: [{ id: 'integrantes', label: 'Integrantes' }, { id: 'subsistemas', label: 'Subsistemas' }, { id: 'cargos', label: 'Cargos e permissões' }],
+    atividades: [{ id: 'quadro', label: 'Quadro de atividades' }, { id: 'backlog', label: 'Backlog' }, { id: 'sprints', label: 'Sprints' }],
+    financeiro: [{ id: 'solicitacoes', label: 'Solicitações de compra' }, { id: 'compras', label: 'Compras e aprovações' }, { id: 'movimentacoes', label: 'Movimentações' }],
+  }
+  const navItems = NAV.map((item) => ({ ...item, children: submenus[item.id] }))
+  const child = submenus[segment]?.find((item) => item.id === subsegment)
 
   const closeMobileNav = useCallback(() => {
     setMobileNavOpen(false)
     requestAnimationFrame(() => menuButtonRef.current?.focus())
+  }, [])
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const onBreakpointChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileNavOpen(false)
+    }
+    desktop.addEventListener('change', onBreakpointChange)
+    if (desktop.matches) setMobileNavOpen(false)
+    return () => desktop.removeEventListener('change', onBreakpointChange)
   }, [])
 
   useEffect(() => {
@@ -103,18 +94,20 @@ export function Shell() {
   }, [mobileNavOpen, closeMobileNav])
 
   function handleNavChange(id: string) {
-    const item = NAV.find((n) => n.id === id)
+    const [moduleId, childId] = id.split('/')
+    const item = NAV.find((n) => n.id === moduleId)
     if (item) {
-      navigate(item.to)
+      navigate(childId ? `${item.to}/${childId}` : item.to)
     }
   }
 
   return (
     <div className="flex h-dvh min-h-0 bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
       <Sidebar
-        appName="Proco Baja"
+        appName="ProcoBaja ERP"
         nav={navItems}
         activeId={segment}
+        activeChildId={subsegment}
         onNavChange={handleNavChange}
         mobileOpen={mobileNavOpen}
         onMobileClose={closeMobileNav}
@@ -124,7 +117,7 @@ export function Shell() {
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden" inert={mobileNavOpen || undefined}>
         <TopBar
-          breadcrumbs={[{ label: 'Proco Baja' }, { label: pageLabel }]}
+          breadcrumbs={[{ label: 'ProcoBaja ERP' }, { label: pageLabel, ...(child ? { href: `#/app/${segment}` } : {}) }, ...(child ? [{ label: child.label }] : [])]}
           onOpenMobileMenu={() => setMobileNavOpen(true)}
           mobileMenuOpen={mobileNavOpen}
           menuButtonRef={menuButtonRef}
