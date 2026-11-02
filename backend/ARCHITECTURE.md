@@ -1,4 +1,6 @@
-# Feature-Oriented Layered Architecture
+# Arquitetura do backend
+
+Este documento apresenta a **direção planejada** para o backend. O repositório contém a aplicação Spring Boot e migrações Flyway; as funcionalidades e endpoints descritos abaixo devem ser confirmados no código antes de serem considerados implementados. Para escopo e requisitos, consulte a [documentação do projeto](../docs/projeto/visao-geral.md).
 
 ## Direção geral
 
@@ -122,6 +124,12 @@ A implementação pode seguir os incrementos definidos no projeto:
 O `dashboard` não deve duplicar regras de negócio. Ele deve consultar os
 serviços dos módulos responsáveis pelos dados e apenas organizar as
 informações para apresentação.
+
+## Banco e integração
+
+As migrações Flyway ficam em `src/main/resources/db/migration/`. Preserve migrações já aplicadas e acrescente novas versões para alterações de esquema. O [modelo relacional proposto](../docs/projeto/modelagem.md) e os SQLs de referência precisam ser comparados às migrações e ao estado do banco; eles não substituem validações de autorização e regras transacionais no backend.
+
+O frontend ainda usa uma sessão demonstrativa local. Qualquer futura autenticação deve validar identidade, autorização e escopo dos dados no servidor; o estado visual da interface não é uma barreira de segurança.
 
 ## Testes
 
