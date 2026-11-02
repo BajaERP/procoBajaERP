@@ -1,23 +1,19 @@
+## Descrição
 
-## 📋 Descrição
+Qual problema ou necessidade esta alteração atende? Descreva o comportamento resultante.
 
-Descreva brevemente o que foi desenvolvido ou alterado neste PR.
+## Alterações
 
-## 🔧 Alterações realizadas
+- Descreva as mudanças principais.
 
-- 
-- 
-- 
+## Verificação
 
-## 📸 Evidências
+- [ ] Executei as verificações adequadas ou expliquei abaixo por que não foram executadas.
+- [ ] Atualizei a documentação quando necessário.
+- [ ] Revisei se o PR aponta para a branch correta.
 
-Adicione imagens ou vídeos demonstrando as alterações.
+Comandos executados, resultados e limitações:
 
+## Evidências visuais
 
-## ✅ Checklist
-
-- [ ] O código foi testado localmente.
-- [ ] As alterações seguem os padrões do projeto.
-- [ ] Não foram adicionados arquivos desnecessários.
-- [ ] A documentação foi atualizada, se necessário.
-- [ ] O PR está direcionado para a branch correta.
+Inclua imagens ou vídeos quando a alteração afetar a interface.
