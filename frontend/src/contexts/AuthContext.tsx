@@ -96,6 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!normalizedRa || !password) {
       throw new Error('RA e senha são obrigatórios.')
     }
+    if (!/^\d+$/.test(normalizedRa)) {
+      throw new Error('O RA deve conter apenas números.')
+    }
+    if (normalizedRa.length > 20) {
+      throw new Error('O RA deve ter no máximo 20 caracteres.')
+    }
     await new Promise((r) => setTimeout(r, 250))
     const next = demoUserFromRa(normalizedRa)
     setUser(next)
