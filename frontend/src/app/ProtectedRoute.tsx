@@ -3,18 +3,18 @@ import type { ReactNode } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ProtectedRouteProps {
-  children: ReactNode
+	children: ReactNode
 }
 
 // Guards /app/* — redirects unauthenticated users to /login while
 // remembering the attempted destination.
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth()
-  const location = useLocation()
+	const { isAuthenticated } = useAuth()
+	const location = useLocation()
 
-  if (!isAuthenticated) {
-    const from = `${location.pathname}${location.search}${location.hash}`
-    return <Navigate to="/login" replace state={{ from }} />
-  }
-  return <>{children}</>
+	if (!isAuthenticated) {
+		const from = `${location.pathname}${location.search}${location.hash}`
+		return <Navigate to="/login" replace state={{ from }} />
+	}
+	return <>{children}</>
 }

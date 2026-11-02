@@ -7,11 +7,11 @@ import './styles.css'
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
-  throw new Error('Elemento raiz do frontend não encontrado.')
+	throw new Error('Elemento raiz do frontend não encontrado.')
 }
 
 createRoot(rootElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+	<StrictMode>
+		<App />
+	</StrictMode>,
 )

@@ -19,6 +19,8 @@ Run commands from `frontend/`:
 npm run dev
 npm run build
 npm run preview
+npm run format       # Apply Prettier to frontend source and configuration
+npm run format:check # Verify formatting without modifying files
 ```
 
 ## App structure
@@ -44,6 +46,8 @@ authorization or a security boundary. Do not present client-side state as
 protection for financial or personal data.
 
 ## UI conventions
+
+- Format frontend source with Prettier: tabs with a display width of four columns.
 
 - Preserve the ProcoBaja logo, red palette, DM Sans and JetBrains Mono.
 - Support layouts from 320 px upward. The sidebar becomes a keyboard-operable

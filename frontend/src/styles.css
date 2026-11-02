@@ -16,167 +16,183 @@
  *   • Cards have NO shadow — hairlines only. Shadows reserved for popovers.
  * ---------------------------------------------------------------- */
 @theme {
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	--font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Brand red — derived from procobaja-logo.svg (#850305 bg + #e33738 accent) */
-  --color-red-tint: #fdf2f3;       /* palest wash, empty-state bg */
-  --color-red-soft: #fbd9dc;       /* light hover bg, chip fill */
-  --color-red-light: #e33738;      /* mid accent (logo secondary curve) */
-  --color-red: #850305;            /* brand primary (logo bg) */
-  --color-red-pressed: #6b0304;    /* pressed/active (one notch deeper) */
-  --color-red-deep: #4a0203;       /* deepest brand strip, heavy emphasis */
+	/* Brand red — derived from procobaja-logo.svg (#850305 bg + #e33738 accent) */
+	--color-red-tint: #fdf2f3; /* palest wash, empty-state bg */
+	--color-red-soft: #fbd9dc; /* light hover bg, chip fill */
+	--color-red-light: #e33738; /* mid accent (logo secondary curve) */
+	--color-red: #850305; /* brand primary (logo bg) */
+	--color-red-pressed: #6b0304; /* pressed/active (one notch deeper) */
+	--color-red-deep: #4a0203; /* deepest brand strip, heavy emphasis */
 
-  /* Surfaces (light — warm cream Pinterest palette) */
-  --color-canvas: #ffffff;
-  --color-surface-soft: #fbfbf9;
-  --color-surface-card: #f6f6f3;
-  --color-secondary-bg: #e5e5e0;
+	/* Surfaces (light — warm cream Pinterest palette) */
+	--color-canvas: #ffffff;
+	--color-surface-soft: #fbfbf9;
+	--color-surface-card: #f6f6f3;
+	--color-secondary-bg: #e5e5e0;
 
-  /* Fixed preview colors remain representative in either active theme. */
-  --color-theme-preview-light: #e5e5e0;
-  --color-theme-preview-dark: #141414;
+	/* Fixed preview colors remain representative in either active theme. */
+	--color-theme-preview-light: #e5e5e0;
+	--color-theme-preview-dark: #141414;
 
-  /* Text tiers (Pinterest ink/body/mute/ash) */
-  --color-ink: #000000;
-  --color-body: #33332e;
-  --color-mute: #62625b;
-  --color-ash: #70706a;
+	/* Text tiers (Pinterest ink/body/mute/ash) */
+	--color-ink: #000000;
+	--color-body: #33332e;
+	--color-mute: #62625b;
+	--color-ash: #70706a;
 
-  /* Hairlines (Pinterest hairline / hairline-soft) */
-  --color-hairline: #dadad3;
-  --color-hairline-soft: #e5e5e0;
-  --color-selected: #fdf2f3;
-  --color-link: #850305;
-  --color-surface-raised: #ffffff;
-  --color-icon-muted: #62625b;
-  --color-state-success: #15803d;
-  --color-state-warning: #b45309;
-  --color-state-error: #b91c1c;
-  --color-state-info: #2563eb;
-  --color-state-success-bg: #f0fdf4;
-  --color-state-warning-bg: #fffbeb;
-  --color-state-error-bg: #fef2f2;
-  --color-state-info-bg: #eff6ff;
+	/* Hairlines (Pinterest hairline / hairline-soft) */
+	--color-hairline: #dadad3;
+	--color-hairline-soft: #e5e5e0;
+	--color-selected: #fdf2f3;
+	--color-link: #850305;
+	--color-surface-raised: #ffffff;
+	--color-icon-muted: #62625b;
+	--color-state-success: #15803d;
+	--color-state-warning: #b45309;
+	--color-state-error: #b91c1c;
+	--color-state-info: #2563eb;
+	--color-state-success-bg: #f0fdf4;
+	--color-state-warning-bg: #fffbeb;
+	--color-state-error-bg: #fef2f2;
+	--color-state-info-bg: #eff6ff;
 
-  /* Dark mode (pure-black dominant) */
-  --color-surface-dark: #0a0a0a;          /* page bg */
-  --color-surface-card-dark: #141414;     /* card bg */
-  --color-surface-chrome-dark: #050505;   /* sidebar / topbar — deeper than page */
-  --color-hairline-dark: #262626;         /* borders on dark */
+	/* Dark mode (pure-black dominant) */
+	--color-surface-dark: #0a0a0a; /* page bg */
+	--color-surface-card-dark: #141414; /* card bg */
+	--color-surface-chrome-dark: #050505; /* sidebar / topbar — deeper than page */
+	--color-hairline-dark: #262626; /* borders on dark */
 }
 
 /* Base background and text color so the page never flashes the wrong theme
    between the inline bootstrap script (index.html) and React mount. */
 html,
 body {
-  background-color: var(--color-surface-soft);
-  color: var(--color-ink);
+	background-color: var(--color-surface-soft);
+	color: var(--color-ink);
 }
 html.dark,
 html.dark body {
-  background-color: var(--color-surface-dark);
-  color: #ffffff;
+	background-color: var(--color-surface-dark);
+	color: #ffffff;
 }
 
 html.dark {
-  --color-canvas: #141414;
-  --color-surface-soft: #0a0a0a;
-  --color-surface-card: #1b1b1b;
-  --color-secondary-bg: #323238;
-  --color-ink: #f5f5f5;
-  --color-body: #e5e5e5;
-  --color-mute: #adadb4;
-  --color-ash: #8a8a8a;
-  --color-hairline: #303030;
-  --color-hairline-soft: #262626;
-  --color-selected: #37171d;
-  --color-link: #ff858a;
-  --color-surface-raised: #212126;
-  --color-icon-muted: #b1b1bb;
-  --color-state-success: #7deba7;
-  --color-state-warning: #ffd379;
-  --color-state-error: #ffa8ae;
-  --color-state-info: #8ebfff;
-  --color-state-success-bg: #10291a;
-  --color-state-warning-bg: #30240e;
-  --color-state-error-bg: #34191d;
-  --color-state-info-bg: #15283b;
+	--color-canvas: #141414;
+	--color-surface-soft: #0a0a0a;
+	--color-surface-card: #1b1b1b;
+	--color-secondary-bg: #323238;
+	--color-ink: #f5f5f5;
+	--color-body: #e5e5e5;
+	--color-mute: #adadb4;
+	--color-ash: #8a8a8a;
+	--color-hairline: #303030;
+	--color-hairline-soft: #262626;
+	--color-selected: #37171d;
+	--color-link: #ff858a;
+	--color-surface-raised: #212126;
+	--color-icon-muted: #b1b1bb;
+	--color-state-success: #7deba7;
+	--color-state-warning: #ffd379;
+	--color-state-error: #ffa8ae;
+	--color-state-info: #8ebfff;
+	--color-state-success-bg: #10291a;
+	--color-state-warning-bg: #30240e;
+	--color-state-error-bg: #34191d;
+	--color-state-info-bg: #15283b;
 }
 
 html,
 body,
 #root {
-  min-height: 100%;
+	min-height: 100%;
 }
 
 body {
-  min-width: 320px;
-  margin: 0;
+	min-width: 320px;
+	margin: 0;
 }
 
 button {
-  min-block-size: 44px;
-  min-inline-size: 44px;
+	min-block-size: 44px;
+	min-inline-size: 44px;
 }
 
 input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
 select,
 textarea {
-  min-block-size: 44px;
+	min-block-size: 44px;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-red-light);
-  outline-offset: 2px;
+	outline: 2px solid var(--color-red-light);
+	outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-ash) transparent;
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-ash) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+	width: 6px;
+	height: 6px;
 }
 
 *::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--color-ash);
-  border-radius: 3px;
+	background: var(--color-ash);
+	border-radius: 3px;
 }
 
 @keyframes login-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 .login-enter {
-  animation: login-enter 350ms ease-out both;
+	animation: login-enter 350ms ease-out both;
 }
 
 @keyframes intro-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .intro-enter { animation: intro-enter 400ms ease-out both; }
-  .intro-title { animation-delay: 100ms; }
-  .intro-caption { animation-delay: 200ms; }
+	.intro-enter {
+		animation: intro-enter 400ms ease-out both;
+	}
+	.intro-title {
+		animation-delay: 100ms;
+	}
+	.intro-caption {
+		animation-delay: 200ms;
+	}
 }
