@@ -38,7 +38,7 @@ O roteador usa `createHashRouter`, portanto os caminhos aparecem após `#` no en
 
 `AuthContext` mantém uma sessão **apenas demonstrativa** no navegador. Ele aceita um RA numérico de até 20 caracteres e uma senha não vazia, cria um usuário fictício e armazena os dados em `localStorage` sob `proco.auth.user`. A senha não é armazenada; os dados locais não representam um usuário autenticado pelo backend. `ProtectedRoute` depende desse estado local para o fluxo de interface: isso **não é autenticação ou autorização** e não protege dados reais. As informações indisponíveis não devem ser apresentadas como se viessem do servidor.
 
-O backend possui migrações de banco, mas o frontend ainda não consome endpoints de autenticação ou uma API de aplicação. O modelo relacional proposto está em [`docs/diagramas`](../docs/diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v4.dbml). Uma futura integração deve autenticar e autorizar no servidor; variáveis públicas do Vite usam o prefixo `VITE_` e não devem conter segredos.
+O backend possui migrações de banco, mas o frontend ainda não consome endpoints de autenticação ou uma API de aplicação. O formulário de login atual não testa credenciais contra o servidor. O modelo relacional proposto está em [`docs/diagramas`](../docs/diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v4.dbml). Uma futura integração deve autenticar e autorizar no servidor; variáveis públicas do Vite usam o prefixo `VITE_` e não devem conter segredos.
 
 `ThemeContext` controla as preferências claro, escuro e sistema. A preferência explícita é salva em `localStorage` como `proco.theme`; a opção sistema acompanha `prefers-color-scheme`. Os tokens e as variantes escuras ficam em `styles.css`.
 
