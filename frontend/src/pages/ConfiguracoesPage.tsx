@@ -3,7 +3,6 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import { AparenciaSection } from '../components/pages/configuracoes/AparenciaSection'
 import { ContaSection } from '../components/pages/configuracoes/ContaSection'
-import { NotificacoesSection } from '../components/pages/configuracoes/NotificacoesSection'
 
 export default function ConfiguracoesPage() {
 	const { preference, setPreference } = useTheme()
@@ -28,7 +27,6 @@ export default function ConfiguracoesPage() {
 				onChange={setPreference}
 			/>
 			<ContaSection user={user} onLogout={handleLogout} />
-			<NotificacoesSection />
 		</div>
 	)
 }
