@@ -5,7 +5,7 @@ import {
 	X as CloseIcon,
 } from 'lucide-react'
 import { LogoMark } from '../shared/Logo'
-import { useAuth } from '../../contexts/AuthContext'
+import { ROLE_LABELS, useAuth } from '../../contexts/AuthContext'
 
 export interface NavItem {
 	id: string
@@ -26,15 +26,6 @@ export interface SidebarProps {
 	onMobileClose?: () => void
 	closeButtonRef?: RefObject<HTMLButtonElement | null>
 	mobileDialogRef?: RefObject<HTMLElement | null>
-}
-
-const ROLE_LABEL: Record<string, string> = {
-	gestor: 'Gestor',
-	membro: 'Membro',
-	financeiro: 'Financeiro',
-	lider: 'Líder',
-	capitao: 'Capitão',
-	orientador: 'Orientador',
 }
 
 export function Sidebar({
@@ -67,7 +58,7 @@ export function Sidebar({
 
 	const name = user?.name ?? 'Visitante'
 	const role = user
-		? `${ROLE_LABEL[user.role] ?? user.role}${user.id === 'demo' ? ' · demonstração' : ''}`
+		? `${ROLE_LABELS[user.role]}${user.id === 'demo' ? ' · demonstração' : ''}`
 		: 'Sem sessão'
 
 	const content = (isMobile: boolean, isCollapsed: boolean) => (

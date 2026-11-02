@@ -7,6 +7,7 @@ import {
 	LogOut as LogoutIcon,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { DevProfileSwitcher } from '../dev/DevProfileSwitcher'
 
 export interface TopBarBreadcrumb {
 	label: string
@@ -123,6 +124,7 @@ export function TopBar({
 			</div>
 
 			<div className="flex items-center gap-2">
+				{import.meta.env.DEV && <DevProfileSwitcher />}
 				{/* Profile menu */}
 				<div className="relative ml-1" ref={menuRef}>
 					<button

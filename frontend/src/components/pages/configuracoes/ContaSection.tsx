@@ -1,14 +1,5 @@
-import type { AuthUser } from '../../../contexts/AuthContext'
+import { ROLE_LABELS, type AuthUser } from '../../../contexts/AuthContext'
 import { LogOut as LogoutIcon } from 'lucide-react'
-
-const ROLE_LABELS = {
-	gestor: 'Gestor',
-	membro: 'Membro',
-	financeiro: 'Financeiro',
-	lider: 'Líder',
-	capitao: 'Capitão',
-	orientador: 'Orientador',
-} as const
 
 export function ContaSection({
 	user,

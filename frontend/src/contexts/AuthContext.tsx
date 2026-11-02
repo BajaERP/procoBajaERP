@@ -9,6 +9,19 @@ import {
 export type UserRole =
 	'gestor' | 'membro' | 'financeiro' | 'lider' | 'capitao' | 'orientador'
 
+export const ROLE_LABELS: Record<UserRole, string> = {
+	capitao: 'Capitão/Administrador',
+	gestor: 'Gestor',
+	financeiro: 'Financeiro',
+	lider: 'Líder',
+	membro: 'Membro',
+	orientador: 'Orientador',
+}
+
+function isUserRole(value: unknown): value is UserRole {
+	return typeof value === 'string' && Object.hasOwn(ROLE_LABELS, value)
+}
+
 export interface AuthUser {
 	id: string
 	name: string
@@ -22,6 +35,7 @@ interface AuthContextValue {
 	isAuthenticated: boolean
 	login: (ra: string, password: string) => Promise<AuthUser>
 	logout: () => void
+	setDemoRole: (role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -54,14 +68,15 @@ function loadStoredUser(): AuthUser | null {
 			typeof stored.ra !== 'string' ||
 			!stored.ra.trim() ||
 			!('role' in stored) ||
-			stored.role !== 'gestor'
+			!isUserRole(stored.role) ||
+			(!import.meta.env.DEV && stored.role !== 'gestor')
 		)
 			return null
 		return {
 			id: 'demo',
 			name: 'Usuário de demonstração',
 			ra: stored.ra,
-			role: 'gestor',
+			role: stored.role,
 			initials: 'UD',
 		}
 	} catch {
@@ -115,11 +130,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setUser(null)
 	}
 
+	function setDemoRole(role: UserRole) {
+		if (!import.meta.env.DEV || !isUserRole(role)) return
+		setUser((current) =>
+			current?.id === 'demo' ? { ...current, role } : current,
+		)
+	}
+
 	const value: AuthContextValue = {
 		user,
 		isAuthenticated: !!user,
 		login,
 		logout,
+		setDemoRole,
 	}
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
