@@ -58,9 +58,8 @@ As prévias de aparência usam `theme-preview-light` (`#e5e5e0`) e `theme-previe
 
 A navegação por perfil e vários módulos ainda são protótipos. Os estados visuais não substituem autorização no backend; não invente dados de usuário ou permissões para completar uma tela.
 
-## Ao criar ou alterar uma interface
+## Validação visual
 
-1. Consulte a seção relevante do Figma, os componentes existentes e os tokens antes de criar novos padrões.
-2. Reutilize componentes compartilhados quando o comportamento for realmente comum; mantenha componentes específicos em `src/components/pages/<pagina>/`.
-3. Verifique conteúdo real, estados vazio/erro, foco e contraste em temas claro e escuro. Teste também 320 px, desktop e movimento reduzido quando a alteração afetar esses casos.
-4. Execute as verificações descritas em `AGENTS.md`. Ao alterar tokens ou decisões visuais duradouras, atualize este documento junto com o código.
+Ao alterar uma interface, compare a seção relevante do Figma com os componentes e tokens existentes. Verifique conteúdo real, estados vazio e de erro, foco e contraste nos temas claro e escuro. Quando afetados, confira também telas de 320 px, desktop e movimento reduzido. Atualize este documento quando mudarem tokens ou decisões visuais duradouras.
+
+Para organização do código e comandos de verificação, consulte `AGENTS.md`; para fluxo de rotas e sessão, consulte `ARCHITECTURE.md`.

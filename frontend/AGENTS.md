@@ -1,45 +1,45 @@
 # ProcoBaja ERP — Frontend
 
-## Working in this directory
+## Comandos e verificação
 
-React, TypeScript, Vite and Tailwind CSS v4; see `package.json` for versions and Node requirements. Run commands from `frontend/`:
+O frontend usa React, TypeScript, Vite e Tailwind CSS v4. Consulte `package.json` para versões e requisitos de Node. Execute os comandos em `frontend/`:
 
 ```bash
-npm run dev           # local development server
-npm run build         # TypeScript check and production build
-npm run format        # apply Prettier
-npm run format:check  # check formatting without modifying files
-npm run preview       # preview the production build
+npm run dev           # servidor de desenvolvimento
+npm run build         # verificação TypeScript e build
+npm run format        # aplicar Prettier
+npm run format:check  # verificar formatação sem alterar arquivos
+npm run preview       # visualizar o build
 ```
 
-After code changes, run `npm run format:check` and `npm run build`. There is no configured test script; exercise affected interactions in the browser when appropriate. Prettier uses tabs displayed at four columns.
+Após alterar código, execute `npm run format:check` e `npm run build`. Não há script de testes configurado; verifique as interações afetadas no navegador quando apropriado. O Prettier usa tabs com largura de quatro colunas.
 
-## Structure and ownership
+## Organização
 
-- `src/app/`: hash router, protected routes, authenticated shell and mobile navigation behavior.
-- `src/pages/`: route-level composition and navigation.
-- `src/components/pages/<page>/`: components specific to a page; move them to `shared/` when they are reused across pages.
-- `src/components/layout/`: shared application shell components, including sidebar and top bar.
-- `src/components/shared/`: reusable components such as the logo and placeholder.
-- `src/contexts/`: demonstration session and theme preference.
-- `src/styles.css`: Tailwind theme tokens, dark-mode values and global styles.
+- `src/app/`: rotas, proteção demonstrativa e shell.
+- `src/pages/`: composição e navegação de cada rota.
+- `src/components/pages/<pagina>/`: componentes específicos de uma página.
+- `src/components/layout/`: estrutura compartilhada, como sidebar e header.
+- `src/components/shared/`: componentes reutilizados entre páginas.
+- `src/contexts/`: sessão demonstrativa e preferência de tema.
+- `src/styles.css`: tokens, temas e estilos globais.
 
-Routes are under `/app/*`; Dashboard is the default after login. Preserve protected deep-link restoration and the existing welcome-to-login transition when changing routing.
+Mantenha componentes próximos da página até haver reutilização real. As rotas usam hash e ficam sob `/app/*`; o destino padrão após o login é Dashboard. Preserve a restauração de links protegidos e a transição entre introdução e login.
 
-## Data and authentication
+## Dados e sessão
 
-Most module pages are placeholders. The Spring Boot project has database migrations, but no application or authentication endpoints are connected to this frontend. `AuthContext` is a local demonstration: it accepts a numeric RA and any non-empty password. Do not treat this session or client-side state as authentication, authorization, or protection for financial or personal data. Do not present unavailable account data as real.
+A maioria dos módulos ainda é placeholder. O frontend não está conectado a endpoints de aplicação ou autenticação: `AuthContext` cria uma sessão local demonstrativa com RA numérico e senha não vazia. Não trate o estado local como autenticação, autorização ou proteção de dados reais; não apresente dados indisponíveis como reais.
 
-## UI and accessibility
+## Interface e acessibilidade
 
-- Preserve the ProcoBaja logo assets, red palette, DM Sans and JetBrains Mono. Use `lucide-react` for interface icons.
-- Support widths from 320 px upward, including short viewports. Keep the mobile sidebar operable by keyboard, with focus contained while open and restored on close.
-- Keep interactive controls at least 44 px high, and icon-only controls at least 44 px wide. Keep dense tables scrollable within their own region.
-- Use responsive layouts; KPI grids have one column on mobile, two on tablet and four on desktop.
-- Use semantic colors in `src/styles.css` and check light and dark modes, including status colors. Respect reduced-motion preferences.
-- Use `rounded-md`, `rounded-lg` and `rounded-full`; reserve `rounded-2xl` for the login card. Avoid arbitrary radii and card shadows.
-- Write user-facing labels in Brazilian Portuguese.
+- Preserve os assets da marca, a paleta vermelha, DM Sans e JetBrains Mono; use `lucide-react` nos ícones de interface.
+- Suporte larguras desde 320 px e telas baixas. No drawer mobile, preserve foco contido, fechamento por Escape e restauração do foco.
+- Mantenha alvos interativos com pelo menos 44 px de altura e botões apenas com ícone com pelo menos 44 px de largura; tabelas densas rolam em região própria.
+- Em indicadores futuros, use uma coluna no mobile, duas no tablet e quatro no desktop.
+- Use os tokens semânticos e verifique temas claro e escuro, estados e movimento reduzido.
+- Prefira `rounded-md`, `rounded-lg` e `rounded-full`; reserve `rounded-2xl` a cartões de login quando usados. Evite raios arbitrários e sombras em cards.
+- Use português brasileiro nos textos da interface.
 
-## Design reference
+## Referências
 
-For visual implementation or comparison, use the [Figma design system](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1), together with `DESIGN.md` and the actual implementation. Preserve explicit user-requested deviations from Figma.
+Para implementar ou comparar interfaces, consulte o [Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1) e `DESIGN.md`; preserve desvios solicitados pelo usuário. Para fluxo de navegação, sessão, desenvolvimento e Docker, consulte `ARCHITECTURE.md`.
