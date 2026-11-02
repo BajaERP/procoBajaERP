@@ -1,0 +1,1244 @@
+// ERP PROCOBAJA - modelo logico relacional - V4: categorias, eventos, previsoes, horas e indices (2026-10-25)
+// Projeto unico com TableGroups e DiagramViews. Alterar aqui atualiza todas as vistas.
+// Oito modulos funcionais; dashboard consulta dados existentes, sem tabelas proprias.
+// IMPORTANTE: modelo logico proposto. FKs, CHECKs e indices que nao exportem integralmente exigem migracoes PostgreSQL.
+// APLICAR SQL COMPLEMENTAR v4 APOS GERAR AS TABELAS (unicidade parcial de pagamentos e sprints).
+// Valores monetarios sao confidenciais e autorizacoes sao obrigatorias no backend.
+Project proco_baja_erp {
+  database_type: 'PostgreSQL'
+  Note: 'Modelo logico PROCOBAJA baseado nas secoes 2.3, 2.4, 4.1 e 4.2 do documento do projeto. Regras de acesso contextuais sao verificadas pelo backend.'
+}
+
+Enum estado_atividade {
+  NAO_INICIADA
+  NAO_CONCLUIDA
+  EM_ANDAMENTO
+  CONCLUIDA
+  PAUSADA
+}
+
+Enum prioridade_atividade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+Enum tipo_entrada_sprint {
+  INICIAL
+  TRANSFERENCIA
+}
+
+Enum escopo_compra {
+  GERAL
+  SUBSISTEMAS
+}
+
+Enum status_compra {
+  PLANEJADA
+  AGUARDANDO_APROVACAO
+  APROVADA
+  REPROVADA
+  REALIZADA_PAGA
+  CANCELADA
+}
+
+Enum papel_aprovador {
+  CAPITAO
+  FINANCEIRO
+}
+
+Enum decisao_aprovacao {
+  APROVADA
+  REPROVADA
+}
+
+Enum tipo_movimentacao {
+  ENTRADA
+  SAIDA
+}
+
+Enum situacao_movimentacao {
+  ATIVA
+  CANCELADA
+}
+
+Enum situacao_previsao_financeira {
+  PENDENTE
+  REALIZADA
+  CANCELADA
+}
+
+Enum situacao_presenca {
+  PRESENTE
+  AUSENTE
+  JUSTIFICADA
+}
+
+Enum situacao_participacao {
+  PREVISTA
+  PRESENTE
+  AUSENTE
+  JUSTIFICADA
+}
+
+Enum tipo_registro_pessoas {
+  OBSERVACAO
+  OCORRENCIA
+  ADVERTENCIA
+}
+
+Enum nivel_registro_pessoas {
+  COTIDIANA
+  ADMIN_CONFIDENCIAL
+}
+
+Enum tipo_evento {
+  REUNIAO
+  EVENTO
+  COMPETICAO
+}
+
+Enum tipo_logistica {
+  INSCRICAO
+  TRANSPORTE
+  HOSPEDAGEM
+  ALIMENTACAO
+  OUTRO
+}
+
+Enum confidencialidade_documento {
+  COMUM
+  ADMIN_CONFIDENCIAL
+  FINANCEIRO_CONFIDENCIAL
+}
+
+Enum status_exclusao_documento {
+  PENDENTE
+  APROVADA
+  REPROVADA
+  EXECUTADA
+}
+
+Enum status_versao_governanca {
+  RASCUNHO
+  PUBLICADA
+}
+
+// A integridade das aprovacoes, tres cotacoes, vinculos por perfil, pagamento e
+// autorizacoes contextuais ainda requer migracoes adicionais e backend transacional.
+// IMPORTANTISSIMO: unicidade parcial por compra ATIVA somente no SQL complementar.
+// Dados financeiros nao devem ser retornados por endpoints operacionais nao autorizados.
+Table perfis {
+  id bigint [pk, increment]
+  nome varchar(32) [not null, unique]
+  descricao text
+  Note: 'Seis papeis oficiais. O catalogo e as permissoes nao anulam regras obrigatorias de negocio e contexto.'
+}
+
+Table permissoes {
+  id bigint [pk, increment]
+  codigo varchar(120) [not null, unique]
+  recurso varchar(60) [not null]
+  acao varchar(60) [not null]
+  descricao text
+  Note: 'Catalogo de operacoes do RBAC. Restricoes por subsistema, propriedade e confidencialidade exigem validacao no backend.'
+}
+
+Table perfil_permissoes {
+  perfil_id bigint [not null]
+  permissao_id bigint [not null]
+  indexes {
+    (perfil_id, permissao_id) [pk]
+  }
+  Note: 'Relacao N:N. Alteracoes nas permissoes nao devem liberar acesso financeiro ao Gestor.'
+}
+
+Table usuarios {
+  id bigint [pk, increment]
+  ra varchar(20) [not null, unique]
+  nome varchar(150) [not null]
+  senha_hash varchar(255) [not null, note: 'Nunca armazenar senha em texto simples']
+  perfil_id bigint [not null]
+  subsistema_id bigint [note: 'Condicional: todo integrante da equipe deve ter um subsistema; Orientador pode nao ter']
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz
+  indexes {
+    perfil_id
+    subsistema_id
+    (id, subsistema_id) [unique]
+  }
+  Note: 'Um perfil ativo por usuario, e no maximo um subsistema simultaneo. Sem autenticacao UTFPR.'
+}
+
+Table subsistemas {
+  id bigint [pk, increment]
+  nome varchar(120) [not null, unique]
+  descricao text
+  lider_usuario_id bigint [note: 'Obrigatorio para subsistema ativo; verificar perfil Lider; pertencimento ao mesmo subsistema garantido por FK composta']
+  ativo boolean [not null, default: false]
+  criado_em timestamptz [not null, default: `now()`]
+  checks {
+  `NOT ativo OR lider_usuario_id IS NOT NULL` [name: 'chk_subsistema_ativo_lider']
+  }
+  Note: 'Criacao em duas etapas ou transacao resolve referencia circular Lider <-> Subsistema. Proibir ativar sem Lider.'
+}
+
+Table vinculos_financeiro_gestor {
+  financeiro_usuario_id bigint [pk]
+  gestor_usuario_id bigint [not null]
+  definido_por_usuario_id bigint [not null]
+  definido_em timestamptz [not null, default: `now()`]
+  indexes {
+    gestor_usuario_id
+  }
+  Note: 'Um Gestor por Financeiro; somente Capitão pode manter o vinculo. Nao concede acesso financeiro ao Gestor.'
+}
+
+Table sprints {
+  id bigint [pk, increment]
+  nome varchar(120) [not null]
+  objetivo text
+  inicio date [not null]
+  fim date [not null]
+  criada_por_usuario_id bigint [not null]
+  criada_em timestamptz [not null, default: `now()`]
+  checks {
+  `fim >= inicio` [name: 'chk_sprint_periodo']
+  }
+  indexes {
+    (inicio, fim)
+  }
+  Note: 'Sprints de trabalho do PROCOBAJA com duracao prevista de 15 dias; nao confundir com sprints de desenvolvimento. Validar duracao na aplicacao.'
+}
+
+Table atividades {
+  id bigint [pk, increment]
+  titulo varchar(180) [not null]
+  descricao text
+  status estado_atividade [not null, default: 'NAO_INICIADA']
+  prioridade prioridade_atividade [not null, default: 'MEDIA']
+  estimativa_fibonacci integer [note: 'Valores Fibonacci permitidos definidos pela aplicacao']
+  prazo date
+  criada_por_usuario_id bigint [not null]
+  criada_em timestamptz [not null, default: `now()`]
+  atualizada_em timestamptz
+  concluida_em timestamptz
+  indexes {
+    status
+    prazo
+    prioridade
+  }
+  Note: 'Atividade pode permanecer no backlog, sem linha ativa em atividades_sprints. Responsaveis e subsistemas sao N:N.'
+}
+
+Table atividades_responsaveis {
+  atividade_id bigint [not null]
+  usuario_id bigint [not null]
+  atribuido_em timestamptz [not null, default: `now()`]
+  indexes {
+    (atividade_id, usuario_id) [pk]
+    (usuario_id, atividade_id)
+  }
+  Note: 'Varios responsaveis de diferentes subsistemas.'
+}
+
+Table atividades_subsistemas {
+  atividade_id bigint [not null]
+  subsistema_id bigint [not null]
+  indexes {
+    (atividade_id, subsistema_id) [pk]
+    (subsistema_id, atividade_id)
+  }
+  Note: 'Uma atividade pode pertencer a varios subsistemas.'
+}
+
+Table atividades_sprints {
+  id bigint [pk, increment]
+  atividade_id bigint [not null]
+  sprint_id bigint [not null]
+  origem tipo_entrada_sprint [not null]
+  transferida_da_alocacao_id bigint
+  entrada_em timestamptz [not null, default: `now()`]
+  saida_em timestamptz
+  transferida_por_usuario_id bigint
+  motivo_transferencia text
+  indexes {
+    atividade_id
+    sprint_id
+    (sprint_id, saida_em)
+    (atividade_id, saida_em)
+    (id, atividade_id) [unique]
+  }
+  Note: 'Linha por passagem da atividade em uma sprint, mantendo a origem e as transferencias. Uma unica alocacao aberta por atividade e regra para indice parcial no PostgreSQL.'
+}
+
+Table historico_status_atividades {
+  id bigint [pk, increment]
+  atividade_id bigint [not null]
+  status_anterior estado_atividade
+  status_novo estado_atividade [not null]
+  alterado_por_usuario_id bigint [not null]
+  alterado_em timestamptz [not null, default: `now()`]
+  observacao text
+  Note: 'Historico dos cinco estados distintos do Kanban.'
+}
+
+// Categorias com tipo para evitar classificacao de receita como despesa e vice-versa.
+Table categorias_financeiras {
+  id bigint [pk, increment]
+  nome varchar(120) [not null]
+  tipo tipo_movimentacao [not null]
+  descricao text
+  ativo boolean [not null, default: true]
+  indexes {
+    (tipo, nome) [unique]
+    (id, tipo) [unique]
+  }
+  Note: 'Cadastro financeiro restrito. Exemplos: INSCRICAO, TRANSPORTE, HOSPEDAGEM, ALIMENTACAO, MATERIAIS para SAIDA; DOACAO, PATROCINIO, AUXILIO para ENTRADA. Nomes sao dados, nao enums.'
+}
+
+Table fornecedores {
+  id bigint [pk, increment]
+  nome varchar(180) [not null]
+  documento_fiscal varchar(20)
+  contato varchar(180)
+  site_url text
+  observacoes text
+  ativo boolean [not null, default: true]
+  Note: 'Fornecedores para cotacoes e compras. Documentos fiscais podem requerer tratamento de dados sensiveis.'
+}
+
+Table solicitacoes_compra {
+  id bigint [pk, increment]
+  titulo varchar(180) [not null]
+  descricao text
+  solicitante_usuario_id bigint [not null]
+  escopo escopo_compra [not null]
+  status status_compra [not null, default: 'PLANEJADA']
+  revisao_atual integer [not null, default: 1]
+  criada_em timestamptz [not null, default: `now()`]
+  enviada_em timestamptz
+  atualizada_em timestamptz
+  checks {
+  `revisao_atual >= 1` [name: 'chk_compra_revisao_positiva']
+  }
+  indexes {
+    status
+    solicitante_usuario_id
+  }
+  Note: 'Uma solicitacao com revisao_atual. Versoes dos itens, cotacoes, associacoes e aprovacoes sao associadas a revisoes_solicitacoes_compra. revisao_atual deve existir e acompanhar o historico transacionalmente.'
+}
+
+Table revisoes_solicitacoes_compra {
+  solicitacao_id bigint [not null]
+  numero_revisao integer [not null]
+  titulo_snapshot varchar(180) [not null]
+  descricao_snapshot text
+  escopo_snapshot escopo_compra [not null]
+  evento_id bigint [note: 'Evento/competicao relacionado a esta revisao; permite planejar antes da compra/pagamento']
+  criada_em timestamptz [not null, default: `now()`]
+  enviada_em timestamptz
+  observacoes text
+  indexes {
+    (solicitacao_id, numero_revisao) [pk]
+    evento_id
+  }
+  checks {
+    `numero_revisao >= 1` [name: 'chk_revisao_compra_positiva']
+  }
+  Note: 'Uma linha por rodada da solicitacao. Snapshot do escopo/descricao/evento e referencia comum para itens, subsistemas, cotacoes e aprovacoes. Revisoes enviadas devem ser imutaveis.'
+}
+
+Table solicitacoes_itens {
+  id bigint [pk, increment]
+  solicitacao_id bigint [not null]
+  descricao varchar(255) [not null]
+  quantidade numeric(12,3) [not null, default: 1]
+  unidade varchar(30)
+  link_referencia text
+  valor_unitario_estimado numeric(14,2)
+  observacoes text
+  revisao_solicitacao integer [not null, default: 1, note: 'Snapshot dos itens por revisao; preserva itens anteriores após reprovação']
+  checks {
+    `quantidade > 0` [name: 'chk_item_quantidade_positiva']
+    `valor_unitario_estimado IS NULL OR valor_unitario_estimado >= 0` [name: 'chk_item_valor_nao_negativo']
+    `revisao_solicitacao >= 1` [name: 'chk_item_revisao_valida']
+  }
+  indexes {
+    solicitacao_id
+    (solicitacao_id, revisao_solicitacao)
+  }
+  Note: 'Itens e valores estimados por revisao; jamais sobrescrever itens de revisoes anteriores. Nao expor precos em APIs administrativas nao financeiras.'
+}
+
+Table solicitacoes_compra_subsistemas {
+  solicitacao_id bigint [not null]
+  subsistema_id bigint [not null]
+  revisao_solicitacao integer [not null]
+  indexes {
+    (solicitacao_id, revisao_solicitacao, subsistema_id) [pk]
+    (subsistema_id, solicitacao_id)
+  }
+  Note: 'Associacao de subsistemas por revisao, sem rateio. Consultas de totais precisam evitar duplicar valores em associacoes N:N.'
+}
+
+Table orcamentos_compra {
+  id bigint [pk, increment]
+  solicitacao_id bigint [not null]
+  fornecedor_id bigint [not null]
+  revisao_solicitacao integer [not null]
+  link_orcamento text [not null]
+  valor_total numeric(14,2) [not null]
+  moeda char(3) [not null, default: 'BRL']
+  data_cotacao date
+  observacoes text
+  checks {
+  `valor_total >= 0` [name: 'chk_cotacao_valor']
+  `revisao_solicitacao >= 1` [name: 'chk_orcamento_revisao_valida']
+  }
+  indexes {
+    solicitacao_id
+    fornecedor_id
+    (id, solicitacao_id, revisao_solicitacao) [unique]
+  }
+  Note: 'Pelo menos 3 orcamentos na submissao de cada revisao; validacao transacional/backend. Nao e necessariamente um orcamento por item.'
+}
+
+Table aprovacoes_compra {
+  id bigint [pk, increment]
+  solicitacao_id bigint [not null]
+  revisao_solicitacao integer [not null]
+  papel_aprovador papel_aprovador [not null]
+  aprovador_usuario_id bigint [not null]
+  decisao decisao_aprovacao [not null]
+  justificativa text
+  decidido_em timestamptz [not null, default: `now()`]
+  indexes {
+    (solicitacao_id, revisao_solicitacao, papel_aprovador) [unique]
+  }
+  checks {
+    `decisao <> 'REPROVADA' OR (justificativa IS NOT NULL AND length(trim(justificativa)) > 0)` [name: 'chk_aprovacao_reprovada_justificada']
+  }
+  Note: 'Uma decisao por papel e por revisao. Apenas duas aprovacoes positivas (Capitao e Financeiro) liberam a compra.'
+}
+
+Table historico_solicitacoes_compra {
+  id bigint [pk, increment]
+  solicitacao_id bigint [not null]
+  revisao_solicitacao integer [not null]
+  status_anterior status_compra
+  status_novo status_compra [not null]
+  motivo text
+  alterado_por_usuario_id bigint [not null]
+  alterado_em timestamptz [not null, default: `now()`]
+  indexes {
+    solicitacao_id
+  }
+  checks {
+    `status_novo NOT IN ('REPROVADA', 'CANCELADA') OR (motivo IS NOT NULL AND length(trim(motivo)) > 0)` [name: 'chk_historico_justificativa_obrigatoria']
+  }
+  Note: 'Historico de status, reprovacao, reenvio e cancelamento. Preservar cada ciclo de aprovacao.'
+}
+
+Table compras {
+  id bigint [pk, increment]
+  solicitacao_id bigint [not null, unique]
+  revisao_aprovada integer [not null]
+  orcamento_escolhido_id bigint
+  realizada_em timestamptz
+  observacoes text
+  indexes {
+    revisao_aprovada
+  }
+  checks {
+    `realizada_em IS NULL OR orcamento_escolhido_id IS NOT NULL` [name: 'chk_compra_cotacao_realizacao']
+  }
+  Note: 'A cotacao escolhida deve pertencer a mesma solicitacao E revisao aprovada (FK composta). O fornecedor vem da cotacao escolhida. Validar dupla aprovacao antes de executar. Pagamento registrado como movimentacao de saida unica.'
+}
+
+Table movimentacoes_financeiras {
+  id bigint [pk, increment]
+  tipo tipo_movimentacao [not null]
+  categoria_id bigint [not null, note: 'Categoria compativel com tipo; conferir FK composta']
+  valor numeric(14,2) [not null]
+  descricao text [not null]
+  data_movimentacao date [not null]
+  compra_id bigint [note: 'Se preenchido, somente SAIDA. Unico registro ATIVO por compra via indice parcial do complemento SQL v4.']
+  evento_id bigint [note: 'Vinculo financeiro restrito com competicao ou evento']
+  situacao situacao_movimentacao [not null, default: 'ATIVA']
+  registrado_por_usuario_id bigint [not null]
+  criado_em timestamptz [not null, default: `now()`]
+  cancelada_por_usuario_id bigint
+  cancelada_em timestamptz
+  justificativa_cancelamento text
+  checks {
+  `valor > 0` [name: 'chk_movimentacao_valor_positivo']
+  `compra_id IS NULL OR tipo = 'SAIDA'` [name: 'chk_compra_debito']
+  `situacao <> 'CANCELADA' OR (cancelada_por_usuario_id IS NOT NULL AND cancelada_em IS NOT NULL AND justificativa_cancelamento IS NOT NULL AND length(trim(justificativa_cancelamento)) > 0)` [name: 'chk_cancelamento_rastreavel']
+  }
+  indexes {
+    data_movimentacao
+    tipo
+    evento_id
+    (id, tipo) [unique]
+    (categoria_id, data_movimentacao)
+    (compra_id, situacao)
+  }
+  Note: 'Registros nao devem ser apagados. Cancelamento com autor e motivo; substituir debito cancelado requer transacao, unicidade parcial ATIVA e regra de estado da compra. SQL complementar obrigatorio.'
+}
+
+Table previsoes_financeiras {
+  id bigint [pk, increment]
+  descricao varchar(255) [not null]
+  tipo tipo_movimentacao [not null]
+  categoria_id bigint [not null, note: 'Deve corresponder ao mesmo tipo da previsao']
+  situacao situacao_previsao_financeira [not null, default: 'PENDENTE']
+  movimentacao_efetiva_id bigint [unique, note: 'Quando REALIZADA, aponta para a movimentacao financeira efetiva, do mesmo tipo']
+  valor_estimado numeric(14,2) [not null]
+  data_prevista date [not null]
+  solicitacao_id bigint
+  evento_id bigint
+  criada_por_usuario_id bigint [not null]
+  cancelada_por_usuario_id bigint
+  cancelada_em timestamptz
+  motivo_cancelamento text
+  atualizada_em timestamptz
+  checks {
+    `valor_estimado >= 0` [name: 'chk_previsao_valor']
+    `(situacao = 'REALIZADA' AND movimentacao_efetiva_id IS NOT NULL) OR (situacao <> 'REALIZADA' AND movimentacao_efetiva_id IS NULL)` [name: 'chk_previsao_realizacao']
+    `situacao <> 'CANCELADA' OR (cancelada_em IS NOT NULL AND cancelada_por_usuario_id IS NOT NULL AND motivo_cancelamento IS NOT NULL AND length(trim(motivo_cancelamento)) > 0)` [name: 'chk_previsao_cancelamento']
+  }
+  indexes {
+    data_prevista
+    (situacao, data_prevista)
+    (categoria_id, data_prevista)
+    evento_id
+  }
+  Note: 'Previsao de caixa; somente PENDENTE compoe valores previstos, REALIZADA referencia movimentacao efetiva, CANCELADA preserva motivo. Vinculo 1:1 com movimentacao efetiva e simplificacao de escopo (parcelamentos pedem outra modelagem). Nao duplicar valores no dashboard.'
+}
+
+Table eventos {
+  id bigint [pk, increment]
+  tipo tipo_evento [not null]
+  nome varchar(200) [not null]
+  descricao text
+  inicio_em timestamptz [not null]
+  fim_em timestamptz
+  local_nome varchar(180)
+  cidade varchar(120)
+  uf varchar(2)
+  criado_por_usuario_id bigint [not null]
+  responsavel_principal_usuario_id bigint
+  criado_em timestamptz [not null, default: `now()`]
+  checks {
+    `fim_em IS NULL OR fim_em >= inicio_em` [name: 'chk_periodo_evento']
+  }
+  indexes {
+    tipo
+    inicio_em
+    (id, tipo) [unique]
+  }
+  Note: 'Superentidade para reunioes, competicoes e demais eventos. Nao armazenar valores monetarios nesta tabela.'
+}
+
+Table evento_responsaveis {
+  evento_id bigint [not null]
+  usuario_id bigint [not null]
+  indexes {
+    (evento_id, usuario_id) [pk]
+  }
+  Note: 'Controla os usuarios que podem atuar como responsaveis operacionais pelo evento.'
+}
+
+Table reunioes {
+  evento_id bigint [pk]
+  tipo_evento tipo_evento [not null, default: 'REUNIAO']
+  pauta text
+  resumo text
+  semanal boolean [not null, default: false]
+  checks {
+    `tipo_evento = 'REUNIAO'` [name: 'chk_subtipo_reuniao']
+  }
+  Note: 'Subtipo de evento tipo REUNIAO. Ata e documentos no modulo de Documentacao.'
+}
+
+Table reunioes_subsistemas {
+  reuniao_evento_id bigint [not null]
+  subsistema_id bigint [not null]
+  indexes {
+    (reuniao_evento_id, subsistema_id) [pk]
+  }
+  Note: 'Uma reuniao pode envolver um ou varios subsistemas.'
+}
+
+Table competicoes {
+  evento_id bigint [pk]
+  tipo_evento tipo_evento [not null, default: 'COMPETICAO']
+  edicao varchar(100)
+  desafio_tecnico text
+  modelo_veiculo varchar(160)
+  inscricao_inicio date
+  inscricao_fim date
+  observacoes text
+  checks {
+    `tipo_evento = 'COMPETICAO'` [name: 'chk_subtipo_competicao']
+    `inscricao_inicio IS NULL OR inscricao_fim IS NULL OR inscricao_fim >= inscricao_inicio` [name: 'chk_periodo_inscricao']
+  }
+  Note: 'Subtipo de evento tipo COMPETICAO. Custos de inscricao/logistica somente no modulo Financeiro.'
+}
+
+Table logistica_eventos {
+  id bigint [pk, increment]
+  evento_id bigint [not null]
+  tipo tipo_logistica [not null]
+  descricao text
+  local_referencia varchar(255)
+  inicio_em timestamptz
+  fim_em timestamptz
+  transporte_compartilhado boolean
+  equipe_parceira varchar(160)
+  auxilio_recebido boolean [not null, default: false, note: 'Indica apoio operacional sem informar valores financeiros']
+  instituicao_auxilio varchar(160) [note: 'Ex.: UTFPR, sem valor monetario']
+  descricao_auxilio text
+  observacoes text
+  checks {
+    `auxilio_recebido OR (instituicao_auxilio IS NULL AND descricao_auxilio IS NULL)` [name: 'chk_auxilio_coerente']
+    `fim_em IS NULL OR inicio_em IS NULL OR fim_em >= inicio_em` [name: 'chk_logistica_periodo']
+  }
+  indexes {
+    evento_id
+    tipo
+  }
+  Note: 'Transporte, hospedagem, alimentacao, inscricao e apoios/auxilios operacionais SEM precos; valores e entradas somente na gestao financeira. Auxilio_recebido nao cria lancamento automaticamente.'
+}
+
+Table inscricoes_competicao {
+  id bigint [pk, increment]
+  competicao_evento_id bigint [not null]
+  usuario_id bigint [not null]
+  status varchar(60)
+  data_inscricao date
+  observacoes text
+  indexes {
+    (competicao_evento_id, usuario_id) [unique]
+  }
+  Note: 'Inscricao de integrante em competicao; nao equivale a presenca efetiva em um evento.'
+}
+
+Table resultados_competicao {
+  id bigint [pk, increment]
+  competicao_evento_id bigint [not null]
+  modalidade varchar(140) [not null]
+  posicao integer
+  pontuacao numeric(12,3)
+  descricao text
+  Note: 'Resultados por prova, categoria ou modalidade, permitindo varios resultados por edicao.'
+}
+
+Table registros_presenca {
+  id bigint [pk, increment]
+  usuario_id bigint [not null]
+  subsistema_id bigint [not null, note: 'Snapshot do subsistema na data, mesmo se usuario mudar depois']
+  data_registro date [not null]
+  turno varchar(50) [not null]
+  hora_inicio time
+  hora_fim time
+  situacao situacao_presenca [not null]
+  justificativa text
+  observacoes text
+  registrado_por_usuario_id bigint [not null]
+  registrado_em timestamptz [not null, default: `now()`]
+  validado_por_usuario_id bigint
+  validado_em timestamptz
+  checks {
+    `((hora_inicio IS NULL AND hora_fim IS NULL) OR (hora_inicio IS NOT NULL AND hora_fim IS NOT NULL AND hora_fim > hora_inicio))` [name: 'chk_presenca_horarios_pareados']
+    `situacao = 'PRESENTE' OR (hora_inicio IS NULL AND hora_fim IS NULL)` [name: 'chk_presenca_ausencia_sem_horas']
+    `(validado_por_usuario_id IS NULL AND validado_em IS NULL) OR (validado_por_usuario_id IS NOT NULL AND validado_em IS NOT NULL)` [name: 'chk_presenca_validacao_pareada']
+  }
+  indexes {
+    (usuario_id, data_registro, turno) [unique]
+    subsistema_id
+    (subsistema_id, data_registro)
+    validado_em
+  }
+  Note: 'Lider registra turnos/justificativas; Gestor ou Capitao valida. Presenca pode existir sem horarios (somente frequencia); para calcular horas trabalhadas, informar ambos. Nao permitir horarios em ausencia. Horario de referencia 18h a 22h; frequencia derivada de registros validados.'
+}
+
+Table historico_registros_presenca {
+  id bigint [pk, increment]
+  registro_presenca_id bigint [not null]
+  alterado_por_usuario_id bigint [not null]
+  acao varchar(60) [not null]
+  dados_anteriores jsonb
+  dados_novos jsonb
+  motivo text
+  alterado_em timestamptz [not null, default: `now()`]
+  indexes {
+    registro_presenca_id
+  }
+  Note: 'Preserva alteracoes e validacoes sem apagar os registros anteriores. Conteudos sujeitos a autorizacao.'
+}
+
+Table diarios_atividades {
+  id bigint [pk, increment]
+  usuario_id bigint [not null]
+  data_atividade date [not null]
+  descricao text [not null]
+  registrado_em timestamptz [not null, default: `now()`]
+  validado_por_usuario_id bigint
+  validado_em timestamptz
+  observacao_validacao text
+  checks {
+    `(validado_por_usuario_id IS NULL AND validado_em IS NULL) OR (validado_por_usuario_id IS NOT NULL AND validado_em IS NOT NULL)` [name: 'chk_diario_validacao_pareada']
+  }
+  indexes {
+    usuario_id
+    data_atividade
+  }
+  Note: 'Preenchido pelo proprio Membro; somente Gestor/Capitao valida.'
+}
+
+Table participacoes_eventos {
+  id bigint [pk, increment]
+  evento_id bigint [not null]
+  usuario_id bigint [not null]
+  situacao situacao_participacao [not null]
+  justificativa text
+  registrada_por_usuario_id bigint [not null]
+  registrada_em timestamptz [not null, default: `now()`]
+  indexes {
+    (evento_id, usuario_id) [unique]
+    (usuario_id, evento_id)
+  }
+  Note: 'Presenca/participacao em reunioes, eventos e competicoes; a inscricao e um dado separado.'
+}
+
+Table registros_disciplinares {
+  id bigint [pk, increment]
+  usuario_id bigint [not null]
+  subsistema_id bigint
+  registrado_por_usuario_id bigint [not null]
+  tipo tipo_registro_pessoas [not null]
+  nivel_acesso nivel_registro_pessoas [not null]
+  descricao text [not null]
+  data_ocorrencia date [not null]
+  registrado_em timestamptz [not null, default: `now()`]
+  indexes {
+    usuario_id
+    nivel_acesso
+  }
+  Note: 'Lider pode registrar ocorrencia/advertencia confidencial mas NAO pode consulta-la depois. Backend aplica filtro antes de devolver qualquer campo.'
+}
+
+Table categorias_documentos {
+  id bigint [pk, increment]
+  nome varchar(120) [not null, unique]
+  descricao text
+  Note: 'Classificacao tematica do documento, separada do nivel de confidencialidade.'
+}
+
+Table documentos {
+  id bigint [pk, increment]
+  drive_file_id varchar(255) [not null, unique]
+  nome varchar(255) [not null]
+  mime_type varchar(180)
+  tamanho_bytes bigint
+  categoria_id bigint [not null]
+  confidencialidade confidencialidade_documento [not null]
+  enviado_por_usuario_id bigint
+  criado_no_drive_em timestamptz
+  cadastrado_no_erp_em timestamptz [not null, default: `now()`]
+  ultima_sincronizacao_em timestamptz
+  ativo boolean [not null, default: true]
+  indexes {
+    categoria_id
+    confidencialidade
+  }
+  Note: 'Somente metadados e referencia Google Drive. Nao colocar conteudo binario. Niveis COMUM/ADMIN_CONFIDENCIAL/FINANCEIRO_CONFIDENCIAL.'
+}
+
+Table versoes_documentos {
+  id bigint [pk, increment]
+  documento_id bigint [not null]
+  drive_revision_id varchar(255)
+  rotulo_versao varchar(120)
+  modificado_no_drive_em timestamptz
+  modificado_por_usuario_id bigint
+  observacoes text
+  indexes {
+    (documento_id, drive_revision_id) [unique]
+  }
+  Note: 'Historico de versoes segundo o Drive, inclusive arquivos preexistentes. Revisoes so existem quando expostas pela API.'
+}
+
+Table documentos_subsistemas {
+  documento_id bigint [not null]
+  subsistema_id bigint [not null]
+  indexes {
+    (documento_id, subsistema_id) [pk]
+  }
+  Note: 'Associacao NAO concede permissao sobre documentos confidenciais.'
+}
+
+Table documentos_atividades {
+  documento_id bigint [not null]
+  atividade_id bigint [not null]
+  indexes {
+    (documento_id, atividade_id) [pk]
+  }
+  Note: 'Relaciona documentos a tarefas sem alterar ACL.'
+}
+
+Table documentos_eventos {
+  documento_id bigint [not null]
+  evento_id bigint [not null]
+  indexes {
+    (documento_id, evento_id) [pk]
+  }
+  Note: 'Cobre reunioes, eventos e competicoes por meio da superentidade eventos.'
+}
+
+Table documentos_compras {
+  documento_id bigint [not null]
+  compra_id bigint [not null]
+  tipo varchar(40) [not null, note: 'Ex.: NOTA_FISCAL, COMPROVANTE, OUTRO']
+  indexes {
+    (documento_id, compra_id) [pk]
+  }
+  Note: 'Associacao de notas fiscais e comprovantes de compras; documentos financeiros mantem restricoes financeiras.'
+}
+
+Table solicitacoes_exclusao_documentos {
+  id bigint [pk, increment]
+  documento_id bigint [not null]
+  solicitante_usuario_id bigint [not null]
+  motivo text [not null]
+  status status_exclusao_documento [not null, default: 'PENDENTE']
+  solicitada_em timestamptz [not null, default: `now()`]
+  analisada_por_usuario_id bigint
+  analisada_em timestamptz
+  justificativa_decisao text
+  indexes {
+    documento_id
+    status
+  }
+  Note: 'Lider solicita; Gestor/Capitao autorizado analisa e executa. Excluir no Drive com tratamento de falhas.'
+}
+
+Table documentos_governanca {
+  id bigint [pk, increment]
+  titulo varchar(200) [not null]
+  tipo varchar(100) [not null]
+  descricao text
+  criado_por_usuario_id bigint [not null]
+  criado_em timestamptz [not null, default: `now()`]
+  ativo boolean [not null, default: true]
+  Note: 'Documento oficial do PROCOBAJA; manter todas as versoes e nunca apagar aceite historico.'
+}
+
+Table versoes_governanca {
+  id bigint [pk, increment]
+  documento_governanca_id bigint [not null]
+  numero_versao integer [not null]
+  conteudo text [not null]
+  status status_versao_governanca [not null, default: 'RASCUNHO']
+  criada_por_usuario_id bigint [not null]
+  criada_em timestamptz [not null, default: `now()`]
+  aprovada_por_usuario_id bigint
+  aprovada_em timestamptz
+  publicada_em timestamptz
+  indexes {
+    (documento_governanca_id, numero_versao) [unique]
+    status
+  }
+  checks {
+    `numero_versao >= 1` [name: 'chk_numero_versao_positivo']
+    `status <> 'PUBLICADA' OR (aprovada_por_usuario_id IS NOT NULL AND aprovada_em IS NOT NULL AND publicada_em IS NOT NULL)` [name: 'chk_versao_publicada_aprovada']
+  }
+  Note: 'Somente Capitao pode aprovar/publicar; demais perfis so consultam versoes publicadas. Versao publicada imutavel.'
+}
+
+Table historico_edicoes_governanca {
+  id bigint [pk, increment]
+  versao_governanca_id bigint [not null]
+  editado_por_usuario_id bigint [not null]
+  resumo_alteracao text [not null]
+  registrado_em timestamptz [not null, default: `now()`]
+  Note: 'Rastreia edicoes de rascunhos e alteracoes historicas.'
+}
+
+Table aceites_governanca {
+  id bigint [pk, increment]
+  versao_governanca_id bigint [not null]
+  usuario_id bigint [not null]
+  ciencia_em timestamptz
+  aceite_em timestamptz
+  indexes {
+    (versao_governanca_id, usuario_id) [unique]
+  }
+  Note: 'Ciência e aceite vinculados a usuario e versao; a versao deve estar PUBLICADA.'
+}
+
+Table logs_auditoria {
+  id bigint [pk, increment]
+  ator_usuario_id bigint
+  entidade varchar(100) [not null]
+  registro_id bigint [not null]
+  acao varchar(100) [not null]
+  detalhes_json jsonb [note: 'NAO guardar segredos, senhas ou dados financeiros desnecessarios']
+  registrado_em timestamptz [not null, default: `now()`]
+  indexes {
+    (entidade, registro_id)
+    registrado_em
+  }
+  Note: 'Rastreabilidade transversal; par (entidade, registro_id) e polimorfico e nao possui FK real. Proteger consultas aos logs.'
+}
+
+// Relacionamentos reais por chaves estrangeiras (sem FKs polimorficas ficticias)
+Ref: perfil_permissoes.perfil_id > perfis.id [delete: restrict]
+Ref: perfil_permissoes.permissao_id > permissoes.id [delete: restrict]
+Ref: usuarios.perfil_id > perfis.id [delete: restrict]
+Ref: usuarios.subsistema_id > subsistemas.id [delete: restrict]
+Ref: subsistemas.(lider_usuario_id, id) > usuarios.(id, subsistema_id) [delete: restrict]
+Ref: vinculos_financeiro_gestor.financeiro_usuario_id > usuarios.id [delete: restrict]
+Ref: vinculos_financeiro_gestor.gestor_usuario_id > usuarios.id [delete: restrict]
+Ref: vinculos_financeiro_gestor.definido_por_usuario_id > usuarios.id [delete: restrict]
+Ref: sprints.criada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: atividades.criada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: atividades_responsaveis.atividade_id > atividades.id [delete: restrict]
+Ref: atividades_responsaveis.usuario_id > usuarios.id [delete: restrict]
+Ref: atividades_subsistemas.atividade_id > atividades.id [delete: restrict]
+Ref: atividades_subsistemas.subsistema_id > subsistemas.id [delete: restrict]
+Ref: atividades_sprints.atividade_id > atividades.id [delete: restrict]
+Ref: atividades_sprints.sprint_id > sprints.id [delete: restrict]
+Ref: atividades_sprints.(transferida_da_alocacao_id, atividade_id) > atividades_sprints.(id, atividade_id) [delete: restrict]
+Ref: atividades_sprints.transferida_por_usuario_id > usuarios.id [delete: restrict]
+Ref: historico_status_atividades.atividade_id > atividades.id [delete: restrict]
+Ref: historico_status_atividades.alterado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: solicitacoes_compra.solicitante_usuario_id > usuarios.id [delete: restrict]
+Ref: revisoes_solicitacoes_compra.evento_id > eventos.id [delete: restrict]
+Ref: revisoes_solicitacoes_compra.solicitacao_id > solicitacoes_compra.id [delete: restrict]
+Ref: solicitacoes_itens.(solicitacao_id, revisao_solicitacao) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: solicitacoes_compra_subsistemas.(solicitacao_id, revisao_solicitacao) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: solicitacoes_compra_subsistemas.subsistema_id > subsistemas.id [delete: restrict]
+Ref: orcamentos_compra.(solicitacao_id, revisao_solicitacao) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: orcamentos_compra.fornecedor_id > fornecedores.id [delete: restrict]
+Ref: aprovacoes_compra.(solicitacao_id, revisao_solicitacao) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: aprovacoes_compra.aprovador_usuario_id > usuarios.id [delete: restrict]
+Ref: historico_solicitacoes_compra.(solicitacao_id, revisao_solicitacao) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: historico_solicitacoes_compra.alterado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: compras.(solicitacao_id, revisao_aprovada) > revisoes_solicitacoes_compra.(solicitacao_id, numero_revisao) [delete: restrict]
+Ref: compras.(orcamento_escolhido_id, solicitacao_id, revisao_aprovada) > orcamentos_compra.(id, solicitacao_id, revisao_solicitacao) [delete: restrict]
+Ref: movimentacoes_financeiras.compra_id > compras.id [delete: restrict]
+Ref: movimentacoes_financeiras.(categoria_id, tipo) > categorias_financeiras.(id, tipo) [delete: restrict]
+Ref: previsoes_financeiras.(categoria_id, tipo) > categorias_financeiras.(id, tipo) [delete: restrict]
+Ref: previsoes_financeiras.(movimentacao_efetiva_id, tipo) > movimentacoes_financeiras.(id, tipo) [delete: restrict]
+Ref: previsoes_financeiras.cancelada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: movimentacoes_financeiras.registrado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: movimentacoes_financeiras.cancelada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: previsoes_financeiras.solicitacao_id > solicitacoes_compra.id [delete: restrict]
+Ref: previsoes_financeiras.criada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: eventos.criado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: eventos.responsavel_principal_usuario_id > usuarios.id [delete: restrict]
+Ref: evento_responsaveis.evento_id > eventos.id [delete: restrict]
+Ref: evento_responsaveis.usuario_id > usuarios.id [delete: restrict]
+Ref: reunioes.(evento_id, tipo_evento) > eventos.(id, tipo) [delete: restrict]
+Ref: reunioes_subsistemas.reuniao_evento_id > reunioes.evento_id [delete: restrict]
+Ref: reunioes_subsistemas.subsistema_id > subsistemas.id [delete: restrict]
+Ref: competicoes.(evento_id, tipo_evento) > eventos.(id, tipo) [delete: restrict]
+Ref: logistica_eventos.evento_id > eventos.id [delete: restrict]
+Ref: inscricoes_competicao.competicao_evento_id > competicoes.evento_id [delete: restrict]
+Ref: inscricoes_competicao.usuario_id > usuarios.id [delete: restrict]
+Ref: resultados_competicao.competicao_evento_id > competicoes.evento_id [delete: restrict]
+Ref: movimentacoes_financeiras.evento_id > eventos.id [delete: restrict]
+Ref: previsoes_financeiras.evento_id > eventos.id [delete: restrict]
+Ref: registros_presenca.usuario_id > usuarios.id [delete: restrict]
+Ref: registros_presenca.subsistema_id > subsistemas.id [delete: restrict]
+Ref: registros_presenca.registrado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: registros_presenca.validado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: historico_registros_presenca.registro_presenca_id > registros_presenca.id [delete: restrict]
+Ref: historico_registros_presenca.alterado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: diarios_atividades.usuario_id > usuarios.id [delete: restrict]
+Ref: diarios_atividades.validado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: participacoes_eventos.evento_id > eventos.id [delete: restrict]
+Ref: participacoes_eventos.usuario_id > usuarios.id [delete: restrict]
+Ref: participacoes_eventos.registrada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: registros_disciplinares.usuario_id > usuarios.id [delete: restrict]
+Ref: registros_disciplinares.subsistema_id > subsistemas.id [delete: restrict]
+Ref: registros_disciplinares.registrado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: documentos.categoria_id > categorias_documentos.id [delete: restrict]
+Ref: documentos.enviado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: versoes_documentos.documento_id > documentos.id [delete: restrict]
+Ref: versoes_documentos.modificado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: documentos_subsistemas.documento_id > documentos.id [delete: restrict]
+Ref: documentos_subsistemas.subsistema_id > subsistemas.id [delete: restrict]
+Ref: documentos_atividades.documento_id > documentos.id [delete: restrict]
+Ref: documentos_atividades.atividade_id > atividades.id [delete: restrict]
+Ref: documentos_eventos.documento_id > documentos.id [delete: restrict]
+Ref: documentos_eventos.evento_id > eventos.id [delete: restrict]
+Ref: documentos_compras.documento_id > documentos.id [delete: restrict]
+Ref: documentos_compras.compra_id > compras.id [delete: restrict]
+Ref: solicitacoes_exclusao_documentos.documento_id > documentos.id [delete: restrict]
+Ref: solicitacoes_exclusao_documentos.solicitante_usuario_id > usuarios.id [delete: restrict]
+Ref: solicitacoes_exclusao_documentos.analisada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: documentos_governanca.criado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: versoes_governanca.documento_governanca_id > documentos_governanca.id [delete: restrict]
+Ref: versoes_governanca.criada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: versoes_governanca.aprovada_por_usuario_id > usuarios.id [delete: restrict]
+Ref: historico_edicoes_governanca.versao_governanca_id > versoes_governanca.id [delete: restrict]
+Ref: historico_edicoes_governanca.editado_por_usuario_id > usuarios.id [delete: restrict]
+Ref: aceites_governanca.versao_governanca_id > versoes_governanca.id [delete: restrict]
+Ref: aceites_governanca.usuario_id > usuarios.id [delete: restrict]
+Ref: logs_auditoria.ator_usuario_id > usuarios.id [delete: restrict]
+
+TableGroup "01 - Equipe e Subsistemas" [color: #4E79A7] {
+  perfis
+  permissoes
+  perfil_permissoes
+  usuarios
+  subsistemas
+  vinculos_financeiro_gestor
+}
+
+TableGroup "02 - Atividades e Sprints" [color: #59A14F] {
+  sprints
+  atividades
+  atividades_responsaveis
+  atividades_subsistemas
+  atividades_sprints
+  historico_status_atividades
+}
+
+TableGroup "03 - Gestao Financeira" [color: #F28E2B] {
+  categorias_financeiras
+  fornecedores
+  solicitacoes_compra
+  revisoes_solicitacoes_compra
+  solicitacoes_itens
+  solicitacoes_compra_subsistemas
+  orcamentos_compra
+  aprovacoes_compra
+  historico_solicitacoes_compra
+  compras
+  movimentacoes_financeiras
+  previsoes_financeiras
+}
+
+TableGroup "04 - Pessoas e Participacao" [color: #B07AA1] {
+  registros_presenca
+  historico_registros_presenca
+  diarios_atividades
+  participacoes_eventos
+  registros_disciplinares
+}
+
+TableGroup "05 - Documentacao" [color: #76B7B2] {
+  categorias_documentos
+  documentos
+  versoes_documentos
+  documentos_subsistemas
+  documentos_atividades
+  documentos_eventos
+  documentos_compras
+  solicitacoes_exclusao_documentos
+}
+
+TableGroup "06 - Competicoes e Eventos" [color: #E15759] {
+  eventos
+  evento_responsaveis
+  reunioes
+  reunioes_subsistemas
+  competicoes
+  logistica_eventos
+  inscricoes_competicao
+  resultados_competicao
+}
+
+TableGroup "07 - Governanca" [color: #9C755F] {
+  documentos_governanca
+  versoes_governanca
+  historico_edicoes_governanca
+  aceites_governanca
+}
+
+TableGroup "09 - Auditoria Transversal" [color: #797979] {
+  logs_auditoria
+}
+
+DiagramView "00 - Geral completo" {
+  Tables {
+    *
+  }
+  TableGroups { * }
+}
+
+DiagramView "00 - Visao geral (entidades centrais)" {
+  Tables {
+    perfis
+    usuarios
+    subsistemas
+    vinculos_financeiro_gestor
+    sprints
+    atividades
+    solicitacoes_compra
+    revisoes_solicitacoes_compra
+    compras
+    movimentacoes_financeiras
+    categorias_financeiras
+    registros_presenca
+    diarios_atividades
+    eventos
+    competicoes
+    documentos
+    documentos_governanca
+    versoes_governanca
+  }
+}
+
+DiagramView "01 - Equipe e Subsistemas" {
+  Tables {
+    perfis
+    permissoes
+    perfil_permissoes
+    usuarios
+    subsistemas
+    vinculos_financeiro_gestor
+  }
+}
+
+DiagramView "02 - Atividades e Sprints" {
+  Tables {
+    sprints
+    atividades
+    atividades_responsaveis
+    atividades_subsistemas
+    atividades_sprints
+    historico_status_atividades
+    usuarios
+    subsistemas
+  }
+}
+
+DiagramView "03 - Gestao Financeira" {
+  Tables {
+    categorias_financeiras
+    fornecedores
+    solicitacoes_compra
+    revisoes_solicitacoes_compra
+    solicitacoes_itens
+    solicitacoes_compra_subsistemas
+    orcamentos_compra
+    aprovacoes_compra
+    historico_solicitacoes_compra
+    compras
+    movimentacoes_financeiras
+    previsoes_financeiras
+    usuarios
+    subsistemas
+    eventos
+    documentos_compras
+    documentos
+  }
+}
+
+DiagramView "04 - Pessoas e Participacao" {
+  Tables {
+    registros_presenca
+    historico_registros_presenca
+    diarios_atividades
+    participacoes_eventos
+    registros_disciplinares
+    usuarios
+    subsistemas
+    eventos
+    reunioes
+    reunioes_subsistemas
+  }
+}
+
+DiagramView "05 - Documentacao" {
+  Tables {
+    categorias_documentos
+    documentos
+    versoes_documentos
+    documentos_subsistemas
+    documentos_atividades
+    documentos_eventos
+    documentos_compras
+    solicitacoes_exclusao_documentos
+    usuarios
+    subsistemas
+    atividades
+    eventos
+    compras
+  }
+}
+
+DiagramView "06 - Competicoes e Eventos" {
+  Tables {
+    eventos
+    evento_responsaveis
+    reunioes
+    reunioes_subsistemas
+    competicoes
+    logistica_eventos
+    inscricoes_competicao
+    resultados_competicao
+    usuarios
+    subsistemas
+    participacoes_eventos
+    documentos_eventos
+    documentos
+    movimentacoes_financeiras
+    categorias_financeiras
+    previsoes_financeiras
+    revisoes_solicitacoes_compra
+  }
+}
+
+DiagramView "07 - Governanca" {
+  Tables {
+    documentos_governanca
+    versoes_governanca
+    historico_edicoes_governanca
+    aceites_governanca
+    usuarios
+  }
+}
+
+DiagramView "08 - Dashboard e Indicadores" {
+  Tables {
+    usuarios
+    perfis
+    subsistemas
+    sprints
+    atividades
+    atividades_sprints
+    registros_presenca
+    diarios_atividades
+    participacoes_eventos
+    eventos
+    solicitacoes_compra
+    revisoes_solicitacoes_compra
+    compras
+    movimentacoes_financeiras
+    categorias_financeiras
+    previsoes_financeiras
+    documentos
+    versoes_governanca
+  }
+}
+
+DiagramView "09 - Auditoria e Integracoes" {
+  Tables {
+    logs_auditoria
+    usuarios
+    historico_status_atividades
+    historico_solicitacoes_compra
+    historico_registros_presenca
+    historico_edicoes_governanca
+    versoes_documentos
+  }
+}
