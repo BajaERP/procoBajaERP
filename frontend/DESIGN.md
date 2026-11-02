@@ -255,7 +255,7 @@ Four values in active use. Pick from the list; don't invent new ones.
 
 ## Components
 
-### Logo (`src/components/Logo.tsx`)
+### Logo (`src/components/shared/Logo.tsx`)
 
 **`LogoMark`** — the boar logo. Two variants:
 
@@ -297,7 +297,7 @@ subtitle. Optional composite, currently unused.
 - Keep scrollbars thin and visible instead of revealing them only on hover.
 - Use the semantic `ash` token for the thumb so it remains visible in both themes.
 
-### Sidebar (`src/components/Sidebar.tsx`)
+### Sidebar (`src/components/layout/Sidebar.tsx`)
 
 - 4px `border-l-4 border-red` strip on the left edge (always visible).
 - Header (56px): boar logo (28px) + "Proco Baja" wordmark when expanded;
@@ -309,18 +309,19 @@ subtitle. Optional composite, currently unused.
 - Collapsed toggle: chevron sits in the header (when expanded) or as a
   separate button below the header (when collapsed).
 
-### TopBar (`src/components/TopBar.tsx`)
+### TopBar (`src/components/layout/TopBar.tsx`)
 
 - `h-14 border-b border-hairline bg-canvas dark:bg-surface-chrome-dark`.
 - Left: breadcrumbs (text-xs text-mute, slash separators). The page owns its
   single `<h1>` in the main content.
 - Right: profile menu trigger with a 28px red avatar inside a 44px hit target.
+- Theme preference remains in Configurações; the header has no theme switcher.
 - Profile menu: 240px wide (`w-60`) dropdown with user info, Configurações
   action, and Sair action (`text-red hover:bg-red/5`). It uses normal tab order.
 
 ### Cards & surfaces
 
-**KPI tile** — metric card on GestaoPage
+**KPI tile** — metric card pattern
 - `bg-canvas dark:bg-surface-card-dark border border-hairline rounded-lg p-5`.
 - Big number (text-2xl font-semibold text-ink) + label (text-xs text-mute uppercase).
 - 4-up at desktop, 2-up at tablet, 1-up at mobile.

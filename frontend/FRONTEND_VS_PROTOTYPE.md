@@ -6,10 +6,8 @@ Este documento compara o app em `src/` com o protótipo empacotado em
 ## Frontend integrado
 
 - O shell tem navegação responsiva, barra superior e páginas Welcome/Login.
-- A tela Gestão apresenta dados fictícios em memória e abas de membros,
-  presenças, reuniões e subsistemas.
 - Configurações permite escolher tema claro, escuro ou acompanhar o sistema.
-- Dashboard, Equipe, Atividades, Financeiro, Competições e Documentação
+- Gestão, Dashboard, Equipe, Atividades, Financeiro, Competições e Documentação
   continuam como páginas “Em construção”.
 - O login aceita RA e senha não vazios apenas para demonstração local. Não há
   API conectada, autenticação real nem controle de acesso no backend.

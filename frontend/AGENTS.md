@@ -1,8 +1,8 @@
 # ProcoBaja ERP — Frontend Guide
 
 Frontend React + Vite + TypeScript + Tailwind CSS v4. The integrated app is
-still a prototype: Gestão uses in-memory demonstration data, while Dashboard,
-Equipe, Atividades, Financeiro, Competições and Documentação are placeholders.
+still a prototype: Gestão, Dashboard, Equipe, Atividades, Financeiro,
+Competições and Documentação are placeholders.
 
 ## Stack and commands
 
@@ -24,18 +24,21 @@ npm run preview
 ## App structure
 
 - `src/app/`: hash routes, authenticated demo shell and mobile navigation.
-- `src/components/`: sidebar, top bar, logo, icons and shared placeholder.
+- `src/components/layout/`: sidebar and top bar shared by authenticated pages.
+- `src/components/shared/`: reusable logo and placeholder components.
+- `src/components/login/` and `src/components/configuracoes/`: page-specific sections.
+  Keep components near their page until reuse justifies moving them to `shared/`.
+- `src/pages/`: compose sections and coordinate route-level data and navigation.
 - `src/contexts/`: local demonstration session and theme preference.
-- `src/pages/`: Welcome, Login, Gestão, Configurações and placeholder routes.
 - `src/styles.css`: Tailwind v4 tokens, dark-mode tokens and global behavior.
 
-Routes live under `/app/*`. The default post-login destination is Gestão;
+Routes live under `/app/*`. The default post-login destination is Dashboard;
 protected deep links are restored after the demonstration form is submitted.
 
 ## Current backend and session limits
 
 The Spring Boot service has no application API or authentication endpoints yet.
-`AuthContext` accepts any non-empty RA and password and stores a local demo
+`AuthContext` accepts a numeric RA and any non-empty password and stores a local demo
 session. This is only for previewing the interface; it is not authentication,
 authorization or a security boundary. Do not present client-side state as
 protection for financial or personal data.
@@ -53,11 +56,8 @@ protection for financial or personal data.
   add explicit dark variants to semantic status colors.
 - Use `rounded-md`, `rounded-lg`, `rounded-2xl` only for the login card, and
   `rounded-full`. Avoid arbitrary radii and card shadows.
-- Keep labels in Brazilian Portuguese. Use the inline SVGs in
-  `src/components/icons.tsx`; do not add an icon dependency.
+- Keep labels in Brazilian Portuguese. Use icons from `lucide-react`; preserve the ProcoBaja logo assets.
 
 ## Figma reference
 
-`prototipacao_erp_procobaja/Prototipação ERP ProcoBaja.zip` is a read-only
-design reference. It is separate from the integrated frontend; do not edit
-the ZIP or treat its screens as implemented routes.
+https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1
