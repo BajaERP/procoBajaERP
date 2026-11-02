@@ -42,7 +42,7 @@ Perfil do Integrante que coordena um Subsistema: gerencia suas Atividades e regi
 Perfil do Integrante que executa Atividades, escreve seu Diário de atividades e pode abrir Solicitações de compra.
 
 **Orientador**:
-Perfil do professor que acompanha o projeto apenas por consulta a informações não confidenciais.
+Perfil do professor que acompanha o projeto com acesso às informações não confidenciais disponibilizadas ao seu perfil; no módulo de Documentação, pode enviar arquivos conforme as permissões previstas.
 
 **Subsistema**:
 Divisão interna da equipe, técnica ou administrativa, coordenada por um Líder que também é seu Integrante; cada Integrante pertence a no máximo um por vez.
@@ -238,6 +238,9 @@ Confirmação de um Usuário de que conhece e aceita uma Versão de governança 
 
 **Não concluída × Não iniciada**:
 O Documento de Projeto lista "Não concluída" como Estado da atividade, mas não diz quando uma Atividade entra nele nem como ele difere de "Não iniciada" e "Pausada".
+
+**Documento financeiro confidencial × acesso do Gestor**:
+A tabela de permissões de Documentação menciona uma possível permissão específica para acesso do Gestor, enquanto as regras financeiras gerais restringem seu acesso a informações financeiras. O PDF não define a exceção; consulte `docs/projeto/modulos/documentacao.md` e valide com a equipe antes de conceder acesso.
 
 **Ocorrência × Advertência**:
 O Documento de Projeto não define o que diferencia uma Ocorrência de uma Advertência.
