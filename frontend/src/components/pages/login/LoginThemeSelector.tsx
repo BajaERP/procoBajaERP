@@ -1,4 +1,4 @@
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../../contexts/ThemeContext'
 
 export function LoginThemeSelector() {
 	const { theme, setPreference } = useTheme()

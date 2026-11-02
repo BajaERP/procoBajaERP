@@ -1,4 +1,4 @@
-import type { AuthUser } from '../../contexts/AuthContext'
+import type { AuthUser } from '../../../contexts/AuthContext'
 import { LogOut as LogoutIcon } from 'lucide-react'
 
 const ROLE_LABELS = {

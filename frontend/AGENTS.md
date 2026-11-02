@@ -28,7 +28,7 @@ npm run format:check # Verify formatting without modifying files
 - `src/app/`: hash routes, authenticated demo shell and mobile navigation.
 - `src/components/layout/`: sidebar and top bar shared by authenticated pages.
 - `src/components/shared/`: reusable logo and placeholder components.
-- `src/components/login/` and `src/components/configuracoes/`: page-specific sections.
+- `src/components/pages/login/` and `src/components/pages/configuracoes/`: page-specific sections.
   Keep components near their page until reuse justifies moving them to `shared/`.
 - `src/pages/`: compose sections and coordinate route-level data and navigation.
 - `src/contexts/`: local demonstration session and theme preference.

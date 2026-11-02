@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../../contexts/AuthContext'
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 	const { login } = useAuth()

@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LoginBrand } from '../components/login/LoginBrand'
-import { LoginForm } from '../components/login/LoginForm'
-import { LoginThemeSelector } from '../components/login/LoginThemeSelector'
+import { LoginBrand } from '../components/pages/login/LoginBrand'
+import { LoginForm } from '../components/pages/login/LoginForm'
+import { LoginThemeSelector } from '../components/pages/login/LoginThemeSelector'
 
 export default function LoginPage() {
 	const navigate = useNavigate()

@@ -1,4 +1,4 @@
-import logo from '../../assets/procobaja-sem-fundo.svg'
+import logo from '../../../assets/procobaja-sem-fundo.svg'
 
 export function LoginBrand() {
 	return (

@@ -1,4 +1,4 @@
-import type { ThemePreference } from '../../contexts/ThemeContext'
+import type { ThemePreference } from '../../../contexts/ThemeContext'
 import { Moon as MoonIcon, Sun as SunIcon } from 'lucide-react'
 
 export function AparenciaSection({
