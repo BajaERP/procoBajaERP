@@ -6,10 +6,10 @@ código-fonte como volume.
 
 Os arquivos usados neste ambiente são:
 
-- [`compose.yaml`](../compose.yaml): configurações comuns dos serviços;
-- [`compose.prod.yaml`](../compose.prod.yaml): targets de produção, portas e política de reinício;
-- [`.env.example`](../.env.example): exemplo das variáveis de ambiente;
-- [`scripts/backup-postgres.sh`](../scripts/backup-postgres.sh): backup do PostgreSQL.
+- [`compose.yaml`](../../../compose.yaml): configurações comuns dos serviços;
+- [`compose.prod.yaml`](../../../compose.prod.yaml): targets de produção, portas e política de reinício;
+- [`.env.example`](../../../.env.example): exemplo das variáveis de ambiente;
+- [`scripts/backup-postgres.sh`](../../../scripts/backup-postgres.sh): backup do PostgreSQL.
 
 ## Pré-requisitos
 
@@ -144,7 +144,7 @@ dados. Backups externos são obrigatórios.
 
 ## Backup do PostgreSQL
 
-O script [`scripts/backup-postgres.sh`](../scripts/backup-postgres.sh) executa
+O script [`scripts/backup-postgres.sh`](../../../scripts/backup-postgres.sh) executa
 `pg_dump` dentro do container do PostgreSQL e grava dumps no diretório definido
 por `BACKUP_DIR`. Use um caminho fora do volume principal:
 

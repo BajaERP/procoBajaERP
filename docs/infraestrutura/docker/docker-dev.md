@@ -4,9 +4,9 @@ Este guia explica como executar o projeto localmente usando Docker Compose.
 
 Os arquivos usados neste ambiente são:
 
-- [`compose.yaml`](../compose.yaml): configurações comuns dos serviços;
-- [`compose.dev.yaml`](../compose.dev.yaml): volumes, portas e comandos de desenvolvimento;
-- [`.env.example`](../.env.example): exemplo das variáveis de ambiente.
+- [`compose.yaml`](../../../compose.yaml): configurações comuns dos serviços;
+- [`compose.dev.yaml`](../../../compose.dev.yaml): volumes, portas e comandos de desenvolvimento;
+- [`.env.example`](../../../.env.example): exemplo das variáveis de ambiente.
 
 ## Pré-requisitos
 
@@ -24,8 +24,8 @@ Execute os comandos a partir da raiz do projeto, onde estão os arquivos
 ## Frontend
 
 O frontend usa React `19.3.0`, TypeScript `7.0.2` e Vite `8.3.0`. Os arquivos
-de dependência ficam em [`frontend/package.json`](../frontend/package.json) e
-[`frontend/package-lock.json`](../frontend/package-lock.json).
+de dependência ficam em [`frontend/package.json`](../../../frontend/package.json) e
+[`frontend/package-lock.json`](../../../frontend/package-lock.json).
 
 Para executar o frontend diretamente na máquina, sem Compose:
 
