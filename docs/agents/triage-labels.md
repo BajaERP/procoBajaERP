@@ -1,15 +1,13 @@
-# Triage Labels
+# Etiquetas de triagem
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+As skills usam os cinco estados abaixo na linha `Status:` das issues locais. Os nomes no projeto correspondem aos nomes usados pelas skills.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
-| -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                  | `wontfix`            | Will not be actioned                     |
+| Estado | Significado |
+| --- | --- |
+| `needs-triage` | A issue precisa ser avaliada. |
+| `needs-info` | A issue aguarda informações de quem a abriu. |
+| `ready-for-agent` | A issue está especificada e pronta para um agente trabalhar de forma autônoma. |
+| `ready-for-human` | A implementação precisa ser feita por uma pessoa. |
+| `wontfix` | A issue não será atendida. |
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
-
-Edit the right-hand column to match whatever vocabulary you actually use.
+Os estados de execução do Wayfinding são específicos desse fluxo; consulte [issue-tracker.md](issue-tracker.md).
