@@ -34,8 +34,7 @@ código-fonte nem `node_modules` como volume em produção.
 
 ## Preparar o ambiente
 
-Execute os comandos a partir da raiz do projeto e crie o arquivo `.env` no
-servidor:
+Execute os comandos a partir da raiz do projeto. Se o servidor ainda não tiver um `.env`, crie-o a partir do exemplo; preserve o arquivo existente em atualizações:
 
 ```bash
 cp .env.example .env

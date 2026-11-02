@@ -40,7 +40,7 @@ O Docker executa esse mesmo fluxo no target de desenvolvimento e mantém
 
 ## Configurar o ambiente
 
-Crie o arquivo local de variáveis a partir do exemplo:
+Se ainda não existir um `.env` local, crie-o a partir do exemplo:
 
 ```bash
 cp .env.example .env
@@ -111,9 +111,16 @@ No desenvolvimento, o código local é montado dentro dos containers:
 - `node_modules` do frontend fica em um volume separado;
 - o cache Maven fica em um volume separado.
 
-Assim, alterações no código-fonte são refletidas sem reconstruir a imagem. Se
-alterar `package.json`, `package-lock.json`, o `Dockerfile` ou alguma
-dependência da imagem, reconstrua os serviços com `up --build`.
+Assim, alterações no código-fonte são refletidas sem reconstruir a imagem. Mudanças no `Dockerfile` ou nas dependências da imagem exigem reconstrução. O volume nomeado de `node_modules` persiste entre recriações e pode continuar com dependências antigas mesmo após `up --build`.
+
+Depois de alterar `package.json` ou `package-lock.json`, atualize o volume no container em execução e reinicie o Vite:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml exec frontend npm ci
+docker compose -f compose.yaml -f compose.dev.yaml restart frontend
+```
+
+O `npm ci` reinstala as dependências do volume conforme o lockfile. Ele não remove o volume do banco. Se a instalação falhar, confira o lockfile e o acesso do container ao registro npm.
 
 ## Comandos úteis
 
@@ -177,4 +184,4 @@ um `package-lock.json` compatível com o `package.json`.
 
 Confirme que o serviço foi iniciado com `compose.dev.yaml` e que o arquivo foi
 salvo dentro da pasta local `frontend/`. O Compose monta essa pasta no
-container; mudanças em Dockerfile ou dependências exigem `--build`.
+container. Para mudanças no Dockerfile, reconstrua a imagem; para dependências npm, atualize também o volume de `node_modules` conforme a seção anterior.
