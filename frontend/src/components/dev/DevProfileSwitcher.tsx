@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Wrench } from 'lucide-react'
+import { ChevronDown, Wrench } from 'lucide-react'
 import { ROLE_LABELS, useAuth, type UserRole } from '../../contexts/AuthContext'
 
 export function DevProfileSwitcher() {
@@ -64,23 +64,33 @@ export function DevProfileSwitcher() {
 					>
 						Perfil de demonstração
 					</label>
-					<select
-						id="dev-profile"
-						aria-label="Perfil de demonstração"
-						value={user.role}
-						onChange={(event) =>
-							setDemoRole(event.target.value as UserRole)
-						}
-						className="mt-2 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
-					>
-						{(
-							Object.entries(ROLE_LABELS) as [UserRole, string][]
-						).map(([role, label]) => (
-							<option key={role} value={role}>
-								{label}
-							</option>
-						))}
-					</select>
+					<div className="relative mt-2">
+						<select
+							id="dev-profile"
+							aria-label="Perfil de demonstração"
+							value={user.role}
+							onChange={(event) =>
+								setDemoRole(event.target.value as UserRole)
+							}
+							className="w-full cursor-pointer appearance-none rounded-md border border-hairline bg-canvas py-2.5 pr-10 pl-3 text-sm font-medium text-ink transition-colors hover:border-ash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised dark:[color-scheme:dark]"
+						>
+							{(
+								Object.entries(ROLE_LABELS) as [
+									UserRole,
+									string,
+								][]
+							).map(([role, label]) => (
+								<option key={role} value={role}>
+									{label}
+								</option>
+							))}
+						</select>
+						<ChevronDown
+							size={18}
+							aria-hidden="true"
+							className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-icon-muted"
+						/>
+					</div>
 					<p className="mt-3 text-xs text-mute">
 						A troca não altera permissões reais.
 					</p>
