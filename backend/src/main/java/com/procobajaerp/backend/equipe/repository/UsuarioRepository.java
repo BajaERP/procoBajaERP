@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.procobajaerp.backend.equipe.domain.Perfil;
+import com.procobajaerp.backend.equipe.domain.Subsistema;
 import com.procobajaerp.backend.equipe.domain.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
@@ -24,6 +25,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     /** A equipe é pequena: as consultas filtram a visibilidade em memória, sobre a lista completa. */
     @Query("select u from Usuario u join fetch u.perfil left join fetch u.subsistema")
     List<Usuario> listarCompletos();
+
+    @Query("select u from Usuario u join fetch u.perfil where u.subsistema = :subsistema")
+    List<Usuario> listarDoSubsistema(Subsistema subsistema);
 
     long countByPerfilNomeAndAtivoTrue(Perfil perfil);
 }
