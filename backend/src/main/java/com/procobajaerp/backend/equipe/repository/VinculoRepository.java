@@ -10,6 +10,9 @@ import com.procobajaerp.backend.equipe.domain.VinculoFinanceiroGestor;
 
 public interface VinculoRepository extends JpaRepository<VinculoFinanceiroGestor, Long> {
 
+    @Query("select v from VinculoFinanceiroGestor v join fetch v.financeiro join fetch v.gestor")
+    List<VinculoFinanceiroGestor> listarCompletos();
+
     @Query("select v from VinculoFinanceiroGestor v join fetch v.financeiro where v.gestor = :gestor")
     List<VinculoFinanceiroGestor> listarDoGestor(Usuario gestor);
 }

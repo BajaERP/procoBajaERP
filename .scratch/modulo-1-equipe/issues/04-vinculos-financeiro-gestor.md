@@ -1,6 +1,6 @@
 # Vínculos Financeiro–Gestor
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 02
 
 Parte de [spec.md](../spec.md), seção "Vínculo Financeiro–Gestor".
@@ -15,3 +15,7 @@ Parte de [spec.md](../spec.md), seção "Vínculo Financeiro–Gestor".
 - Definir o primeiro Vínculo ativa o Financeiro, e remover o Vínculo de um Financeiro ativo o desativa.
 - Depois que o Capitão transfere os Vínculos de um Gestor, esse Gestor pode trocar de Perfil.
 - Gestor e Financeiro recebem 403 ao tentar alterar Vínculos.
+
+## Comments
+
+Implementado em `VinculoService` e `VinculoController`. Verificado por `VinculoControllerTest`.
