@@ -67,15 +67,15 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
 
     @Test
     void apiExigeLogin() throws Exception {
-        mvc.perform(get("/api/usuarios")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/auth/eu")).andExpect(status().isUnauthorized());
     }
 
     @Test
     void alteracaoSemTokenCsrfERecusada() throws Exception {
-        usuario("capitao", Perfil.CAPITAO_ADMIN, null);
-        MockHttpSession sessao = login("capitao");
-        mvc.perform(post("/api/subsistemas").session(sessao)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"nome\":\"Motor\"}"))
+        usuario("orientador", Perfil.ORIENTADOR, null);
+        MockHttpSession sessao = login("orientador");
+        mvc.perform(put("/api/auth/senha").session(sessao).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"senhaAtual\":\"" + SENHA + "\",\"novaSenha\":\"nova-senha-1\"}"))
                 .andExpect(status().isForbidden());
     }
 
@@ -92,13 +92,13 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
     void trocaDePerfilValeNaRequisicaoSeguinte() throws Exception {
         long gestor = usuario("gestor", Perfil.GESTOR, null);
         MockHttpSession sessao = login("gestor");
+        mvc.perform(get("/api/auth/eu").session(sessao))
+                .andExpect(jsonPath("$.permissoes").value(hasItem("USUARIOS_GERENCIAR")));
         jdbc.update("UPDATE usuarios SET perfil_id = (SELECT id FROM perfis WHERE nome = 'ORIENTADOR') WHERE id = ?", gestor);
 
         mvc.perform(get("/api/auth/eu").session(sessao))
                 .andExpect(jsonPath("$.perfil").value("ORIENTADOR"))
                 .andExpect(jsonPath("$.permissoes").value(not(hasItem("USUARIOS_GERENCIAR"))));
-        mvc.perform(json(post("/api/subsistemas"), Map.of("nome", "Motor")).session(sessao))
-                .andExpect(status().isForbidden());
     }
 
     @Test
