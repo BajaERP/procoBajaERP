@@ -24,4 +24,13 @@ public final class Visibilidade {
     public static boolean podeVerRa(Usuario quem, Usuario alvo) {
         return quem.mesmoUsuario(alvo) || quem.getPerfil().administraEquipe();
     }
+
+    public static boolean podeVerComposicao(Usuario quem, Subsistema subsistema) {
+        return quem.getPerfil().veComposicaoGeral() || quem.pertenceA(subsistema);
+    }
+
+    /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, só de Capitão e Gestor. */
+    public static boolean podeVer(Usuario quem, Subsistema subsistema) {
+        return subsistema.isAtivo() || quem.getPerfil().administraEquipe();
+    }
 }
