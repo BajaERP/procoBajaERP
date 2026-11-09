@@ -5,4 +5,5 @@ O login do ERP usa uma sessão guardada no servidor pelo Spring Security, com co
 ## Consequências
 
 - O navegador não guarda nada de autenticação no `localStorage`. O frontend chama a API pela mesma origem, pelo proxy do Vite no desenvolvimento, e, nas requisições que alteram dados, lê o cookie `XSRF-TOKEN` e reenvia o valor no cabeçalho `X-XSRF-TOKEN`.
+- Em produção o ERP precisa de HTTPS: os cookies de sessão e `XSRF-TOKEN` são `Secure`, e um proxy com TLS serve o frontend e a API no mesmo domínio.
 - Para rodar mais de uma instância do backend, as sessões precisam ir para um armazenamento compartilhado, como o Spring Session JDBC no próprio PostgreSQL.

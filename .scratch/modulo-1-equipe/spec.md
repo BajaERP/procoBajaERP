@@ -78,6 +78,8 @@ O Capitão não aparece em nenhuma Composição.
 ## Sessão e login
 
 - A sessão fica no servidor, com cookie HttpOnly, SameSite=Lax e proteção CSRF para a SPA ([ADR 0001](../../docs/adr/0001-sessao-no-servidor.md)). O frontend chama a API pela mesma origem.
+- Em produção, os cookies de sessão e `XSRF-TOKEN` são `Secure`, então o ERP só funciona por HTTPS. O `compose.prod.yaml` liga essa opção, e o guia de produção pede um proxy com TLS na frente dos containers.
+- O Capitão inicial só é criado com credenciais definidas no `.env` real. O `.env.example` deixa essas variáveis vazias.
 - O token CSRF fica no cookie `XSRF-TOKEN`, legível pelo frontend. Em toda requisição que altera dados, inclusive o login, o frontend lê o cookie e reenvia o valor no cabeçalho `X-XSRF-TOKEN`. `GET /api/auth/csrf` responde 204 e só garante que o cookie exista. O login e o logout trocam o token, então o frontend lê o cookie de novo a cada requisição, em vez de guardar o valor.
 - Cada requisição recarrega o Usuário do banco, para que a Troca de Perfil e a Desativação valham na hora.
 - Login com RA ou senha errados, ou de Usuário desativado, recebe sempre a mesma mensagem: "RA ou senha inválidos".
