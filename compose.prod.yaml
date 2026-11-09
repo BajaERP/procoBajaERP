@@ -6,6 +6,9 @@ services:
     build:
       target: runtime
     restart: unless-stopped
+    environment:
+      # A sessão só trafega por HTTPS em produção; veja docs/infraestrutura/docker/docker-prod.md.
+      PROCOBAJA_COOKIE_SEGURO: ${PROCOBAJA_COOKIE_SEGURO:-true}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 

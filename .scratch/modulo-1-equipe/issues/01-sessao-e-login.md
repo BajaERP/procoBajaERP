@@ -27,3 +27,7 @@ Implementado nos pacotes `seguranca` e `equipe` (V5 semeia as permissões). Veri
 Ajuste durante a implementação: `GET /api/auth/csrf` responde 204 e só emite o cookie. O token do corpo da resposta, que vinha mascarado, não servia no cabeçalho com `csrf().spa()`. O contrato ficou na spec, seção "Sessão e login".
 
 Ajuste na revisão: o BCrypt recusa senhas acima de 72 bytes, e uma senha de 64 caracteres acentuados passa disso, o que dava erro 500 na troca de senha. A regra `Senha` confere os 8 a 64 caracteres e os 72 bytes, na troca de senha e no Capitão inicial, e a spec registra o limite.
+
+Ajustes da revisão do PR (comentários sobre produção):
+- O `.env.example` deixa vazias as variáveis do Capitão inicial, para que nenhuma conta administrativa nasça com credenciais publicadas no repositório. Os guias de desenvolvimento e de produção pedem essas variáveis no `.env` real.
+- O `compose.prod.yaml` liga o cookie `Secure`, e o `XSRF-TOKEN` segue a mesma configuração (`SegurancaConfigTest`). O guia de produção exige HTTPS por um proxy com TLS na frente dos containers.
