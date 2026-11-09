@@ -1,5 +1,6 @@
 package com.procobajaerp.backend.seguranca;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -53,11 +54,16 @@ public class SegurancaConfig {
 
     /**
      * Cookie XSRF-TOKEN legível pelo frontend, que o reenvia no cabeçalho X-XSRF-TOKEN. É o mesmo repositório que
-     * o {@code csrf().spa()} usaria; vira bean para o login trocar o token, como o formLogin faria.
+     * o {@code csrf().spa()} usaria; vira bean para o login trocar o token, como o formLogin faria. Quando o
+     * cookie de sessão é Secure, este também é: atrás de um proxy com HTTPS o backend recebe HTTP e não saberia.
      */
     @Bean
-    CsrfTokenRepository repositorioDeCsrf() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    CsrfTokenRepository repositorioDeCsrf(@Value("${server.servlet.session.cookie.secure:false}") boolean cookieSeguro) {
+        CookieCsrfTokenRepository repositorio = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        if (cookieSeguro) {
+            repositorio.setCookieCustomizer(cookie -> cookie.secure(true));
+        }
+        return repositorio;
     }
 
     /** BCrypt, com o prefixo do algoritmo no hash para permitir trocá-lo no futuro (RNF05). */
