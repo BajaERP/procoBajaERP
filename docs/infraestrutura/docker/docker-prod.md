@@ -47,6 +47,9 @@ Edite o `.env` e substitua os valores de exemplo, principalmente:
 POSTGRES_DB=procobaja
 POSTGRES_USER=procobaja
 POSTGRES_PASSWORD=uma-senha-forte
+PROCOBAJA_CAPITAO_INICIAL_RA=ra-do-primeiro-capitao
+PROCOBAJA_CAPITAO_INICIAL_NOME=Nome do primeiro Capitão
+PROCOBAJA_CAPITAO_INICIAL_SENHA=outra-senha-forte
 BACKEND_PORT=8080
 FRONTEND_PROD_PORT=80
 ```
@@ -54,6 +57,13 @@ FRONTEND_PROD_PORT=80
 O `.env` real contém credenciais e nunca deve ser commitado ou publicado. As
 variáveis `PGADMIN_*` existem para o desenvolvimento; o pgAdmin não é iniciado
 pela configuração de produção.
+
+As variáveis `PROCOBAJA_CAPITAO_INICIAL_*` criam a primeira conta
+administrativa. O `.env.example` as deixa vazias de propósito: enquanto
+estiverem vazias, o backend não cria nenhum Capitão e só avisa no log. Ele cria
+o Capitão uma única vez, ao iniciar com o banco sem nenhum Capitão ativo. Depois
+do primeiro login, troque a senha em Configurações e apague
+`PROCOBAJA_CAPITAO_INICIAL_SENHA` do `.env`.
 
 ## Construir e iniciar
 
@@ -75,10 +85,12 @@ ou reinicializações do servidor.
 
 ## Acessar e verificar os serviços
 
-Com as portas padrão:
+Os usuários acessam o ERP somente por HTTPS, pelo proxy descrito em
+[HTTPS obrigatório](#https-obrigatório). As portas padrão publicadas pelo
+Compose são as que o proxy usa:
 
-- frontend: `http://IP_OU_DOMINIO_DO_SERVIDOR:80`;
-- backend: `http://IP_OU_DOMINIO_DO_SERVIDOR:8080`;
+- frontend: porta `80` do servidor;
+- backend: porta `8080` do servidor;
 - PostgreSQL: acessível internamente apenas pelo hostname `postgres` na porta
   `5432`.
 
@@ -199,8 +211,24 @@ destino. Prefira validar a restauração primeiro em uma base separada ou em um
 ambiente de recuperação. Faça uma confirmação explícita antes de restaurar
 sobre a base de produção.
 
-## Fora do escopo desta configuração
+## HTTPS obrigatório
 
-TLS, domínio, proxy reverso, firewall e publicação segura do backend não são
-configurados por estes arquivos. Em um ambiente público, configure esses
-componentes antes de expor a aplicação à Internet.
+O login do ERP abre uma sessão guardada num cookie. Sem HTTPS, esse cookie
+trafega sem criptografia e pode ser capturado por quem observa a rede. Por
+isso, o `compose.prod.yaml` define `PROCOBAJA_COOKIE_SEGURO=true`, e os cookies
+de sessão e `XSRF-TOKEN` saem marcados como `Secure`. O navegador só os envia
+por HTTPS: acessando por `http://`, o login não se mantém.
+
+Antes de liberar o acesso, coloque na frente dos containers um proxy reverso
+com certificado TLS, como Caddy, Nginx ou Traefik:
+
+- sirva o ERP por um domínio em `https://`;
+- encaminhe `/api` para o backend (porta `8080`) e o restante para o frontend
+  (porta `80`), no mesmo domínio, porque o frontend chama a API pela mesma
+  origem;
+- redirecione `http://` para `https://`;
+- bloqueie no firewall o acesso externo direto às portas `80` e `8080` dos
+  containers, deixando aberto apenas o proxy.
+
+Domínio, certificado, proxy e firewall não são configurados por estes arquivos.
+Não defina `PROCOBAJA_COOKIE_SEGURO=false` em produção.

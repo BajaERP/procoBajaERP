@@ -50,6 +50,12 @@ Altere pelo menos `POSTGRES_PASSWORD` e
 `PGADMIN_DEFAULT_PASSWORD` no arquivo `.env`. O arquivo `.env` é ignorado pelo
 Git e não deve ser commitado.
 
+Para entrar no ERP, preencha também `PROCOBAJA_CAPITAO_INICIAL_RA`,
+`PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`, com uma
+senha de 8 a 64 caracteres. Com o banco sem nenhum Capitão ativo, o backend cria
+esse Capitão ao iniciar; enquanto as variáveis estiverem vazias, ele não cria
+nenhum e avisa no log.
+
 As principais portas podem ser alteradas caso já estejam ocupadas:
 
 ```dotenv
