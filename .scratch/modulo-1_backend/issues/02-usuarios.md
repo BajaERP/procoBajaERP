@@ -1,6 +1,6 @@
 # Cadastro e administração de Usuários
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 01
 
 Parte de [spec.md](../spec.md), seções "Usuários", "Visibilidade" e "Auditoria".
@@ -17,3 +17,11 @@ Parte de [spec.md](../spec.md), seções "Usuários", "Visibilidade" e "Auditori
 - Financeiro cadastrado pelo Gestor nasce desativado. Cadastrado pelo Capitão, nasce com Vínculo e ativo.
 - O último Capitão ativo, um Gestor com Vínculos e um Líder não podem ser desativados nem trocar de Perfil.
 - Líder e Membro só veem Usuários do próprio Subsistema, e ninguém além do próprio Usuário, do Capitão e do Gestor vê o RA.
+
+## Comments
+
+Implementado em `UsuarioService` e `UsuarioController`. Verificado por `UsuarioControllerTest`.
+
+A regra do último Capitão ativo não é alcançável pela API: ninguém desativa nem troca o próprio Perfil, e só um Capitão ativo age sobre outro Capitão, então sempre resta ao menos um. A checagem fica no service como defesa.
+
+Ajuste na revisão: a Troca de Perfil para Capitão recusa um Subsistema informado, como o cadastro já fazia.

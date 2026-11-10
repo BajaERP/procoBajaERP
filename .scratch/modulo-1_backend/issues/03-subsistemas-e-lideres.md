@@ -1,6 +1,6 @@
 # Subsistemas, Definição de Líder e Transferência de integrante
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 02
 
 Parte de [spec.md](../spec.md), seções "Subsistemas e Líderes", "Visibilidade" e "Auditoria".
@@ -18,3 +18,7 @@ Parte de [spec.md](../spec.md), seções "Subsistemas e Líderes", "Visibilidade
 - O primeiro Subsistema da equipe pode ser montado do zero: criar, cadastrar Membros nele e definir o Líder.
 - Um Líder não pode ser transferido sem antes ser substituído.
 - Desativar um Subsistema move todos os seus Usuários para o destino e deixa o antigo Líder como Membro.
+
+## Comments
+
+Implementado em `SubsistemaService` e `SubsistemaController`. Verificado por `SubsistemaControllerTest`, incluindo a montagem do primeiro Subsistema pela API.
