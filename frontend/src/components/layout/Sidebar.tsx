@@ -42,7 +42,7 @@ export function Sidebar({
 
 	const name = user?.name ?? 'Visitante'
 	const role = user
-		? `${ROLE_LABELS[user.role]}${user.id === 'demo' ? ' · demonstração' : ''}`
+		? `${user.financial ? 'Gestor Financeiro' : ROLE_LABELS[user.role]}${user.isDemo ? ' · demonstração' : ''}`
 		: 'Sem sessão'
 
 	const content = (isMobile: boolean, isCollapsed: boolean) => (

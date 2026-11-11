@@ -64,10 +64,10 @@ test('Gestor consulta integrantes autorizados e identificadores', () => {
 	assert.equal(resultado[0].identificador, '123')
 })
 
-test('Gestor Financeiro demonstrativo conserva a consulta de Gestor', () => {
+test('Gestor com atribuição financeira conserva a consulta de Gestor', () => {
 	const resultado = filtrarIntegrantesVisiveis(integrantes, {
 		id: 'bruno',
-		perfil: 'financeiro',
+		perfil: 'gestor',
 		subsistemaId: 'gestao',
 	})
 	assert.equal(resultado.length, 5)
@@ -107,6 +107,37 @@ test('Líder não consulta integrante desativado do próprio subsistema', () => 
 		resultado.map((item) => item.id),
 		['diego'],
 	)
+})
+
+test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terceiros', () => {
+	const resultado = filtrarIntegrantesVisiveis(
+		[
+			...integrantes,
+			{
+				id: 'joao',
+				nome: 'João Almeida',
+				identificador: '456789',
+				perfil: 'orientador',
+				subsistemaId: null,
+				ativo: true,
+				financeiro: false,
+			},
+		],
+		{ id: 'joao', perfil: 'orientador', subsistemaId: null },
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'joao')?.identificador,
+		'456789',
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'ana')?.identificador,
+		null,
+	)
+	assert.equal(
+		resultado.some((item) => item.id === 'elisa'),
+		false,
+	)
+	assert.deepEqual(pesquisarIntegrantes(resultado, '123', '', ''), [])
 })
 
 test('Busca e filtros operam sobre dados recebidos', () => {

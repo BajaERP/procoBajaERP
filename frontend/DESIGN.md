@@ -51,6 +51,8 @@ O drawer mobile fecha pelo botão, pelo fundo ou por Escape. Ao abri-lo, mova o 
 
 O header contém o caminho de navegação e o avatar. Seu menu de conta mostra o nome, acesso a Configurações e a ação Sair; mantenha o fechamento por clique fora ou Escape e a restauração de foco ao fechar com Escape.
 
+O seletor Dev existe apenas em desenvolvimento e separa perspectiva de pessoa ativa. Gestor Financeiro é uma visão do Gestor com atribuição adicional. Mostre a indicação de demonstração no menu da conta e na sidebar; na conta, exiba o subsistema e a situação de troca de senha. Avisos de identidade indisponível devem permanecer visíveis após fechar o seletor. A restauração exige confirmação, e o painel Dev deve caber em telas estreitas e baixas com rolagem interna.
+
 ### Formulários e feedback
 
 Associe cada rótulo ao campo e mantenha foco visível, áreas de toque adequadas e mensagens compreensíveis. No login, o RA aceita somente números; os campos e a validação atual fazem parte de um fluxo demonstrativo, sem conferência de credenciais no servidor.

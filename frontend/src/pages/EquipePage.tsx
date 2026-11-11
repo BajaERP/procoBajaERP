@@ -12,7 +12,7 @@ type LoadState =
 	| { status: 'error'; message: string }
 
 export default function EquipePage() {
-	const { user } = useAuth()
+	const { user, demoRevision } = useAuth()
 	const location = useLocation()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
 
@@ -78,7 +78,7 @@ export default function EquipePage() {
 				</section>
 			) : user ? (
 				<IntegrantesContent
-					key={`${user.id}:${user.role}`}
+					key={`${user.id}:${user.role}:${demoRevision}`}
 					user={user}
 				/>
 			) : null}
@@ -96,7 +96,7 @@ function IntegrantesContent({ user }: { user: AuthUser }) {
 			.listarIntegrantes({
 				id: user.id,
 				perfil: user.role,
-				subsistemaId: null,
+				subsistemaId: user.subsistemaId,
 			})
 			.then((data) => {
 				if (!cancelled) setLoadState({ status: 'ready', data })
