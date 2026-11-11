@@ -10,21 +10,21 @@ Sistema interno de gestão do PROCOBAJA, equipe Baja SAE da UTFPR Câmpus Corné
 A equipe de extensão da UTFPR-CP que projeta e constrói veículos off-road para as competições Baja SAE; é a única organização que usa o ERP.
 
 **Usuário**:
-Conta de acesso ao ERP, identificada pelo RA, com exatamente um Perfil e ativa ou desativada; nunca é excluída. O próprio Usuário só muda sua senha; Nome e RA são corrigidos pelo Capitão ou, nos Perfis que administra, pelo Gestor.
+Conta de acesso ao ERP, identificada pelo RA, com exatamente um Perfil e ativa ou desativada; nunca é excluída. Um Usuário ativo pode acessar o sistema mesmo quando seu Subsistema está inativo. O próprio Usuário só muda sua senha; Nome e RA são corrigidos pelo Capitão ou, nos Perfis que administra, pelo Gestor.
 _Avoid_: Conta UTFPR, login
 
 **RA**:
-Identificador de login do Usuário, usado com uma senha própria do ERP e sem as credenciais institucionais: o Registro Acadêmico do aluno na UTFPR ou, para o Orientador, o SIAPE. Só o próprio Usuário, o Capitão e o Gestor o veem.
+Identificador numérico de login do Usuário, usado com uma senha própria do ERP e sem as credenciais institucionais: o Registro Acadêmico do aluno na UTFPR ou, para o Orientador, o SIAPE. Só o próprio Usuário, o Capitão e o Gestor o veem.
 
 **Senha provisória**:
-Senha gerada pelo ERP ao cadastrar um Usuário ou redefinir sua senha, mostrada uma única vez a quem fez a operação.
+Senha gerada pelo ERP ao cadastrar um Usuário ou redefinir sua senha, mostrada uma única vez a quem fez a operação. A senha configurada para o primeiro Capitão também é provisória. Não tem prazo de expiração. A redefinição encerra as sessões ativas do Usuário. No próximo acesso após o cadastro ou a redefinição, o Usuário deve substituí-la por uma senha própria antes de acessar os módulos.
 
 **Integrante**:
 Pessoa que faz parte da equipe. Pertence a um Subsistema, com duas exceções: o Capitão nunca pertence a nenhum, porque atua em todos, e o Orientador pode pertencer ou não, só para fins de informação.
 _Avoid_: Membro (para qualquer pessoa da equipe: Membro é um Perfil)
 
 **Perfil**:
-Papel de acesso de um Usuário, que define o que ele pode ver e fazer; são seis, cada um com permissões fixas, e cada Usuário tem um só por vez.
+Papel de acesso de um Usuário, que define o que ele pode ver e fazer; são cinco (Capitão, Gestor, Líder, Membro e Orientador), cada um com permissões fixas, e cada Usuário tem um só por vez. A Atribuição financeira acrescenta as funções financeiras a um Gestor.
 _Avoid_: Cargo, função, role
 
 **Troca de Perfil**:
@@ -32,15 +32,14 @@ Mudança do Perfil de um Usuário; é o que o Documento de Projeto chama de alte
 _Avoid_: Alterar cargo, alterar permissões
 
 **Capitão/Administrador**:
-Perfil com administração geral da equipe e do ERP; único que mantém Vínculos Financeiro–Gestor, publica Governança e aprova compras junto ao Financeiro. A equipe tem sempre pelo menos um Capitão ativo e pode ter vários. Não pertence a nenhum Subsistema, porque atua em todos: quem passa a Capitão deixa o seu. Na forma curta, "Capitão".
+Perfil com administração geral da equipe e do ERP; único que atribui ou retira a responsabilidade financeira, publica Governança e aprova compras junto ao Gestor Financeiro. A equipe tem sempre pelo menos um Capitão ativo e pode ter vários. Não pertence a nenhum Subsistema, porque atua em todos: quem passa a Capitão deixa o seu. Na forma curta, "Capitão".
 _Avoid_: Admin
 
 **Gestor**:
-Perfil que administra Integrantes, Subsistemas, Sprints e Validações, sem nenhum acesso a Informação financeira restrita; entre os Usuários, administra só os de Perfil Financeiro, Líder, Membro e Orientador.
+Perfil que administra Integrantes, Subsistemas, Sprints e Validações. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro. As regras de administração de Usuários precisam ser revistas conforme essa atribuição.
 
-**Financeiro**:
-Perfil responsável pelo caixa, pelas compras e pela previsão financeira, e que aprova compras junto ao Capitão; pode haver vários, cada um com Vínculo a um único Gestor. Só fica ativo com Vínculo: quando um Gestor cadastra alguém como Financeiro ou o troca para esse Perfil, a conta fica desativada até que o Capitão defina o Vínculo.
-_Avoid_: Gestor Financeiro
+**Gestor Financeiro**:
+Gestor que recebe a responsabilidade pelo caixa, pelas compras e pela previsão financeira, e aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor; conserva as funções de Gestor e recebe as funções financeiras por uma atribuição adicional. No máximo um Gestor tem essa responsabilidade por vez; a posição pode ficar vaga. Somente o Capitão pode alterar seu Nome, RA, Perfil ou situação; o próprio Gestor Financeiro pode trocar sua senha.
 
 **Líder**:
 Perfil de quem lidera um Subsistema; ter o Perfil Líder e liderar um Subsistema são a mesma coisa. Gerencia as Atividades do Subsistema e registra presença e participação dos seus Integrantes.
@@ -56,11 +55,11 @@ Perfil do Integrante que executa Atividades, escreve seu Diário de atividades e
 Perfil do professor que acompanha o projeto com acesso às informações não confidenciais disponibilizadas ao seu perfil; no módulo de Documentação, pode enviar arquivos conforme as permissões previstas.
 
 **Subsistema**:
-Divisão interna da equipe, técnica ou administrativa, coordenada por um Líder que também é seu Integrante; cada Integrante pertence a no máximo um por vez. Nasce desativado e sem Líder, já podendo receber Integrantes, e se ativa ao ganhar o primeiro Líder. Nunca é excluído: ao ser desativado, seus Integrantes vão para outro Subsistema, e o Líder vai como Membro.
+Divisão interna da equipe, técnica ou administrativa, coordenada por um Líder que também é seu Integrante; cada Integrante pertence a no máximo um por vez. Nasce desativado e sem Líder, já podendo receber Integrantes, e se ativa ao ganhar o primeiro Líder. Nunca é excluído: ao ser desativado, seus Integrantes, inclusive os Usuários desativados, são transferidos para Subsistemas ativos, podendo ir para destinos diferentes, e o Líder vai como Membro. Se houver Integrantes e não houver outro Subsistema ativo para recebê-los, a desativação fica bloqueada; se estiver vazio, não precisa de destino.
 _Avoid_: Setor, área, módulo
 
 **Composição**:
-Lista dos Integrantes de um Subsistema, com seu Líder. Capitão, Gestor, Financeiro e Orientador veem a de todos os Subsistemas; Líder e Membro, só a do próprio. Já os nomes dos Subsistemas ativos e de seus Líderes são visíveis a todos.
+Lista dos Integrantes de um Subsistema, com seu Líder. Capitão, Gestor e Orientador veem a de todos os Subsistemas; Líder e Membro, só a do próprio, inclusive quando ele está inativo. Já os nomes dos Subsistemas ativos e de seus Líderes são visíveis a todos. A visibilidade da Composição não concede acesso a Usuários desativados ou informações restritas.
 
 **Desativação**:
 Retirada de um Usuário ou de um Subsistema de uso, preservando seu histórico; Usuário desativado não acessa o ERP. É a única forma de retirada, porque o ERP não exclui Usuários nem Subsistemas. A Reativação a desfaz e exige a mesma permissão; ninguém desativa a si mesmo.
@@ -70,11 +69,12 @@ _Avoid_: Exclusão, remoção
 Área funcional do ERP (Equipe, Atividades, Financeiro, Pessoas, Documentação, Eventos, Governança, Dashboard); um Módulo atende vários Subsistemas.
 _Avoid_: Subsistema
 
-**Vínculo Financeiro–Gestor**:
-Associação organizacional de um Financeiro a um único Gestor, mantida somente pelo Capitão; não dá ao Gestor acesso financeiro algum. Deixa de existir quando o Financeiro troca de Perfil e continua se ele for desativado. Um Gestor com Vínculos só troca de Perfil ou é desativado depois que o Capitão transfere esses Vínculos a outro Gestor. Remover o Vínculo de um Financeiro ativo o desativa.
+**Atribuição financeira**:
+Responsabilidade financeira dada pelo Capitão a um Gestor já cadastrado e ativo. Só o Capitão pode atribuí-la, retirá-la ou transferi-la diretamente a outro Gestor ativo. Antes de desativar o Gestor Financeiro ou mudar seu Perfil, o Capitão deve retirar ou transferir a responsabilidade.
+_Avoid_: Vínculo Financeiro–Gestor entre pessoas distintas
 
 **Transferência de integrante**:
-Mudança de um Integrante de um Subsistema para outro.
+Mudança de um Integrante de um Subsistema para outro. Em uma transferência comum, o destino pode estar inativo; na desativação do Subsistema de origem, os destinos devem estar ativos.
 
 ### Atividades e Sprints
 
@@ -259,6 +259,9 @@ Anotação de quem fez uma operação auditável, quando e sobre qual registro, 
 _Avoid_: Log, histórico (genérico)
 
 ## Ambiguidades em aberto
+
+**Financeiro como atribuição do Gestor**:
+A regra esclarecida é que o Gestor Financeiro é a própria pessoa que já é Gestor e mantém suas funções ao receber a responsabilidade financeira. A documentação anterior, o modelo v4 e as permissões atuais descrevem duas pessoas distintas e precisam ser revistos após esclarecer os detalhes dessa atribuição, incluindo a representação e a hierarquia de permissões.
 
 **Não concluída × Não iniciada**:
 O Documento de Projeto lista "Não concluída" como Estado da atividade, mas não diz quando uma Atividade entra nele nem como ele difere de "Não iniciada" e "Pausada".
