@@ -4,8 +4,7 @@ import type {
 	Integrante,
 	SubsistemaDemo,
 } from '../services/equipeTypes'
-
-export const DEMO_DATA_KEY = 'proco.demo.equipe.v1'
+import { DEMO_DATA_KEY } from '../services/demoStorage.ts'
 
 interface StoragePort {
 	getItem(key: string): string | null

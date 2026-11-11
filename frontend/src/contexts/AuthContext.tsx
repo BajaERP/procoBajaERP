@@ -11,6 +11,10 @@ import {
 	identitiesForPerspective,
 } from '../services/demoSession'
 import type { DemoIdentity, DemoPerspective } from '../services/equipeTypes'
+import {
+	DEMO_DATA_KEY,
+	DEMO_SESSION_KEY as STORAGE_KEY,
+} from '../services/demoStorage'
 
 export type UserRole = 'gestor' | 'membro' | 'lider' | 'capitao' | 'orientador'
 
@@ -56,7 +60,6 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
-const STORAGE_KEY = 'proco.auth.user'
 
 function initialsFromName(name: string): string {
 	return name
@@ -190,8 +193,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			setRevision((value) => value + 1)
 		}
 		function onChange(event: Event) {
+			if (
+				event instanceof StorageEvent &&
+				(event.storageArea !== window.localStorage ||
+					(event.key !== null &&
+						event.key !== STORAGE_KEY &&
+						event.key !== DEMO_DATA_KEY))
+			)
+				return
 			const stored =
-				event instanceof StorageEvent && event.key === STORAGE_KEY
+				event instanceof StorageEvent &&
+				(event.key === STORAGE_KEY || event.key === null)
 					? readStoredSession()
 					: { id: user?.id ?? null, perspective: demoPerspective }
 			void refresh(stored?.id ?? null, stored?.perspective ?? null)
