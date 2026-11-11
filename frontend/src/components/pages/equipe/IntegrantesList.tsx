@@ -59,13 +59,7 @@ export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
 		(paginaAtual - 1) * PAGE_SIZE,
 		paginaAtual * PAGE_SIZE,
 	)
-	const subsistemas = Array.from(
-		new Map(
-			data.integrantes
-				.filter((item) => item.subsistemaId && item.subsistema)
-				.map((item) => [item.subsistemaId, item.subsistema]),
-		).entries(),
-	)
+	const subsistemas = data.subsistemas
 
 	return (
 		<section aria-label="Consulta de integrantes" className="mt-5 min-w-0">
@@ -166,9 +160,9 @@ export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
 						className="w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink dark:[color-scheme:dark]"
 					>
 						<option value="">Todos</option>
-						{subsistemas.map(([id, name]) => (
-							<option key={id} value={id ?? ''}>
-								{name}
+						{subsistemas.map(({ id, nome }) => (
+							<option key={id} value={id}>
+								{nome}
 							</option>
 						))}
 					</select>
