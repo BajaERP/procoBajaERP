@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AlertCircle, RotateCcw } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, type AuthUser } from '../contexts/AuthContext'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
 import { equipeService } from '../services/equipe'
 import type { ConsultaIntegrantes } from '../services/equipeTypes'
@@ -15,44 +15,6 @@ export default function EquipePage() {
 	const { user } = useAuth()
 	const location = useLocation()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
-	const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
-	const [attempt, setAttempt] = useState(0)
-
-	useEffect(() => {
-		if (!import.meta.env.DEV || !user || subsistemas) return
-		let cancelled = false
-		// Loading is visible for the first request and every retry.
-		queueMicrotask(() => {
-			if (!cancelled) setLoadState({ status: 'loading' })
-		})
-		equipeService
-			.listarIntegrantes({
-				id: user.id,
-				perfil: user.role,
-				subsistemaId: null,
-			})
-			.then((data) => {
-				if (!cancelled) setLoadState({ status: 'ready', data })
-			})
-			.catch((error: unknown) => {
-				if (!cancelled)
-					setLoadState({
-						status: 'error',
-						message:
-							error instanceof Error
-								? error.message
-								: 'Não foi possível carregar os integrantes.',
-					})
-			})
-		return () => {
-			cancelled = true
-		}
-	}, [user?.id, user?.role, subsistemas, attempt])
-
-	async function simulateFailure() {
-		await equipeService.simularFalhaNaProximaConsulta?.()
-		setAttempt((value) => value + 1)
-	}
 
 	return (
 		<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
@@ -114,59 +76,102 @@ export default function EquipePage() {
 						A consulta dos subsistemas está em construção.
 					</p>
 				</section>
-			) : loadState.status === 'loading' ? (
-				<section
-					role="status"
-					aria-live="polite"
-					className="mt-6 space-y-4"
-				>
-					<p className="text-sm text-mute">
-						Carregando integrantes demonstrativos...
-					</p>
-					<div className="h-16 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
-					<div className="h-48 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
-				</section>
-			) : loadState.status === 'error' ? (
-				<section
-					role="alert"
-					className="mt-6 rounded-lg border border-state-error bg-state-error-bg p-6"
-				>
-					<div className="flex items-start gap-3 text-state-error">
-						<AlertCircle
-							size={20}
-							className="mt-0.5 shrink-0"
-							aria-hidden="true"
-						/>
-						<div>
-							<h2 className="font-semibold">
-								Falha ao consultar integrantes
-							</h2>
-							<p className="mt-1 text-sm">{loadState.message}</p>
-						</div>
-					</div>
-					<button
-						type="button"
-						onClick={() => setAttempt((value) => value + 1)}
-						className="mt-4 inline-flex items-center gap-2 rounded-md border border-hairline bg-canvas px-4 text-sm font-semibold text-ink hover:bg-surface-soft"
-					>
-						<RotateCcw size={16} aria-hidden="true" /> Tentar
-						novamente
-					</button>
-				</section>
-			) : (
-				<>
-					<IntegrantesList data={loadState.data} />
-					<div className="mt-4 flex justify-end">
-						<button
-							type="button"
-							onClick={simulateFailure}
-							className="text-xs text-mute underline underline-offset-4 hover:text-ink"
-						>
-							Simular falha na próxima consulta
-						</button>
-					</div>
-				</>
-			)}
+			) : user ? (
+				<IntegrantesContent
+					key={`${user.id}:${user.role}`}
+					user={user}
+				/>
+			) : null}
 		</div>
+	)
+}
+
+function IntegrantesContent({ user }: { user: AuthUser }) {
+	const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
+	const [attempt, setAttempt] = useState(0)
+
+	useEffect(() => {
+		let cancelled = false
+		equipeService
+			.listarIntegrantes({
+				id: user.id,
+				perfil: user.role,
+				subsistemaId: null,
+			})
+			.then((data) => {
+				if (!cancelled) setLoadState({ status: 'ready', data })
+			})
+			.catch((error: unknown) => {
+				if (!cancelled)
+					setLoadState({
+						status: 'error',
+						message:
+							error instanceof Error
+								? error.message
+								: 'Não foi possível carregar os integrantes.',
+					})
+			})
+		return () => {
+			cancelled = true
+		}
+	}, [user.id, user.role, attempt])
+
+	function retry() {
+		setLoadState({ status: 'loading' })
+		setAttempt((value) => value + 1)
+	}
+
+	async function simulateFailure() {
+		await equipeService.simularFalhaNaProximaConsulta?.()
+		retry()
+	}
+
+	return loadState.status === 'loading' ? (
+		<section role="status" aria-live="polite" className="mt-6 space-y-4">
+			<p className="text-sm text-mute">
+				Carregando integrantes demonstrativos...
+			</p>
+			<div className="h-16 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
+			<div className="h-48 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
+		</section>
+	) : loadState.status === 'error' ? (
+		<section
+			role="alert"
+			className="mt-6 rounded-lg border border-state-error bg-state-error-bg p-6"
+		>
+			<div className="flex items-start gap-3 text-state-error">
+				<AlertCircle
+					size={20}
+					className="mt-0.5 shrink-0"
+					aria-hidden="true"
+				/>
+				<div>
+					<h2 className="font-semibold">
+						Falha ao consultar integrantes
+					</h2>
+					<p className="mt-1 text-sm">{loadState.message}</p>
+				</div>
+			</div>
+			<button
+				type="button"
+				onClick={retry}
+				className="mt-4 inline-flex items-center gap-2 rounded-md border border-hairline bg-canvas px-4 text-sm font-semibold text-ink hover:bg-surface-soft"
+			>
+				<RotateCcw size={16} aria-hidden="true" /> Tentar novamente
+			</button>
+		</section>
+	) : (
+		<>
+			<IntegrantesList data={loadState.data} />
+			<div className="mt-4 flex justify-end">
+				<button
+					type="button"
+					onClick={simulateFailure}
+					className="text-xs text-mute underline underline-offset-4 hover:text-ink"
+				>
+					Simular falha na próxima consulta
+				</button>
+			</div>
+		</>
 	)
 }

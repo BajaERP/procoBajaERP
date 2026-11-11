@@ -64,6 +64,23 @@ test('Gestor consulta integrantes autorizados e identificadores', () => {
 	assert.equal(resultado[0].identificador, '123')
 })
 
+test('Gestor Financeiro demonstrativo conserva a consulta de Gestor', () => {
+	const resultado = filtrarIntegrantesVisiveis(integrantes, {
+		id: 'bruno',
+		perfil: 'financeiro',
+		subsistemaId: 'gestao',
+	})
+	assert.equal(resultado.length, 5)
+	assert.equal(
+		resultado.find((item) => item.id === 'ana')?.identificador,
+		'123',
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'elisa')?.identificador,
+		'902',
+	)
+})
+
 test('Membro consulta apenas ativos do próprio subsistema e seu identificador', () => {
 	const visualizador: Visualizador = {
 		id: 'carla',
