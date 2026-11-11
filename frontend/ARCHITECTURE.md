@@ -17,7 +17,9 @@ frontend/src/
 │   ├── pages/             # Componentes específicos de cada página
 │   └── shared/            # Componentes compartilhados
 ├── contexts/              # Sessão demonstrativa e tema
+├── mocks/                 # Dados fictícios exclusivos do desenvolvimento
 ├── pages/                 # Composição das páginas e navegação
+├── services/              # Fronteira de consulta e regras de visibilidade
 ├── App.tsx                # Provedores e roteador
 ├── main.tsx               # Inicialização do React
 └── styles.css             # Tokens, temas e estilos globais
@@ -32,7 +34,9 @@ O roteador usa `createHashRouter`, portanto os caminhos aparecem após `#` no en
 - `/` apresenta a introdução e avança automaticamente para o login; uma sessão demonstrativa existente segue para o Dashboard.
 - `/login` recebe RA e senha. Após o acesso demonstrativo, abre o Dashboard ou restaura uma rota protegida solicitada anteriormente.
 - `/app/*` usa `ProtectedRoute` e `Shell`. O shell reúne sidebar, barra superior e conteúdo da rota. No mobile, a navegação é apresentada em um drawer.
-- A sidebar organiza módulos e alguns subitens, mas ainda não adapta o menu por perfil; várias rotas exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
+- A sidebar apresenta uma entrada principal por módulo, sem subitens; ainda não adapta o menu por perfil. Equipe e Subsistemas oferece abas internas para Integrantes e Subsistemas. Outras rotas ainda exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
+
+Em desenvolvimento, a página de Integrantes consulta `services/equipe.ts`, que seleciona o serviço fictício em `mocks/equipe.ts`. O serviço aplica a visibilidade demonstrativa antes de entregar dados à tela; busca, filtros e paginação operam somente sobre essa lista recebida. O botão de simulação provoca uma falha na próxima consulta para conferir o estado de recuperação. Esta regra local não é autorização de dados reais. No build de produção, o módulo apresenta indisponibilidade até a integração e não inclui os dados fictícios do módulo.
 
 ## Sessão e tema
 
