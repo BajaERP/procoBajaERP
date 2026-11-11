@@ -3,6 +3,8 @@
 Status: resolved
 Blocked by: 02
 
+> Implementação original incorporada à `develop` pelo PR #36, a partir do #33. Os ajustes decididos posteriormente estão na [issue 08](08-ajustar-desativacao-e-visibilidade-subsistemas.md). Os critérios abaixo registram o escopo original.
+
 Parte de [spec.md](../spec.md), seções "Subsistemas e Líderes", "Visibilidade" e "Auditoria".
 
 ## O que fazer

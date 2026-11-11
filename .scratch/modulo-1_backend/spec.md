@@ -1,5 +1,7 @@
 # Módulo 1: Equipe e Subsistemas
 
+> **Revisão necessária:** as implementações originais das issues 01–04 foram incorporadas à `develop`; decisões posteriores alteraram as regras de Gestor Financeiro, RA, senha provisória e subsistemas. O conteúdo abaixo preserva a especificação anterior e não deve ser usado como referência definitiva nesses pontos. Consulte [CONTEXT.md](../../CONTEXT.md) e as issues de acompanhamento [06](issues/06-correcao-gestor-financeiro-banco.md), [07](issues/07-identificacao-e-senha-provisoria.md) e [08](issues/08-ajustar-desativacao-e-visibilidade-subsistemas.md).
+
 Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável pelo projeto em 2026-11-04. Complementa o [resumo do módulo](../../docs/projeto/modulos/equipe-e-subsistemas.md), o glossário em [CONTEXT.md](../../CONTEXT.md) e o [ADR 0001](../../docs/adr/0001-sessao-no-servidor.md). Os termos seguem o glossário. As tabelas são as do esquema v4, já aplicado pela migration `V4__adopt_schema_v4.sql`.
 
 ## Perfis e permissões
@@ -99,4 +101,4 @@ Login, logout e a troca da própria senha não são registrados.
 ## Fora do escopo
 
 - O registro de presença do Capitão está em aberto no glossário e fica para o módulo 4.
-- A integração do frontend (login real e telas de Equipe) tem issue própria.
+- O frontend e sua integração posterior são planejados na [especificação própria](../modulo-1_frontend/spec.md).

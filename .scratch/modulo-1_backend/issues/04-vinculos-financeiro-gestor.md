@@ -3,6 +3,8 @@
 Status: resolved
 Blocked by: 02
 
+> Implementação original incorporada à `develop` pelo PR #36, a partir do #34. O vínculo entre duas pessoas foi substituído pela atribuição ao próprio Gestor; a correção está na [issue 06](06-correcao-gestor-financeiro-banco.md). Os critérios abaixo registram o escopo original, não a regra desejada.
+
 Parte de [spec.md](../spec.md), seção "Vínculo Financeiro–Gestor".
 
 ## O que fazer

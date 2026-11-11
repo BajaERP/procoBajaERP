@@ -2,6 +2,8 @@
 
 Status: resolved
 
+> Implementação incorporada pelo PR #31. As regras posteriores de RA numérico e troca obrigatória de senha provisória são tratadas na [issue 07](07-identificacao-e-senha-provisoria.md).
+
 Parte de [spec.md](../spec.md), seções "Sessão e login" e "Perfis e permissões".
 
 ## O que fazer

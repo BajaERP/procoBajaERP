@@ -3,6 +3,8 @@
 Status: resolved
 Blocked by: 01
 
+> Implementação original incorporada à `develop` pelo PR #36, a partir do #32. As regras de Gestor Financeiro, RA e senha provisória mudaram depois e serão ajustadas nas [issues 06](06-correcao-gestor-financeiro-banco.md) e [07](07-identificacao-e-senha-provisoria.md). Os critérios abaixo registram o escopo original.
+
 Parte de [spec.md](../spec.md), seções "Usuários", "Visibilidade" e "Auditoria".
 
 ## O que fazer
