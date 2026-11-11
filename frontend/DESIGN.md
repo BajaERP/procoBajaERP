@@ -45,7 +45,7 @@ A preferência de tema pode ser **Claro**, **Escuro** ou **Sistema** e é contro
 
 ### Sidebar e header
 
-A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Diferencie a página ativa dos demais itens usando `bg-selected` e `text-link`; mantenha a seleção coerente com a rota ao abrir submenus ou navegar para outra página. Apenas um grupo de subitens fica expandido por vez. No modo recolhido, centralize os ícones e mantenha nomes acessíveis.
+A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Diferencie a página ativa dos demais itens usando `bg-selected` e `text-link`; mantenha a seleção coerente com a rota. Cada módulo tem somente sua entrada principal, sem subitens. Em Equipe e Subsistemas, use as abas internas Integrantes e Subsistemas. No modo recolhido, centralize os ícones e mantenha nomes acessíveis.
 
 O drawer mobile fecha pelo botão, pelo fundo ou por Escape. Ao abri-lo, mova o foco para dentro e mantenha-o contido; ao fechá-lo, devolva o foco ao botão de abertura. Ao mudar para desktop, libere o conteúdo da página.
 
