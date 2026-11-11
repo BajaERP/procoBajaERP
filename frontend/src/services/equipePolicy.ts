@@ -5,9 +5,7 @@ export function filtrarIntegrantesVisiveis(
 	visualizador: Visualizador,
 ): IntegranteVisivel[] {
 	const administra =
-		visualizador.perfil === 'capitao' ||
-		visualizador.perfil === 'gestor' ||
-		visualizador.perfil === 'financeiro'
+		visualizador.perfil === 'capitao' || visualizador.perfil === 'gestor'
 	return integrantes
 		.filter((integrante) => {
 			if (administra) return true

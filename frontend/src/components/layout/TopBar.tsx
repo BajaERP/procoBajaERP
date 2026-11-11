@@ -152,6 +152,11 @@ export function TopBar({
 								<p className="text-sm font-semibold text-ink dark:text-white truncate">
 									{name}
 								</p>
+								{user?.isDemo && (
+									<p className="mt-1 text-xs text-mute">
+										Sessão de demonstração
+									</p>
+								)}
 							</div>
 
 							<button

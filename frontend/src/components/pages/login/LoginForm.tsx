@@ -53,7 +53,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 					placeholder="Ex.: 2345678"
 					value={ra}
 					onChange={(e) => setRa(e.target.value.replace(/\D/g, ''))}
-					disabled={submitting}
+					disabled={submitting || !import.meta.env.DEV}
 					className={inputClass}
 				/>
 			</div>
@@ -72,7 +72,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 					placeholder="••••••••••"
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
-					disabled={submitting}
+					disabled={submitting || !import.meta.env.DEV}
 					className={inputClass}
 				/>
 			</div>
@@ -88,7 +88,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 				)}
 				<button
 					type="submit"
-					disabled={submitting}
+					disabled={submitting || !import.meta.env.DEV}
 					className={`${error ? 'mt-5' : ''} w-full rounded-md bg-red px-3 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-red-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-light focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`}
 				>
 					{submitting ? 'Entrando…' : 'Entrar'}
