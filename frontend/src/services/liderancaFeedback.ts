@@ -1,10 +1,9 @@
 import { toast } from 'sonner'
 
 const LIDERANCA_TOASTER_ID = 'lideranca'
-const LIDERANCA_MODAL_TOASTER_ID = 'lideranca-modal'
 
 export function notificarFalhaLideranca(mensagem: string) {
-	return toast.error(mensagem, { toasterId: LIDERANCA_MODAL_TOASTER_ID })
+	return toast.error(mensagem)
 }
 
 export function notificarSucessoLideranca(subsistemaNome: string) {
