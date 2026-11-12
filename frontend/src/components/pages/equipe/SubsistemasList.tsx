@@ -83,11 +83,11 @@ export function SubsistemasList({
 								type="button"
 								onClick={() => onOpen(subsistema.id)}
 								aria-label={`Ver detalhes de ${subsistema.nome}`}
-								className="block min-h-[84px] w-full p-4 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red"
+								className="flex min-h-[84px] w-full flex-col justify-between p-3 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red md:min-h-[190px] md:p-6"
 							>
 								<div className="flex min-w-0 items-center justify-between gap-2">
 									<div className="flex min-w-0 items-center gap-2">
-										<span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-selected text-xs font-bold text-link">
+										<span className="hidden size-9 shrink-0 items-center justify-center rounded-md bg-selected text-xs font-bold text-link md:inline-flex">
 											{siglaSubsistema(subsistema.nome)}
 										</span>
 										<h2 className="min-w-0 break-words text-base font-semibold text-ink">
@@ -95,7 +95,7 @@ export function SubsistemasList({
 										</h2>
 									</div>
 									<span
-										className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${subsistema.ativo ? 'bg-state-success-bg text-state-success' : 'bg-state-warning-bg text-state-warning'}`}
+										className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${subsistema.ativo ? 'hidden bg-state-success-bg text-state-success md:inline-flex' : 'inline-flex bg-state-warning-bg text-state-warning'}`}
 									>
 										{subsistema.ativo ? 'Ativo' : 'Inativo'}
 									</span>
@@ -105,19 +105,19 @@ export function SubsistemasList({
 										{subsistema.descricao}
 									</p>
 								)}
-								<div className="mt-1 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm text-body">
-									<p className="min-w-0 truncate">
+								<div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-sm text-body md:mt-0">
+									<p className="min-w-0 flex-1 truncate">
 										Líder:{' '}
 										{subsistema.lider?.nome ?? 'Sem Líder'}
 									</p>
-									<span className="inline-flex shrink-0 items-center gap-2">
+									<span className="inline-flex shrink-0 items-center gap-2 md:gap-3">
 										{subsistema.integrantes && (
 											<span className="text-xs text-mute">
 												{subsistema.integrantes.length}{' '}
 												integrantes
 											</span>
 										)}
-										<span className="inline-flex items-center gap-1 text-xs font-semibold text-link">
+										<span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-link">
 											<Eye size={14} aria-hidden="true" />
 											Ver detalhes
 										</span>

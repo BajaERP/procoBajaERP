@@ -26,7 +26,7 @@ export function siglaSubsistema(nome: string): string {
 					.slice(0, 4)
 					.map((palavra) => Array.from(palavra)[0])
 					.join('')
-			: Array.from(palavras[0]).slice(0, 3).join('')
+			: Array.from(palavras[0]).slice(0, 2).join('')
 	return sigla
 		.normalize('NFD')
 		.replace(/[\u0300-\u036f]/g, '')

@@ -26,6 +26,6 @@ test('composição mostra os nomes dos cinco perfis e a atribuição financeira'
 test('sigla é derivada do nome do subsistema sem persistir outro campo', () => {
 	assert.deepEqual(
 		['Gestão', 'Elétrica', 'Gestão Financeira', '  '].map(siglaSubsistema),
-		['GES', 'ELE', 'GF', ''],
+		['GE', 'EL', 'GF', ''],
 	)
 })
