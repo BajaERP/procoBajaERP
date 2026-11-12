@@ -220,7 +220,7 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 
 	if (!required) return content
 	return (
-		<main className="flex min-h-full items-start justify-center bg-surface-soft px-4 py-8 dark:bg-surface-dark sm:items-center sm:px-6">
+		<main className="flex min-h-dvh items-start justify-center bg-surface-soft px-4 py-8 dark:bg-surface-dark sm:items-center sm:px-6">
 			{content}
 		</main>
 	)
