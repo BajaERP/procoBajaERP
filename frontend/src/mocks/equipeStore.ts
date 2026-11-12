@@ -202,11 +202,13 @@ export function createDemoStore(storage: StoragePort) {
 		return copy(initialData)
 	}
 
-	function persist(next: DemoData) {
+	function persist(next: DemoData): boolean {
 		try {
 			storage.setItem(DEMO_DATA_KEY, JSON.stringify(safeData(next)))
+			return true
 		} catch {
 			// Keep the current page usable when persistence is unavailable.
+			return false
 		}
 	}
 
@@ -236,6 +238,16 @@ export function createDemoStore(storage: StoragePort) {
 				visualizador.perfil === 'gestor' ||
 				visualizador.perfil === 'orientador'
 			return {
+				resumo: {
+					subsistemasAtivos: source.subsistemas.filter(
+						(item) => item.ativo,
+					).length,
+					integrantesAssociados: seeAllComposition
+						? source.integrantes.filter(
+								(item) => item.subsistemaId !== null,
+							).length
+						: null,
+				},
 				subsistemas: source.subsistemas
 					.filter(
 						(subsistema) =>
@@ -269,6 +281,9 @@ export function createDemoStore(storage: StoragePort) {
 											nome: item.nome,
 											perfil: item.perfil,
 											ativo: item.ativo,
+											financeiro:
+												item.perfil === 'gestor' &&
+												item.financeiro,
 										})),
 									}
 								: {}),
@@ -385,7 +400,10 @@ export function createDemoStore(storage: StoragePort) {
 				if (selecionados.has(item.id) && item.subsistemaId === null)
 					item.subsistemaId = subsystem.id
 			}
-			persist(next)
+			if (!persist(next))
+				throw new SubsistemaError(
+					'Não foi possível salvar o subsistema neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 			const people = next.integrantes.filter(
 				(item) => item.subsistemaId === subsystem.id && item.ativo,
 			)

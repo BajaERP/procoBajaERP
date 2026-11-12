@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createDemoStore } from './equipeStore.ts'
 
-function storage() {
+function storage(failWrites = false) {
 	const values = new Map<string, string>()
 	return {
 		getItem: (key: string) => values.get(key) ?? null,
 		setItem: (key: string, value: string) => {
+			if (failWrites) throw new Error('storage unavailable')
 			values.set(key, value)
 		},
 		removeItem: (key: string) => {
@@ -204,6 +205,25 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 			?.integrantes,
 	)
 	assert.ok(membro.some((item: { id: string }) => item.id === 'projeto'))
+	assert.deepEqual(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo,
+		{
+			subsistemasAtivos: 4,
+			integrantesAssociados: 7,
+		},
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'carla',
+			perfil: 'membro',
+			subsistemaId: 'inativo',
+		}).resumo.integrantesAssociados,
+		null,
+	)
 	const orientador = store.listarSubsistemas({
 		id: 'joao',
 		perfil: 'orientador',
@@ -313,6 +333,20 @@ test('edição preserva vínculos de integrantes desativados da composição', (
 			?.subsistemaId,
 		'chassi',
 	)
+})
+
+test('falha ao persistir subsistema é reportada e não confirma a alteração', () => {
+	const localStorage = storage(true)
+	const store = createDemoStore(localStorage)
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				nome: 'Aerodinâmica',
+				integranteIds: [],
+			}),
+		/Não foi possível salvar o subsistema/,
+	)
+	assert.equal(localStorage.getItem('proco.demo.equipe.v1'), null)
 })
 
 test('duplicidade só orienta reativação quando o ator pode administrar a conta desativada', () => {
