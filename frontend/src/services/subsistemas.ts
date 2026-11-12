@@ -23,7 +23,10 @@ export function siglaSubsistema(nome: string): string {
 	const sigla =
 		palavras.length > 1
 			? palavras
-					.slice(0, 4)
+					.filter(
+						(palavra) => palavra.toLocaleLowerCase('pt-BR') !== 'e',
+					)
+					.slice(0, 2)
 					.map((palavra) => Array.from(palavra)[0])
 					.join('')
 			: Array.from(palavras[0]).slice(0, 2).join('')
