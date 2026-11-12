@@ -13,6 +13,7 @@ import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroInt
 import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
 import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
 import { ResponsabilidadeFinanceiraContent } from '../components/pages/equipe/ResponsabilidadeFinanceiraContent'
+import { getEquipePageContentKeys } from './equipePageKeys'
 import { Notifications } from '../components/shared/Notifications'
 
 type LoadState =
@@ -22,6 +23,11 @@ type LoadState =
 
 export default function EquipePage() {
 	const { user, demoRevision } = useAuth()
+	const pageKeys = getEquipePageContentKeys(
+		user?.id ?? '',
+		user?.role ?? '',
+		demoRevision,
+	)
 	const location = useLocation()
 	const navigate = useNavigate()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
@@ -145,7 +151,7 @@ export default function EquipePage() {
 					</section>
 				) : subsistemas && user ? (
 					<SubsistemasContent
-						key={`${user.id}:${user.role}:${demoRevision}`}
+						key={pageKeys.subsistemas}
 						user={user}
 						createRequest={createSubsystemRequest}
 						onCreateRequestConsumed={() =>
@@ -155,7 +161,7 @@ export default function EquipePage() {
 					/>
 				) : user ? (
 					<IntegrantesContent
-						key={`${user.id}:${user.role}:${demoRevision}`}
+						key={pageKeys.integrantes}
 						user={user}
 						onOpen={setDetalheIntegrante}
 						onOpenFinancial={() =>
@@ -165,7 +171,7 @@ export default function EquipePage() {
 				) : null}
 				{import.meta.env.DEV && user && responsabilidadeFinanceira && (
 					<ResponsabilidadeFinanceiraContent
-						key={`${user.id}:${user.role}:${demoRevision}`}
+						key={pageKeys.financeiro}
 						user={user}
 						onClose={() => navigate('/app/equipe/integrantes')}
 					/>
