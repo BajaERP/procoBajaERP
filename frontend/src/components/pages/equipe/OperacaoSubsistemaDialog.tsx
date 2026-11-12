@@ -36,6 +36,8 @@ export function OperacaoSubsistemaDialog({
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
 	const headerRef = useRef<HTMLElement>(null)
+	const toastFailureIdRef = useRef<string | number | null>(null)
+	const toastFailureTimerRef = useRef<number | null>(null)
 	const transferindo = integranteId !== undefined
 	const [options, setOptions] = useState<
 		State<OpcoesTransferenciaIntegrante | OpcoesDesativacaoSubsistema>
@@ -56,6 +58,27 @@ export function OperacaoSubsistemaDialog({
 		setToastTop((current) => (current === next ? current : next))
 	}
 
+	function dismissToastFailure() {
+		const toastId = toastFailureIdRef.current
+		if (toastId === null) {
+			setToastFailure(false)
+			return
+		}
+		toast.dismiss(toastId)
+	}
+
+	function finishToastFailure(toastId: string | number) {
+		if (toastFailureIdRef.current !== toastId) return
+		if (toastFailureTimerRef.current !== null)
+			window.clearTimeout(toastFailureTimerRef.current)
+		toastFailureTimerRef.current = window.setTimeout(() => {
+			if (toastFailureIdRef.current !== toastId) return
+			toastFailureIdRef.current = null
+			toastFailureTimerRef.current = null
+			setToastFailure(false)
+		}, 250)
+	}
+
 	useEffect(() => {
 		const dialog = dialogRef.current!
 		const previousFocus = document.activeElement
@@ -65,9 +88,19 @@ export function OperacaoSubsistemaDialog({
 		const header = headerRef.current
 		const observer = new ResizeObserver(updateToastTop)
 		if (header) observer.observe(header)
+		const viewport = window.visualViewport
+		window.addEventListener('resize', updateToastTop)
+		viewport?.addEventListener('resize', updateToastTop)
 		document.body.style.overflow = 'hidden'
 		return () => {
 			observer.disconnect()
+			window.removeEventListener('resize', updateToastTop)
+			viewport?.removeEventListener('resize', updateToastTop)
+			if (toastFailureTimerRef.current !== null)
+				window.clearTimeout(toastFailureTimerRef.current)
+			const toastFailureId = toastFailureIdRef.current
+			toastFailureIdRef.current = null
+			if (toastFailureId !== null) toast.dismiss(toastFailureId)
 			dialog.close()
 			document.body.style.overflow = previousOverflow
 			if (
@@ -115,7 +148,7 @@ export function OperacaoSubsistemaDialog({
 		if (options.status !== 'ready') return
 		if (transferindo && !destinoId) {
 			setFailure('Escolha um subsistema de destino.')
-			setToastFailure(false)
+			dismissToastFailure()
 			return
 		}
 		if (!transferindo) {
@@ -123,12 +156,12 @@ export function OperacaoSubsistemaDialog({
 			const missing = integrantes.find((item) => !destinos[item.id])
 			if (missing) {
 				setFailure(`Escolha um destino para ${missing.nome}.`)
-				setToastFailure(false)
+				dismissToastFailure()
 				return
 			}
 		}
 		setFailure(null)
-		setToastFailure(false)
+		dismissToastFailure()
 		setReview(true)
 	}
 
@@ -136,7 +169,7 @@ export function OperacaoSubsistemaDialog({
 		if (saving || options.status !== 'ready') return
 		setSaving(true)
 		setFailure(null)
-		setToastFailure(false)
+		dismissToastFailure()
 		try {
 			if (transferindo) {
 				await equipeService.transferirIntegrante(
@@ -170,11 +203,12 @@ export function OperacaoSubsistemaDialog({
 					: 'Não foi possível concluir a operação.'
 			setFailure(message)
 			setToastFailure(true)
-			toast.error(message, {
+			const toastId = toast.error(message, {
 				toasterId: 'subsistema-operacao-erro',
-				onAutoClose: () => setToastFailure(false),
-				onDismiss: () => setToastFailure(false),
+				onAutoClose: ({ id }) => finishToastFailure(id),
+				onDismiss: ({ id }) => finishToastFailure(id),
 			})
+			toastFailureIdRef.current = toastId
 		} finally {
 			setSaving(false)
 		}
@@ -322,7 +356,7 @@ export function OperacaoSubsistemaDialog({
 										onChange={(event) => {
 											setDestinoId(event.target.value)
 											setFailure(null)
-											setToastFailure(false)
+											dismissToastFailure()
 										}}
 										className="mt-1.5 min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink"
 									>
@@ -440,7 +474,7 @@ export function OperacaoSubsistemaDialog({
 															}),
 														)
 														setFailure(null)
-														setToastFailure(false)
+														dismissToastFailure()
 													}}
 													className="mt-1 min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink"
 												>
@@ -484,7 +518,12 @@ export function OperacaoSubsistemaDialog({
 					<footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-hairline bg-surface-card px-5 py-4 sm:px-7">
 						<button
 							type="button"
-							onClick={review ? () => setReview(false) : close}
+							onClick={() => {
+								if (review) {
+									dismissToastFailure()
+									setReview(false)
+								} else close()
+							}}
 							className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-canvas px-4 text-sm font-semibold text-ink hover:bg-surface-soft"
 						>
 							{review && (
