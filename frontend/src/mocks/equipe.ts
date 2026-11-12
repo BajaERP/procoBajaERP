@@ -8,6 +8,16 @@ import { createDemoStore } from './equipeStore'
 const store = createDemoStore(window.localStorage)
 
 export const mockEquipeService: EquipeService = {
+	async opcoesCadastroIntegrante(atorId) {
+		return store.createOptions(atorId)
+	},
+	async cadastrarIntegrante(atorId, dados) {
+		await new Promise((resolve) => window.setTimeout(resolve, 350))
+		return store.createIntegrante(atorId, dados)
+	},
+	simularFalhaNoProximoCadastro() {
+		store.failNextCreate()
+	},
 	async listarIntegrantes(visualizador): Promise<ConsultaIntegrantes> {
 		await new Promise((resolve) => window.setTimeout(resolve, 350))
 		const data = store.read()
