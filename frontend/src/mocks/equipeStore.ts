@@ -7,6 +7,7 @@ import type {
 	DemoPerspective,
 	Integrante,
 	IntegranteVisivel,
+	OpcoesDefinicaoLider,
 	OpcoesAdministracaoIntegrante,
 	OpcoesSubsistema,
 	SubsistemaConsultavel,
@@ -365,6 +366,95 @@ export function createDemoStore(storage: StoragePort) {
 					)
 					.map((item) => item.id),
 			}
+		},
+		opcoesDefinicaoLider(
+			atorId: string,
+			subsistemaId: string,
+		): OpcoesDefinicaoLider {
+			const source = data()
+			const ator = source.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
+				throw new SubsistemaError(
+					'Você não tem permissão para definir a liderança do subsistema.',
+				)
+			const subsistema = source.subsistemas.find(
+				(item) => item.id === subsistemaId,
+			)
+			if (!subsistema)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			const liderAtual = source.integrantes.find(
+				(item) =>
+					item.ativo &&
+					item.perfil === 'lider' &&
+					item.subsistemaId === subsistemaId,
+			)
+			return {
+				integrantesDisponiveis: source.integrantes
+					.filter((item) => item.ativo && item.perfil === 'membro')
+					.map((item) => ({
+						id: item.id,
+						nome: item.nome,
+						perfil: item.perfil,
+						ativo: item.ativo,
+						subsistemaId: item.subsistemaId,
+						subsistemaNome:
+							source.subsistemas.find(
+								(candidate) =>
+									candidate.id === item.subsistemaId,
+							)?.nome ?? null,
+					})),
+				liderAtual: liderAtual
+					? { id: liderAtual.id, nome: liderAtual.nome }
+					: null,
+				subsistemaAtivo: subsistema.ativo,
+			}
+		},
+		definirLider(
+			atorId: string,
+			subsistemaId: string,
+			integranteId: string,
+		) {
+			const next = data()
+			const ator = next.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
+				throw new SubsistemaError(
+					'Você não tem permissão para definir a liderança do subsistema.',
+				)
+			const subsistema = next.subsistemas.find(
+				(item) => item.id === subsistemaId,
+			)
+			if (!subsistema)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			const integrante = next.integrantes.find(
+				(item) => item.id === integranteId,
+			)
+			if (
+				!integrante ||
+				!integrante.ativo ||
+				integrante.perfil !== 'membro'
+			)
+				throw new SubsistemaError(
+					'Escolha um Membro ativo para definir como Líder.',
+				)
+
+			const liderAnterior = next.integrantes.find(
+				(item) =>
+					item.ativo &&
+					item.perfil === 'lider' &&
+					item.subsistemaId === subsistemaId,
+			)
+			integrante.perfil = 'lider'
+			integrante.subsistemaId = subsistemaId
+			if (liderAnterior) liderAnterior.perfil = 'membro'
+			subsistema.ativo = true
+			if (!persist(next))
+				throw new SubsistemaError(
+					'Não foi possível salvar a liderança neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 		},
 		salvarSubsistema(atorId: string, dados: DadosSubsistema) {
 			const next = data()

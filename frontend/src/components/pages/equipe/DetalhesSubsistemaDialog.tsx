@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Pencil, Users, X } from 'lucide-react'
+import { Crown, Pencil, Users, X } from 'lucide-react'
 import type { SubsistemaConsultavel } from '../../../services/equipeTypes'
 import { labelPerfilSubsistema } from '../../../services/subsistemas'
 
@@ -7,11 +7,13 @@ export function DetalhesSubsistemaDialog({
 	subsistema,
 	podeAdministrar,
 	onEdit,
+	onChangeLeader,
 	onClose,
 }: {
 	subsistema: SubsistemaConsultavel
 	podeAdministrar: boolean
 	onEdit: () => void
+	onChangeLeader: () => void
 	onClose: () => void
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
@@ -141,13 +143,25 @@ export function DetalhesSubsistemaDialog({
 					Fechar
 				</button>
 				{podeAdministrar && (
-					<button
-						type="button"
-						onClick={onEdit}
-						className="inline-flex min-h-11 items-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed"
-					>
-						<Pencil size={15} aria-hidden="true" /> Editar
-					</button>
+					<>
+						<button
+							type="button"
+							onClick={onEdit}
+							className="inline-flex min-h-11 items-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed"
+						>
+							<Pencil size={15} aria-hidden="true" /> Editar
+						</button>
+						<button
+							type="button"
+							onClick={onChangeLeader}
+							className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-canvas px-4 text-sm font-semibold text-ink hover:bg-surface-soft"
+						>
+							<Crown size={15} aria-hidden="true" />
+							{subsistema.lider
+								? 'Substituir Líder'
+								: 'Definir Líder'}
+						</button>
+					</>
 				)}
 			</footer>
 		</dialog>

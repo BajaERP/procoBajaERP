@@ -72,6 +72,18 @@ export const equipeService: EquipeService = import.meta.env.DEV
 					subsistemaId,
 				)
 			},
+			async opcoesDefinicaoLider(atorId, subsistemaId) {
+				return (await mockService()).opcoesDefinicaoLider(
+					atorId,
+					subsistemaId,
+				)
+			},
+			async definirLider(atorId, subsistemaId, integranteId) {
+				await (
+					await mockService()
+				).definirLider(atorId, subsistemaId, integranteId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
 			async salvarSubsistema(atorId, dados) {
 				await (await mockService()).salvarSubsistema(atorId, dados)
 				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
@@ -140,6 +152,16 @@ export const equipeService: EquipeService = import.meta.env.DEV
 				)
 			},
 			async opcoesSubsistema() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesDefinicaoLider() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async definirLider() {
 				throw new Error(
 					'Administração indisponível até a integração com o servidor.',
 				)

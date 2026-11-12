@@ -6,7 +6,9 @@ import type {
 	ConsultaSubsistemas,
 	ResumoSubsistemas,
 } from '../../../services/equipeTypes'
+import { Notifications } from '../../shared/Notifications'
 import { AdministrarSubsistemaDialog } from './AdministrarSubsistemaDialog'
+import { DefinirLiderDialog } from './DefinirLiderDialog'
 import { DetalhesSubsistemaDialog } from './DetalhesSubsistemaDialog'
 import { SubsistemasList } from './SubsistemasList'
 
@@ -30,6 +32,7 @@ export function SubsistemasContent({
 	const [attempt, setAttempt] = useState(0)
 	const [editor, setEditor] = useState<string | 'new' | null>(null)
 	const [detailsId, setDetailsId] = useState<string | null>(null)
+	const [leaderChangeId, setLeaderChangeId] = useState<string | null>(null)
 	const podeAdministrar =
 		import.meta.env.DEV && ['capitao', 'gestor'].includes(user.role)
 
@@ -93,6 +96,7 @@ export function SubsistemasContent({
 
 	return (
 		<>
+			<Notifications id="lideranca" />
 			<div className="min-w-0">
 				{state.status === 'loading' ? (
 					<section
@@ -161,7 +165,17 @@ export function SubsistemasContent({
 						setDetailsId(null)
 						setEditor(details.id)
 					}}
+					onChangeLeader={() => setLeaderChangeId(details.id)}
 					onClose={() => setDetailsId(null)}
+				/>
+			)}
+			{leaderChangeId && podeAdministrar && details && (
+				<DefinirLiderDialog
+					key={`${user.id}:${leaderChangeId}`}
+					atorId={user.id}
+					subsistema={details}
+					onSaved={retry}
+					onClose={() => setLeaderChangeId(null)}
 				/>
 			)}
 			{editor !== null && podeAdministrar && (

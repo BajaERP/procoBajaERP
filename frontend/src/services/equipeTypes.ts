@@ -83,6 +83,14 @@ export interface OpcoesSubsistema {
 	integranteIds: string[]
 }
 
+export interface OpcoesDefinicaoLider {
+	integrantesDisponiveis: (IntegranteDeSubsistema & {
+		subsistemaNome: string | null
+	})[]
+	liderAtual: Pick<IntegranteDeSubsistema, 'id' | 'nome'> | null
+	subsistemaAtivo: boolean
+}
+
 export interface DadosSubsistema {
 	id?: string
 	nome: string
@@ -99,6 +107,15 @@ export interface EquipeService {
 		atorId: string,
 		subsistemaId?: string,
 	): Promise<OpcoesSubsistema>
+	opcoesDefinicaoLider(
+		atorId: string,
+		subsistemaId: string,
+	): Promise<OpcoesDefinicaoLider>
+	definirLider(
+		atorId: string,
+		subsistemaId: string,
+		integranteId: string,
+	): Promise<void>
 	salvarSubsistema(atorId: string, dados: DadosSubsistema): Promise<void>
 	obterDetalheIntegrante?(
 		visualizador: Visualizador,
