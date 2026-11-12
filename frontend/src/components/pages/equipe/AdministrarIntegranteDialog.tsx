@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Check, Copy, KeyRound, LoaderCircle, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { ROLE_LABELS } from '../../../contexts/AuthContext'
+import { ROLE_LABELS, type UserRole } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
 import {
 	AdministracaoIntegranteError,
@@ -47,6 +47,8 @@ export function AdministrarIntegranteDialog({
 	const [errors, setErrors] = useState<ErrosEdicaoIntegrante>({})
 	const [password, setPassword] = useState<string | null>(null)
 	const [copied, setCopied] = useState(false)
+	const [selectedProfile, setSelectedProfile] = useState<UserRole | ''>('')
+	const [selectedSubsystemId, setSelectedSubsystemId] = useState('')
 
 	useEffect(() => {
 		const dialog = dialogRef.current!
@@ -89,7 +91,11 @@ export function AdministrarIntegranteDialog({
 					)
 				if (!opcoes)
 					throw new Error('A administração não está disponível.')
-				if (active) setState({ status: 'ready', integrante, opcoes })
+				if (active) {
+					setSelectedProfile(integrante.perfil)
+					setSelectedSubsystemId(integrante.subsistemaId ?? '')
+					setState({ status: 'ready', integrante, opcoes })
+				}
 			} catch (error) {
 				if (active)
 					setState({
@@ -109,6 +115,14 @@ export function AdministrarIntegranteDialog({
 
 	const integrante = (state.status === 'ready' ? state.integrante : null)!
 	const opcoes = (state.status === 'ready' ? state.opcoes : null)!
+	const precisaSelecionarSubsistema =
+		!!integrante &&
+		!!opcoes?.podeEditarDados &&
+		!!selectedProfile &&
+		selectedProfile !== 'capitao' &&
+		(integrante.perfil === 'capitao' ||
+			(integrante.subsistemaId === null &&
+				selectedProfile !== 'orientador'))
 
 	function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
@@ -123,8 +137,31 @@ export function AdministrarIntegranteDialog({
 		const perfil = String(
 			form.get('perfil') ?? '',
 		) as AlteracaoIntegrante['perfil']
-		if (perfil && perfil !== integrante.perfil) changes.perfil = perfil
+		if (perfil && perfil !== integrante.perfil) {
+			changes.perfil = perfil
+			if (perfil === 'capitao') changes.subsistemaId = null
+			else if (precisaSelecionarSubsistema)
+				changes.subsistemaId = selectedSubsystemId || null
+		}
 		const invalid = validarEdicaoIntegrante(changes)
+		if (
+			!invalid.subsistemaId &&
+			perfil &&
+			perfil !== 'capitao' &&
+			perfil !== 'orientador' &&
+			precisaSelecionarSubsistema &&
+			!selectedSubsystemId
+		)
+			invalid.subsistemaId = 'Selecione um subsistema.'
+		if (
+			!invalid.subsistemaId &&
+			selectedSubsystemId &&
+			precisaSelecionarSubsistema &&
+			!opcoes.subsistemas.some(
+				(subsistema) => subsistema.id === selectedSubsystemId,
+			)
+		)
+			invalid.subsistemaId = 'Selecione um subsistema disponível.'
 		if (Object.keys(invalid).length) {
 			setErrors(invalid)
 			setFailure('Confira os campos indicados.')
@@ -435,14 +472,27 @@ export function AdministrarIntegranteDialog({
 						</div>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div>
-								<span className="mb-1.5 block text-xs font-medium text-body">
+								<label
+									htmlFor="admin-perfil"
+									className="mb-1.5 block text-xs font-medium text-body"
+								>
 									Perfil
-								</span>
+								</label>
 								{opcoes.perfis.length ? (
 									<>
 										<select
+											id="admin-perfil"
 											name="perfil"
-											defaultValue={integrante.perfil}
+											value={selectedProfile}
+											onChange={(event) => {
+												const next = event.target
+													.value as UserRole
+												setSelectedProfile(next)
+												if (next === 'capitao')
+													setSelectedSubsystemId('')
+											}}
+											aria-invalid={!!errors.perfil}
+											aria-describedby={`admin-perfil-help${errors.perfil ? ' admin-perfil-error' : ''}`}
 											className={controlClass}
 										>
 											<option value={integrante.perfil}>
@@ -463,10 +513,15 @@ export function AdministrarIntegranteDialog({
 													</option>
 												))}
 										</select>
-										<p className="mt-1 text-xs text-mute">
+										<p
+											id="admin-perfil-help"
+											className="mt-1 text-xs text-mute"
+										>
 											A definição e troca de Líder
 											acontece no fluxo próprio do
-											subsistema.
+											subsistema. Ao assumir Capitão, o
+											vínculo com subsistema será
+											removido.
 										</p>
 									</>
 								) : (
@@ -480,12 +535,67 @@ export function AdministrarIntegranteDialog({
 								{fieldError('perfil')}
 							</div>
 							<div>
-								<span className="mb-1.5 block text-xs font-medium text-body">
+								<label
+									htmlFor="admin-subsistema"
+									className="mb-1.5 block text-xs font-medium text-body"
+								>
 									Subsistema
-								</span>
-								<p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-sm">
-									{integrante.subsistema ?? 'Sem subsistema'}
-								</p>
+								</label>
+								{precisaSelecionarSubsistema ? (
+									<select
+										id="admin-subsistema"
+										value={selectedSubsystemId}
+										required={
+											selectedProfile !== 'orientador'
+										}
+										onChange={(event) =>
+											setSelectedSubsystemId(
+												event.target.value,
+											)
+										}
+										aria-invalid={!!errors.subsistemaId}
+										aria-describedby={`admin-subsistema-help${errors.subsistemaId ? ' admin-subsistemaId-error' : ''}`}
+										className={controlClass}
+									>
+										<option value="">
+											{selectedProfile === 'orientador'
+												? 'Sem subsistema'
+												: 'Selecione um subsistema'}
+										</option>
+										{opcoes.subsistemas.map(
+											(subsistema) => (
+												<option
+													key={subsistema.id}
+													value={subsistema.id}
+												>
+													{subsistema.nome}
+													{subsistema.ativo
+														? ''
+														: ' (inativo)'}
+												</option>
+											),
+										)}
+									</select>
+								) : (
+									<p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-sm">
+										{selectedProfile === 'capitao' &&
+										integrante.perfil !== 'capitao'
+											? 'Sem subsistema ao assumir o perfil Capitão'
+											: (integrante.subsistema ??
+												'Sem subsistema')}
+									</p>
+								)}
+								{precisaSelecionarSubsistema && (
+									<p
+										id="admin-subsistema-help"
+										className="mt-1 text-xs text-mute"
+									>
+										{selectedProfile === 'orientador'
+											? 'O subsistema é opcional para Orientador.'
+											: 'Este perfil precisa pertencer a um subsistema.'}
+									</p>
+								)}
+								{fieldError('subsistemaId')}
 							</div>
 						</div>
 						<div className="flex flex-wrap items-center gap-2 text-sm">
