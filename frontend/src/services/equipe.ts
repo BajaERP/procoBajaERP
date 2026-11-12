@@ -48,6 +48,15 @@ export const equipeService: EquipeService = import.meta.env.DEV
 				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
 				return password
 			},
+			async trocarSenhaPropria(integranteId, senhaAtual, novaSenha) {
+				await (
+					await mockService()
+				).trocarSenhaPropria(integranteId, senhaAtual, novaSenha)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
+			async simularFalhaNaProximaTrocaSenha() {
+				await (await mockService()).simularFalhaNaProximaTrocaSenha?.()
+			},
 			async opcoesCadastroIntegrante(atorId) {
 				return (await mockService()).opcoesCadastroIntegrante(atorId)
 			},
@@ -177,6 +186,11 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async redefinirSenhaProvisoria() {
 				throw new Error(
 					'Redefinição indisponível até a integração com o servidor.',
+				)
+			},
+			async trocarSenhaPropria() {
+				throw new Error(
+					'Troca indisponível até a integração com o servidor.',
 				)
 			},
 			async opcoesCadastroIntegrante() {

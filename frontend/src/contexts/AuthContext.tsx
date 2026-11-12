@@ -57,6 +57,10 @@ interface AuthContextValue {
 	setDemoPerspective: (perspective: DemoPerspective) => void
 	setDemoIdentity: (id: string) => void
 	restoreDemo: () => Promise<void>
+	changeOwnPassword: (
+		currentPassword: string,
+		newPassword: string,
+	) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -297,6 +301,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setRevision((value) => value + 1)
 	}
 
+	async function changeOwnPassword(
+		currentPassword: string,
+		newPassword: string,
+	) {
+		if (!import.meta.env.DEV || !user?.isDemo)
+			throw new Error(
+				'Troca indisponível até a integração com o servidor.',
+			)
+		await equipeService.trocarSenhaPropria(
+			user.id,
+			currentPassword,
+			newPassword,
+		)
+		// The DEMO_DATA_CHANGED listener is the sole identity refresh path.
+	}
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -312,6 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setDemoPerspective,
 				setDemoIdentity,
 				restoreDemo,
+				changeOwnPassword,
 			}}
 		>
 			{children}

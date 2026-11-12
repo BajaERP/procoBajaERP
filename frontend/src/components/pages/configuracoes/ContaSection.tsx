@@ -1,5 +1,6 @@
 import { ROLE_LABELS, type AuthUser } from '../../../contexts/AuthContext'
 import { LogOut as LogoutIcon } from 'lucide-react'
+import { PasswordChangeForm } from './PasswordChangeForm'
 
 export function ContaSection({
 	user,
@@ -52,6 +53,8 @@ export function ContaSection({
 				Sessão de demonstração. Os dados da conta ainda não estão
 				conectados ao servidor.
 			</p>
+
+			<PasswordChangeForm required={false} />
 
 			<button
 				onClick={onLogout}
