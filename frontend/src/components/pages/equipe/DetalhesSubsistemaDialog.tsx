@@ -45,7 +45,7 @@ export function DetalhesSubsistemaDialog({
 			onClick={(event) => {
 				if (event.target === event.currentTarget) onClose()
 			}}
-			className="fixed inset-0 m-auto flex h-[calc(100dvh-1rem)] max-h-dvh w-full max-w-none flex-col overflow-hidden border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
+			className="fixed inset-y-0 right-0 m-0 ml-auto flex h-dvh max-h-dvh w-full max-w-none flex-col overflow-hidden border-l border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay md:w-[555px] md:max-w-[calc(100vw-1rem)]"
 		>
 			<header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
 				<div className="min-w-0">

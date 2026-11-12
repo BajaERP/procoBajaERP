@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search, Users } from 'lucide-react'
+import { Eye, Search } from 'lucide-react'
 import type { ConsultaSubsistemas } from '../../../services/equipeTypes'
 import { labelPerfilSubsistema } from '../../../services/subsistemas'
 
@@ -95,54 +95,25 @@ export function SubsistemasList({
 										{subsistema.ativo ? 'Ativo' : 'Inativo'}
 									</span>
 								</div>
-								<div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-sm text-body">
+								<div className="mt-1 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm text-body">
 									<p className="min-w-0 truncate">
 										Líder:{' '}
 										{subsistema.lider?.nome ?? 'Sem Líder'}
 									</p>
-									{subsistema.integrantes && (
-										<span className="shrink-0 text-xs text-mute">
-											{subsistema.integrantes.length}{' '}
-											integrantes
+									<span className="inline-flex shrink-0 items-center gap-2">
+										{subsistema.integrantes && (
+											<span className="text-xs text-mute">
+												{subsistema.integrantes.length}{' '}
+												integrantes
+											</span>
+										)}
+										<span className="inline-flex items-center gap-1 text-xs font-semibold text-link">
+											<Eye size={14} aria-hidden="true" />
+											Ver detalhes
 										</span>
-									)}
+									</span>
 								</div>
 							</button>
-							{subsistema.integrantes && (
-								<div className="hidden border-t border-hairline-soft px-4 py-3 md:block">
-									<h3 className="flex items-center gap-2 text-sm font-semibold text-body">
-										<Users size={16} aria-hidden="true" />
-										Composição
-									</h3>
-									{subsistema.integrantes.length ? (
-										<ul className="mt-2 flex flex-wrap gap-2">
-											{subsistema.integrantes.map(
-												(integrante) => (
-													<li
-														key={integrante.id}
-														className="max-w-full rounded-md bg-surface-soft px-3 py-2 text-sm text-body"
-													>
-														<span className="break-words">
-															{integrante.nome}
-														</span>
-														<span className="ml-2 text-xs text-mute">
-															{labelPerfilSubsistema(
-																integrante.perfil,
-																integrante.financeiro,
-															)}
-														</span>
-													</li>
-												),
-											)}
-										</ul>
-									) : (
-										<p className="mt-2 text-sm text-mute">
-											Nenhum integrante ativo na
-											composição.
-										</p>
-									)}
-								</div>
-							)}
 						</li>
 					))}
 				</ul>
