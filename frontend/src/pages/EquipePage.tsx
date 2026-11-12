@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertCircle, Plus, RotateCcw } from 'lucide-react'
 import { useAuth, type AuthUser } from '../contexts/AuthContext'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
@@ -12,6 +12,8 @@ import { perfisParaCadastro } from '../services/cadastroIntegrante'
 import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroIntegranteDialog'
 import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
 import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
+import { ResponsabilidadeFinanceiraContent } from '../components/pages/equipe/ResponsabilidadeFinanceiraContent'
+import { Notifications } from '../components/shared/Notifications'
 
 type LoadState =
 	| { status: 'loading' }
@@ -21,7 +23,9 @@ type LoadState =
 export default function EquipePage() {
 	const { user, demoRevision } = useAuth()
 	const location = useLocation()
+	const navigate = useNavigate()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
+	const responsabilidadeFinanceira = location.pathname.endsWith('/financeiro')
 	const [cadastroAtor, setCadastroAtor] = useState<string | null>(null)
 	const [detalheIntegrante, setDetalheIntegrante] = useState<string | null>(
 		null,
@@ -45,132 +49,155 @@ export default function EquipePage() {
 	}, [user?.id, user?.role, location.pathname])
 
 	return (
-		<div
-			className={`mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10 ${subsistemas && podeAdministrarSubsistemas ? 'pb-24 md:pb-10' : ''}`}
-		>
-			<header className="flex flex-wrap items-start justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-						Equipe e subsistemas
-					</h1>
-					<p className="mt-1 text-sm text-mute">
-						Organize as pessoas e as áreas do projeto em um só
-						lugar.
-					</p>
-					{subsistemas && resumoSubsistemas && (
-						<p className="mt-2 text-sm text-mute">
-							{resumoSubsistemas.subsistemasAtivos} subsistemas
-							ativos
-							{resumoSubsistemas.integrantesAssociados !== null &&
-								` · ${resumoSubsistemas.integrantesAssociados} integrantes associados`}
+		<>
+			<Notifications
+				id="responsabilidade-financeira"
+				position="top-center"
+				offset={{ top: 72 }}
+				mobileOffset={{ top: 12, left: 16, right: 16 }}
+			/>
+			<div
+				className={`mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10 ${subsistemas && podeAdministrarSubsistemas ? 'pb-24 md:pb-10' : ''}`}
+			>
+				<header className="flex flex-wrap items-start justify-between gap-4">
+					<div>
+						<h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+							Equipe e subsistemas
+						</h1>
+						<p className="mt-1 text-sm text-mute">
+							Organize as pessoas e as áreas do projeto em um só
+							lugar.
 						</p>
-					)}
-				</div>
-				{subsistemas && podeAdministrarSubsistemas ? (
-					<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
+						{subsistemas && resumoSubsistemas && (
+							<p className="mt-2 text-sm text-mute">
+								{resumoSubsistemas.subsistemasAtivos}{' '}
+								subsistemas ativos
+								{resumoSubsistemas.integrantesAssociados !==
+									null &&
+									` · ${resumoSubsistemas.integrantesAssociados} integrantes associados`}
+							</p>
+						)}
+					</div>
+					{subsistemas && podeAdministrarSubsistemas ? (
+						<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
+							<button
+								type="button"
+								onClick={() => setCreateSubsystemRequest(true)}
+								className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed md:w-auto"
+							>
+								<Plus size={18} aria-hidden="true" /> Novo
+								subsistema
+							</button>
+						</div>
+					) : podeCadastrar &&
+					  !subsistemas &&
+					  !responsabilidadeFinanceira ? (
 						<button
 							type="button"
-							onClick={() => setCreateSubsystemRequest(true)}
-							className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed md:w-auto"
+							onClick={() => setCadastroAtor(user.id)}
+							className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed sm:w-auto"
 						>
-							<Plus size={18} aria-hidden="true" /> Novo
-							subsistema
+							<Plus size={18} aria-hidden="true" />
+							Novo integrante
 						</button>
-					</div>
-				) : podeCadastrar && !subsistemas ? (
-					<button
-						type="button"
-						onClick={() => setCadastroAtor(user.id)}
-						className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed sm:w-auto"
-					>
-						<Plus size={18} aria-hidden="true" />
-						Novo integrante
-					</button>
-				) : null}
-			</header>
+					) : null}
+				</header>
 
-			<nav
-				aria-label="Áreas de Equipe e Subsistemas"
-				className="mt-7 flex gap-2 border-b border-hairline"
-			>
-				{[
-					{
-						label: 'Integrantes',
-						to: '/app/equipe/integrantes',
-						active: !subsistemas,
-					},
-					{
-						label: 'Subsistemas',
-						to: '/app/equipe/subsistemas',
-						active: subsistemas,
-					},
-				].map((tab) => (
-					<Link
-						key={tab.to}
-						to={tab.to}
-						aria-current={tab.active ? 'page' : undefined}
-						className={`relative inline-flex min-h-11 items-center px-3 text-sm font-semibold transition-colors ${tab.active ? 'text-ink after:absolute after:inset-x-0 after:-bottom-px after:h-[3px] after:bg-red-light' : 'text-mute hover:text-ink'}`}
-					>
-						{tab.label}
-					</Link>
-				))}
-			</nav>
-
-			{!import.meta.env.DEV ? (
-				<section
-					role="status"
-					className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
+				<nav
+					aria-label="Áreas de Equipe e Subsistemas"
+					className="mt-7 flex min-w-0 gap-1 border-b border-hairline"
 				>
-					<h2 className="text-lg font-semibold text-ink">
-						Módulo indisponível
-					</h2>
-					<p className="mt-2">
-						A consulta de Equipe e Subsistemas estará disponível
-						após a integração com o servidor.
-					</p>
-				</section>
-			) : subsistemas && user ? (
-				<SubsistemasContent
-					key={`${user.id}:${user.role}:${demoRevision}`}
-					user={user}
-					createRequest={createSubsystemRequest}
-					onCreateRequestConsumed={() =>
-						setCreateSubsystemRequest(false)
-					}
-					onSummary={setResumoSubsistemas}
-				/>
-			) : user ? (
-				<IntegrantesContent
-					key={`${user.id}:${user.role}:${demoRevision}`}
-					user={user}
-					onOpen={setDetalheIntegrante}
-				/>
-			) : null}
-			{cadastroAtor === user?.id && podeCadastrar && !subsistemas && (
-				<CadastroIntegranteDialog
-					key={`${user.id}:${user.role}`}
-					atorId={user.id}
-					onClose={() => setCadastroAtor(null)}
-				/>
-			)}
-			{user && detalheIntegrante && !subsistemas && (
-				<AdministrarIntegranteDialog
-					key={`${user.id}:${detalheIntegrante}`}
-					ator={user}
-					integranteId={detalheIntegrante}
-					onClose={() => setDetalheIntegrante(null)}
-				/>
-			)}
-		</div>
+					{[
+						{
+							label: 'Integrantes',
+							to: '/app/equipe/integrantes',
+							active: !subsistemas,
+						},
+						{
+							label: 'Subsistemas',
+							to: '/app/equipe/subsistemas',
+							active: subsistemas,
+						},
+					].map((tab) => (
+						<Link
+							key={tab.to}
+							to={tab.to}
+							aria-current={tab.active ? 'page' : undefined}
+							className={`relative inline-flex min-h-11 min-w-0 flex-1 items-center justify-center px-1 text-center text-xs font-semibold transition-colors sm:flex-none sm:px-3 sm:text-sm ${tab.active ? 'text-ink after:absolute after:inset-x-0 after:-bottom-px after:h-[3px] after:bg-red-light' : 'text-mute hover:text-ink'}`}
+						>
+							{tab.label}
+						</Link>
+					))}
+				</nav>
+
+				{!import.meta.env.DEV ? (
+					<section
+						role="status"
+						className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
+					>
+						<h2 className="text-lg font-semibold text-ink">
+							Módulo indisponível
+						</h2>
+						<p className="mt-2">
+							A consulta de Equipe e Subsistemas estará disponível
+							após a integração com o servidor.
+						</p>
+					</section>
+				) : subsistemas && user ? (
+					<SubsistemasContent
+						key={`${user.id}:${user.role}:${demoRevision}`}
+						user={user}
+						createRequest={createSubsystemRequest}
+						onCreateRequestConsumed={() =>
+							setCreateSubsystemRequest(false)
+						}
+						onSummary={setResumoSubsistemas}
+					/>
+				) : user ? (
+					<IntegrantesContent
+						key={`${user.id}:${user.role}:${demoRevision}`}
+						user={user}
+						onOpen={setDetalheIntegrante}
+						onOpenFinancial={() =>
+							navigate('/app/equipe/financeiro')
+						}
+					/>
+				) : null}
+				{import.meta.env.DEV && user && responsabilidadeFinanceira && (
+					<ResponsabilidadeFinanceiraContent
+						key={`${user.id}:${user.role}:${demoRevision}`}
+						user={user}
+						onClose={() => navigate('/app/equipe/integrantes')}
+					/>
+				)}
+				{cadastroAtor === user?.id && podeCadastrar && !subsistemas && (
+					<CadastroIntegranteDialog
+						key={`${user.id}:${user.role}`}
+						atorId={user.id}
+						onClose={() => setCadastroAtor(null)}
+					/>
+				)}
+				{user && detalheIntegrante && !subsistemas && (
+					<AdministrarIntegranteDialog
+						key={`${user.id}:${detalheIntegrante}`}
+						ator={user}
+						integranteId={detalheIntegrante}
+						onClose={() => setDetalheIntegrante(null)}
+					/>
+				)}
+			</div>
+		</>
 	)
 }
 
 function IntegrantesContent({
 	user,
 	onOpen,
+	onOpenFinancial,
 }: {
 	user: AuthUser
 	onOpen: (id: string) => void
+	onOpenFinancial: () => void
 }) {
 	const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
 	const [attempt, setAttempt] = useState(0)
@@ -247,7 +274,11 @@ function IntegrantesContent({
 		</section>
 	) : (
 		<>
-			<IntegrantesList data={loadState.data} onOpen={onOpen} />
+			<IntegrantesList
+				data={loadState.data}
+				onOpen={onOpen}
+				onOpenFinancial={onOpenFinancial}
+			/>
 			<div className="mt-4 flex justify-end">
 				<button
 					type="button"

@@ -49,6 +49,7 @@ export const router = createHashRouter([
 			{ path: 'configuracoes', Component: ConfiguracoesPage },
 			{ path: 'equipe/integrantes', Component: EquipePage },
 			{ path: 'equipe/subsistemas', Component: EquipePage },
+			{ path: 'equipe/financeiro', Component: EquipePage },
 			...[
 				['equipe/cargos', 'Cargos e permissões'],
 				['atividades/quadro', 'Quadro de atividades'],

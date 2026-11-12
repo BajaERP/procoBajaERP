@@ -45,9 +45,11 @@ function Status({ active }: { active: boolean }) {
 export function IntegrantesList({
 	data,
 	onOpen,
+	onOpenFinancial,
 }: {
 	data: ConsultaIntegrantes
 	onOpen: (integranteId: string) => void
+	onOpenFinancial: () => void
 }) {
 	const [busca, setBusca] = useState('')
 	const [perfil, setPerfil] = useState('')
@@ -86,14 +88,32 @@ export function IntegrantesList({
 				].map((metric, index) => (
 					<div
 						key={metric.label}
-						className={`flex min-h-16 items-center gap-4 px-4 py-3 ${index > 0 ? 'border-t border-hairline sm:border-l sm:border-t-0' : ''}`}
+						className={`${index > 0 ? 'border-t border-hairline sm:border-l sm:border-t-0' : ''}`}
 					>
-						<strong className="text-2xl font-bold text-ink">
-							{metric.value}
-						</strong>
-						<span className="text-xs text-mute">
-							{metric.label}
-						</span>
+						{index === 2 ? (
+							<button
+								type="button"
+								onClick={onOpenFinancial}
+								aria-label="Abrir responsabilidade financeira"
+								className="flex min-h-16 w-full items-center gap-4 px-4 py-3 text-left hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-red"
+							>
+								<strong className="text-2xl font-bold text-ink">
+									{metric.value}
+								</strong>
+								<span className="text-xs text-mute">
+									{metric.label}
+								</span>
+							</button>
+						) : (
+							<div className="flex min-h-16 items-center gap-4 px-4 py-3">
+								<strong className="text-2xl font-bold text-ink">
+									{metric.value}
+								</strong>
+								<span className="text-xs text-mute">
+									{metric.label}
+								</span>
+							</div>
+						)}
 					</div>
 				))}
 			</div>
