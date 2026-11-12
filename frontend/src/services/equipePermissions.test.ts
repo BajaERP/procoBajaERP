@@ -84,3 +84,11 @@ test('Matriz mantém os limites de composição, desativados e identificadores d
 		)
 	}
 })
+
+test('A matriz distingue a saída comum de Líder da desativação do subsistema', () => {
+	const permissoes = consulta('capitao', 'gestor')!
+	assert.equal(
+		permissoes.find((item) => item.id === 'lideranca')?.escopo,
+		'Em operações comuns, substitua o Líder antes da saída; na desativação do subsistema, ele passa a Membro.',
+	)
+})

@@ -69,7 +69,7 @@ export function consultarPermissoesEquipe(
 			acao: 'Definir líderes e transferir integrantes autorizados',
 			permitido: administra,
 			escopo: administra
-				? 'Líderes precisam ser substituídos antes de sair do subsistema'
+				? 'Em operações comuns, substitua o Líder antes da saída; na desativação do subsistema, ele passa a Membro.'
 				: undefined,
 		},
 		{
