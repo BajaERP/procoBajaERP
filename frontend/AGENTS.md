@@ -30,8 +30,9 @@ Execute em `frontend/`. Consulte `package.json` para a lista completa de scripts
 npm run dev           # servidor de desenvolvimento
 npm run format:check  # verifica formatação sem alterar arquivos
 npm run build         # verifica TypeScript e gera o build
+node --experimental-strip-types --test # executa todos os testes Node
 ```
 
-Após alterar código, execute `npm run format:check` e `npm run build`. Não há script de testes configurado. Quando layout ou interação mudar, verifique no navegador os estados e tamanhos afetados; para mudanças na navegação, confira também a seleção da sidebar e os fluxos de login e retorno relevantes. Informe o que foi verificado e qualquer limitação.
+Após alterar código, execute `npm run format:check`, `npm run build` e `node --experimental-strip-types --test`, a partir de `frontend/`. A suíte usa o runner nativo do Node e não requer script ou dependência adicional. Quando layout ou interação mudar, verifique no navegador os estados e tamanhos afetados; para mudanças na navegação, confira também a seleção da sidebar e os fluxos de login e retorno relevantes. Informe o que foi verificado e qualquer limitação.
 
 `npm run format` reescreve os arquivos cobertos pelo script; revise o resultado para preservar alterações existentes. Para instalação e detalhes de execução, consulte `ARCHITECTURE.md`.
