@@ -24,6 +24,10 @@ import {
 } from '../services/cadastroIntegrante.ts'
 import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
 import { SubsistemaError, validarSubsistema } from '../services/subsistemas.ts'
+import {
+	assertValidPasswordChange,
+	PasswordChangeError,
+} from '../services/passwordChange.ts'
 
 interface StoragePort {
 	getItem(key: string): string | null
@@ -107,6 +111,7 @@ const initialData: DemoData = {
 			subsistemaId: null,
 			ativo: true,
 			financeiro: false,
+			passwordChangePending: true,
 		},
 		{
 			id: 'bruno',
@@ -340,6 +345,7 @@ export function createDemoStore(storage: StoragePort) {
 
 	let failNext = false
 	let failCreate = false
+	let failPasswordChange = false
 
 	function administradorAtivo(
 		source: DemoData,
@@ -1300,6 +1306,35 @@ export function createDemoStore(storage: StoragePort) {
 		},
 		failNextRead() {
 			failNext = true
+		},
+		failNextPasswordChange() {
+			failPasswordChange = true
+		},
+		changeOwnPassword(
+			id: string,
+			currentPassword: string,
+			newPassword: string,
+		) {
+			assertValidPasswordChange(currentPassword, newPassword)
+			if (failPasswordChange) {
+				failPasswordChange = false
+				throw new PasswordChangeError(
+					'Não foi possível concluir a troca demonstrativa. Tente novamente.',
+				)
+			}
+			const next = data()
+			const target = next.integrantes.find(
+				(item) => item.id === id && item.ativo,
+			)
+			if (!target)
+				throw new PasswordChangeError(
+					'A identidade demonstrativa não está disponível.',
+				)
+			target.passwordChangePending = false
+			if (!persist(next))
+				throw new PasswordChangeError(
+					'Não foi possível salvar a troca neste navegador. Tente novamente.',
+				)
 		},
 		identities(perspective?: DemoPerspective): DemoIdentity[] {
 			const source = data()

@@ -21,6 +21,13 @@ export const mockEquipeService: EquipeService = {
 	async redefinirSenhaProvisoria(atorId, integranteId) {
 		return store.resetTemporaryPassword(atorId, integranteId)
 	},
+	async trocarSenhaPropria(integranteId, senhaAtual, novaSenha) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.changeOwnPassword(integranteId, senhaAtual, novaSenha)
+	},
+	simularFalhaNaProximaTrocaSenha() {
+		store.failNextPasswordChange()
+	},
 	async opcoesCadastroIntegrante(atorId) {
 		return store.createOptions(atorId)
 	},
