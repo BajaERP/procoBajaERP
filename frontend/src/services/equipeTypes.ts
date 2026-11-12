@@ -88,11 +88,13 @@ export interface AlteracaoIntegrante {
 	nome?: string
 	identificador?: string
 	perfil?: Exclude<UserRole, 'lider'>
+	subsistemaId?: string | null
 	ativo?: boolean
 }
 
 export interface OpcoesAdministracaoIntegrante {
 	perfis: Exclude<UserRole, 'lider'>[]
+	subsistemas: SubsistemaDemo[]
 	podeEditarDados: boolean
 	podeAlterarStatus: boolean
 	podeRedefinirSenha: boolean

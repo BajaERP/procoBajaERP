@@ -24,6 +24,7 @@ export const equipeService: EquipeService = import.meta.env.DEV
 						integranteId,
 					) ?? {
 						perfis: [],
+						subsistemas: [],
 						podeEditarDados: false,
 						podeAlterarStatus: false,
 						podeRedefinirSenha: false,

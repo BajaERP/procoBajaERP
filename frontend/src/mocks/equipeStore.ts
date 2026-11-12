@@ -372,6 +372,7 @@ export function createDemoStore(storage: StoragePort) {
 					!target?.financeiro
 						? [...rolesForActor]
 						: [],
+				subsistemas: permitted ? source.subsistemas : [],
 				podeEditarDados: permitted && !self,
 				podeAlterarStatus: permitted && !self && !bloqueioStatus,
 				podeRedefinirSenha: permitted,
@@ -443,6 +444,57 @@ export function createDemoStore(storage: StoragePort) {
 					'Retire ou transfira a responsabilidade financeira antes de desativar esta conta.',
 					{ ativo: 'A atribuição financeira ainda está ativa.' },
 				)
+			const proximoPerfil = changes.perfil ?? target.perfil
+			let proximoSubsistemaId = target.subsistemaId
+			if (proximoPerfil === 'capitao') {
+				proximoSubsistemaId = null
+			} else if (
+				target.perfil === 'capitao' ||
+				(target.subsistemaId === null && proximoPerfil !== 'orientador')
+			) {
+				if (changes.subsistemaId === undefined)
+					throw new AdministracaoIntegranteError(
+						'Selecione um subsistema para este perfil.',
+						{ subsistemaId: 'Selecione um subsistema.' },
+					)
+				proximoSubsistemaId = changes.subsistemaId
+			} else if (
+				changes.subsistemaId !== undefined &&
+				changes.subsistemaId !== target.subsistemaId
+			) {
+				throw new AdministracaoIntegranteError(
+					'A transferência entre subsistemas deve ser feita pelo fluxo próprio.',
+					{
+						subsistemaId:
+							'Use o fluxo de transferência de integrantes.',
+					},
+				)
+			}
+			if (
+				proximoPerfil !== 'capitao' &&
+				proximoPerfil !== 'orientador' &&
+				proximoSubsistemaId === null
+			)
+				throw new AdministracaoIntegranteError(
+					'Selecione um subsistema para este perfil.',
+					{
+						subsistemaId:
+							'Este perfil precisa pertencer a um subsistema.',
+					},
+				)
+			if (
+				proximoSubsistemaId !== null &&
+				!next.subsistemas.some(
+					(subsistema) => subsistema.id === proximoSubsistemaId,
+				)
+			)
+				throw new AdministracaoIntegranteError(
+					'Selecione um subsistema disponível.',
+					{
+						subsistemaId:
+							'O subsistema selecionado não está disponível.',
+					},
+				)
 			if (changes.nome !== undefined) {
 				const nome = changes.nome.trim()
 				if (!nome)
@@ -508,6 +560,7 @@ export function createDemoStore(storage: StoragePort) {
 					{ perfil: 'Mantenha ao menos um Capitão ativo.' },
 				)
 			if (changes.perfil !== undefined) target.perfil = changes.perfil
+			target.subsistemaId = proximoSubsistemaId
 			if (changes.ativo !== undefined) target.ativo = changes.ativo
 			persist(next)
 		},
