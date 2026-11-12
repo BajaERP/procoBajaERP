@@ -24,6 +24,10 @@ import {
 } from '../services/cadastroIntegrante.ts'
 import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
 import { SubsistemaError, validarSubsistema } from '../services/subsistemas.ts'
+import {
+	assertValidPasswordChange,
+	PasswordChangeError,
+} from '../services/passwordChange.ts'
 
 interface StoragePort {
 	getItem(key: string): string | null
@@ -32,6 +36,7 @@ interface StoragePort {
 }
 
 export interface DemoData {
+	schemaVersion?: number
 	integrantes: Integrante[]
 	subsistemas: SubsistemaDemo[]
 	auditoria: RegistroAuditoriaDemo[]
@@ -64,7 +69,10 @@ export type RegistroAuditoriaDemo = {
 
 class ResponsabilidadeFinanceiraError extends Error {}
 
+const DEMO_DATA_SCHEMA_VERSION = 2
+
 const initialData: DemoData = {
+	schemaVersion: DEMO_DATA_SCHEMA_VERSION,
 	auditoria: [],
 	subsistemas: [
 		{
@@ -107,6 +115,7 @@ const initialData: DemoData = {
 			subsistemaId: null,
 			ativo: true,
 			financeiro: false,
+			passwordChangePending: true,
 		},
 		{
 			id: 'bruno',
@@ -188,6 +197,7 @@ const roles = ['capitao', 'gestor', 'lider', 'membro', 'orientador'] as const
 
 function copy(data: DemoData): DemoData {
 	return {
+		schemaVersion: data.schemaVersion,
 		integrantes: data.integrantes.map((item) => ({ ...item })),
 		subsistemas: data.subsistemas.map((item) => ({ ...item })),
 		auditoria: [...(data.auditoria ?? [])].map((item) => ({
@@ -236,6 +246,9 @@ function validData(value: unknown): value is DemoData {
 	if (!value || typeof value !== 'object') return false
 	const data = value as Partial<DemoData>
 	return (
+		(data.schemaVersion === undefined ||
+			(Number.isInteger(data.schemaVersion) &&
+				data.schemaVersion >= 1)) &&
 		Array.isArray(data.integrantes) &&
 		Array.isArray(data.subsistemas) &&
 		(data.auditoria === undefined ||
@@ -270,7 +283,10 @@ function validData(value: unknown): value is DemoData {
 
 function safeData(value: DemoData): DemoData {
 	let financialAssignmentUsed = false
+	const migrateInitialCaptainPassword =
+		(value.schemaVersion ?? 0) < DEMO_DATA_SCHEMA_VERSION
 	return {
+		schemaVersion: DEMO_DATA_SCHEMA_VERSION,
 		integrantes: value.integrantes.map((item) => {
 			const financeiro =
 				item.perfil === 'gestor' &&
@@ -286,7 +302,10 @@ function safeData(value: DemoData): DemoData {
 				subsistemaId: item.subsistemaId,
 				ativo: item.ativo,
 				financeiro,
-				passwordChangePending: item.passwordChangePending === true,
+				passwordChangePending:
+					migrateInitialCaptainPassword && item.id === 'ana'
+						? true
+						: item.passwordChangePending === true,
 			}
 		}),
 		subsistemas: value.subsistemas.map((item) => ({
@@ -305,7 +324,13 @@ export function createDemoStore(storage: StoragePort) {
 			const raw = storage.getItem(DEMO_DATA_KEY)
 			if (raw) {
 				const parsed: unknown = JSON.parse(raw)
-				if (validData(parsed)) return safeData(parsed)
+				if (validData(parsed)) {
+					const schemaVersion = parsed.schemaVersion ?? 0
+					const migrated = safeData(parsed)
+					if (schemaVersion < DEMO_DATA_SCHEMA_VERSION)
+						persist(migrated)
+					return migrated
+				}
 			}
 		} catch {
 			// Browser storage can be disabled; the seed remains available.
@@ -340,6 +365,7 @@ export function createDemoStore(storage: StoragePort) {
 
 	let failNext = false
 	let failCreate = false
+	let failPasswordChange = false
 
 	function administradorAtivo(
 		source: DemoData,
@@ -1300,6 +1326,35 @@ export function createDemoStore(storage: StoragePort) {
 		},
 		failNextRead() {
 			failNext = true
+		},
+		failNextPasswordChange() {
+			failPasswordChange = true
+		},
+		changeOwnPassword(
+			id: string,
+			currentPassword: string,
+			newPassword: string,
+		) {
+			assertValidPasswordChange(currentPassword, newPassword)
+			if (failPasswordChange) {
+				failPasswordChange = false
+				throw new PasswordChangeError(
+					'Não foi possível concluir a troca demonstrativa. Tente novamente.',
+				)
+			}
+			const next = data()
+			const target = next.integrantes.find(
+				(item) => item.id === id && item.ativo,
+			)
+			if (!target)
+				throw new PasswordChangeError(
+					'A identidade demonstrativa não está disponível.',
+				)
+			target.passwordChangePending = false
+			if (!persist(next))
+				throw new PasswordChangeError(
+					'Não foi possível salvar a troca neste navegador. Tente novamente.',
+				)
 		},
 		identities(perspective?: DemoPerspective): DemoIdentity[] {
 			const source = data()

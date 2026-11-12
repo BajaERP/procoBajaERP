@@ -186,6 +186,12 @@ export interface EquipeService {
 		atorId: string,
 		integranteId: string,
 	): Promise<string>
+	trocarSenhaPropria(
+		integranteId: string,
+		senhaAtual: string,
+		novaSenha: string,
+	): Promise<void>
+	simularFalhaNaProximaTrocaSenha?(): void | Promise<void>
 	opcoesCadastroIntegrante(atorId: string): Promise<OpcoesCadastroIntegrante>
 	cadastrarIntegrante(
 		atorId: string,
