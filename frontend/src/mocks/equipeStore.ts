@@ -273,7 +273,8 @@ export function createDemoStore(storage: StoragePort) {
 					).length,
 					integrantesAssociados: seeAllComposition
 						? source.integrantes.filter(
-								(item) => item.subsistemaId !== null,
+								(item) =>
+									item.subsistemaId !== null && item.ativo,
 							).length
 						: null,
 				},
@@ -288,7 +289,7 @@ export function createDemoStore(storage: StoragePort) {
 						const pessoas = source.integrantes.filter(
 							(item) =>
 								item.subsistemaId === subsistema.id &&
-								(seeAllComposition || item.ativo),
+								item.ativo,
 						)
 						const lider = pessoas.find(
 							(item) => item.perfil === 'lider' && item.ativo,
@@ -790,7 +791,10 @@ export function createDemoStore(storage: StoragePort) {
 			if (changes.perfil !== undefined) target.perfil = changes.perfil
 			target.subsistemaId = proximoSubsistemaId
 			if (changes.ativo !== undefined) target.ativo = changes.ativo
-			persist(next)
+			if (!persist(next))
+				throw new AdministracaoIntegranteError(
+					'Não foi possível salvar as alterações neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 		},
 		resetTemporaryPassword(atorId: string, integranteId: string) {
 			const next = data()
@@ -809,7 +813,10 @@ export function createDemoStore(storage: StoragePort) {
 					'Você não tem permissão para redefinir esta senha.',
 				)
 			target.passwordChangePending = true
-			persist(next)
+			if (!persist(next))
+				throw new AdministracaoIntegranteError(
+					'Não foi possível salvar a redefinição neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 			const alphabet =
 				'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
 			const random = crypto.getRandomValues(new Uint8Array(20))
@@ -864,7 +871,10 @@ export function createDemoStore(storage: StoragePort) {
 				for (const other of next.integrantes)
 					if (other.id !== id) other.financeiro = false
 			}
-			persist(next)
+			if (!persist(next))
+				throw new Error(
+					'Não foi possível salvar as alterações neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 		},
 		reset() {
 			try {

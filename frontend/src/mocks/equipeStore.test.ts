@@ -4,14 +4,18 @@ import { createDemoStore } from './equipeStore.ts'
 
 function storage(failWrites = false) {
 	const values = new Map<string, string>()
+	let writesFail = failWrites
 	return {
 		getItem: (key: string) => values.get(key) ?? null,
 		setItem: (key: string, value: string) => {
-			if (failWrites) throw new Error('storage unavailable')
+			if (writesFail) throw new Error('storage unavailable')
 			values.set(key, value)
 		},
 		removeItem: (key: string) => {
 			values.delete(key)
+		},
+		setWritesFail: (value: boolean) => {
+			writesFail = value
 		},
 	}
 }
@@ -224,15 +228,51 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 		}).resumo.integrantesAssociados,
 		null,
 	)
+	store.updateIntegrante('elisa', { ativo: false })
 	const orientador = store.listarSubsistemas({
 		id: 'joao',
 		perfil: 'orientador',
 		subsistemaId: null,
 	}).subsistemas
 	assert.ok(
-		orientador
+		!orientador
 			.find((item: { id: string }) => item.id === 'chassi')
 			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const lider = store.listarSubsistemas({
+		id: 'diego',
+		perfil: 'lider',
+		subsistemaId: 'chassi',
+	}).subsistemas
+	assert.ok(
+		!lider
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const captain = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	assert.ok(
+		!captain
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo.integrantesAssociados,
+		6,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+			'elisa',
+		)?.ativo,
+		false,
 	)
 })
 
@@ -478,6 +518,19 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	assert.equal(store.identity('elisa')?.role, 'orientador')
 })
 
+test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.administer('bruno', 'elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.administer('bruno', 'elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
+})
+
 test('liderança não muda por edição comum e Gestor Financeiro exige tratar a atribuição à parte', () => {
 	const store = createDemoStore(storage())
 	assert.deepEqual(store.administrationOptions('bruno', 'diego').perfis, [])
@@ -563,6 +616,32 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
 	)
+})
+
+test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { passwordChangePending: false })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.resetTemporaryPassword('ana', 'elisa'),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.passwordChangePending, false)
+})
+
+test('falha ao persistir atualização genérica retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.updateIntegrante('elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
 })
 
 test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {

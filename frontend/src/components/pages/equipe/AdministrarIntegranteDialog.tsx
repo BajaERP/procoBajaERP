@@ -290,6 +290,7 @@ export function AdministrarIntegranteDialog({
 	}
 
 	function close() {
+		if (saving) return
 		setPassword(null)
 		onClose()
 	}
