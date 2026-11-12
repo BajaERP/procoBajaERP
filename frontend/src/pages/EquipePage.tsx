@@ -7,6 +7,7 @@ import { equipeService } from '../services/equipe'
 import type { ConsultaIntegrantes } from '../services/equipeTypes'
 import { perfisParaCadastro } from '../services/cadastroIntegrante'
 import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroIntegranteDialog'
+import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
 
 type LoadState =
 	| { status: 'loading' }
@@ -18,12 +19,16 @@ export default function EquipePage() {
 	const location = useLocation()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
 	const [cadastroAtor, setCadastroAtor] = useState<string | null>(null)
+	const [detalheIntegrante, setDetalheIntegrante] = useState<string | null>(
+		null,
+	)
 	const podeCadastrar =
 		import.meta.env.DEV &&
 		!!user &&
 		perfisParaCadastro(user.role).length > 0
 	useEffect(() => {
 		setCadastroAtor(null)
+		setDetalheIntegrante(null)
 	}, [user?.id, user?.role, location.pathname])
 
 	return (
@@ -103,6 +108,7 @@ export default function EquipePage() {
 				<IntegrantesContent
 					key={`${user.id}:${user.role}:${demoRevision}`}
 					user={user}
+					onOpen={setDetalheIntegrante}
 				/>
 			) : null}
 			{cadastroAtor === user?.id && podeCadastrar && !subsistemas && (
@@ -112,11 +118,25 @@ export default function EquipePage() {
 					onClose={() => setCadastroAtor(null)}
 				/>
 			)}
+			{user && detalheIntegrante && !subsistemas && (
+				<AdministrarIntegranteDialog
+					key={`${user.id}:${detalheIntegrante}`}
+					ator={user}
+					integranteId={detalheIntegrante}
+					onClose={() => setDetalheIntegrante(null)}
+				/>
+			)}
 		</div>
 	)
 }
 
-function IntegrantesContent({ user }: { user: AuthUser }) {
+function IntegrantesContent({
+	user,
+	onOpen,
+}: {
+	user: AuthUser
+	onOpen: (id: string) => void
+}) {
 	const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
 	const [attempt, setAttempt] = useState(0)
 
@@ -192,7 +212,7 @@ function IntegrantesContent({ user }: { user: AuthUser }) {
 		</section>
 	) : (
 		<>
-			<IntegrantesList data={loadState.data} />
+			<IntegrantesList data={loadState.data} onOpen={onOpen} />
 			<div className="mt-4 flex justify-end">
 				<button
 					type="button"

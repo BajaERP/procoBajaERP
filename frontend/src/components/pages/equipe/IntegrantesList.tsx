@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react'
 import { pesquisarIntegrantes } from '../../../services/equipePolicy'
 import type {
 	ConsultaIntegrantes,
@@ -42,7 +42,13 @@ function Status({ active }: { active: boolean }) {
 	)
 }
 
-export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
+export function IntegrantesList({
+	data,
+	onOpen,
+}: {
+	data: ConsultaIntegrantes
+	onOpen: (integranteId: string) => void
+}) {
 	const [busca, setBusca] = useState('')
 	const [perfil, setPerfil] = useState('')
 	const [subsistema, setSubsistema] = useState('')
@@ -202,6 +208,9 @@ export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
 									<th scope="col" className="px-4 py-3">
 										Situação
 									</th>
+									<th scope="col" className="px-4 py-3">
+										Ações
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -238,6 +247,19 @@ export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
 										<td className="px-4 py-3">
 											<Status active={item.ativo} />
 										</td>
+										<td className="px-4 py-3">
+											<button
+												type="button"
+												onClick={() => onOpen(item.id)}
+												className="inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-xs font-semibold text-link hover:bg-selected"
+											>
+												<Eye
+													size={15}
+													aria-hidden="true"
+												/>{' '}
+												Detalhes
+											</button>
+										</td>
 									</tr>
 								))}
 							</tbody>
@@ -268,6 +290,14 @@ export function IntegrantesList({ data }: { data: ConsultaIntegrantes }) {
 									</div>
 									<Status active={item.ativo} />
 								</div>
+								<button
+									type="button"
+									onClick={() => onOpen(item.id)}
+									className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-xs font-semibold text-link hover:bg-selected"
+								>
+									<Eye size={15} aria-hidden="true" /> Ver
+									detalhes e administração
+								</button>
 								<p className="mt-3 border-t border-hairline-soft pt-3 text-xs text-mute">
 									RA / SIAPE:{' '}
 									<span className="font-mono text-body">
