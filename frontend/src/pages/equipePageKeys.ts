@@ -8,5 +8,6 @@ export function getEquipePageContentKeys(
 		subsistemas: `subsistemas:${identity}`,
 		integrantes: `integrantes:${identity}`,
 		financeiro: `financeiro:${identity}`,
+		permissoes: `permissoes:${identity}`,
 	}
 }

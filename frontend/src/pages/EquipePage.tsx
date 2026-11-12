@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertCircle, Plus, RotateCcw } from 'lucide-react'
+import { AlertCircle, Plus, RotateCcw, ShieldCheck } from 'lucide-react'
 import { useAuth, type AuthUser } from '../contexts/AuthContext'
+import { PermissoesDialog } from '../components/pages/equipe/PermissoesDialog'
+import { podeConsultarPermissoes } from '../services/equipePermissions'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
 import { equipeService } from '../services/equipe'
 import type {
@@ -30,7 +32,16 @@ export default function EquipePage() {
 	)
 	const location = useLocation()
 	const navigate = useNavigate()
-	const subsistemas = location.pathname.endsWith('/subsistemas')
+	const permissoesLinkRef = useRef<HTMLAnchorElement>(null)
+	const permissoes = location.pathname.endsWith('/permissoes')
+	const podeConsultar = Boolean(user && podeConsultarPermissoes(user.role))
+	const origem =
+		location.state?.returnTo === '/app/equipe/subsistemas'
+			? '/app/equipe/subsistemas'
+			: '/app/equipe/integrantes'
+	const subsistemas =
+		location.pathname.endsWith('/subsistemas') ||
+		(permissoes && origem.endsWith('/subsistemas'))
 	const responsabilidadeFinanceira = location.pathname.endsWith('/financeiro')
 	const [cadastroAtor, setCadastroAtor] = useState<string | null>(null)
 	const [detalheIntegrante, setDetalheIntegrante] = useState<string | null>(
@@ -84,6 +95,17 @@ export default function EquipePage() {
 							</p>
 						)}
 					</div>
+					{import.meta.env.DEV && podeConsultar && (
+						<Link
+							ref={permissoesLinkRef}
+							to="/app/equipe/permissoes"
+							state={{ returnTo: location.pathname }}
+							className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-surface-card px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-raised"
+						>
+							<ShieldCheck size={17} aria-hidden="true" />
+							Perfis e permissões
+						</Link>
+					)}
 					{subsistemas && podeAdministrarSubsistemas ? (
 						<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
 							<button
@@ -149,6 +171,25 @@ export default function EquipePage() {
 							após a integração com o servidor.
 						</p>
 					</section>
+				) : permissoes && !podeConsultar ? (
+					<section
+						role="status"
+						className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
+					>
+						<h2 className="text-lg font-semibold text-ink">
+							Consulta restrita
+						</h2>
+						<p className="mt-2">
+							A matriz de permissões está disponível para Capitão e
+							Gestor.
+						</p>
+						<Link
+							to="/app/equipe/integrantes"
+							className="mt-4 inline-flex min-h-11 items-center rounded-md text-link underline underline-offset-4"
+						>
+							Voltar para integrantes
+						</Link>
+					</section>
 				) : subsistemas && user ? (
 					<SubsistemasContent
 						key={pageKeys.subsistemas}
@@ -174,6 +215,15 @@ export default function EquipePage() {
 						key={pageKeys.financeiro}
 						user={user}
 						onClose={() => navigate('/app/equipe/integrantes')}
+					/>
+				)}
+				{import.meta.env.DEV && permissoes && podeConsultar && user && (
+					<PermissoesDialog
+						key={pageKeys.permissoes}
+						perfil={user.role}
+						financial={user.financial}
+						onClose={() => navigate(origem, { replace: true })}
+						returnFocusRef={permissoesLinkRef}
 					/>
 				)}
 				{cadastroAtor === user?.id && podeCadastrar && !subsistemas && (
