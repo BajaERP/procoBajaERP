@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { Crown, Pencil, Users, X } from 'lucide-react'
 import type { SubsistemaConsultavel } from '../../../services/equipeTypes'
 import { labelPerfilSubsistema } from '../../../services/subsistemas'
-import { Notifications } from '../../shared/Notifications'
 
 export function DetalhesSubsistemaDialog({
 	subsistema,
@@ -50,7 +49,6 @@ export function DetalhesSubsistemaDialog({
 			}}
 			className="fixed inset-y-0 right-0 m-0 ml-auto flex h-dvh max-h-dvh w-full max-w-none flex-col overflow-hidden border-l border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay md:w-[555px] md:max-w-[calc(100vw-1rem)]"
 		>
-			<Notifications id="lideranca" />
 			<header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-2">

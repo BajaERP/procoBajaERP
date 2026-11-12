@@ -6,6 +6,7 @@ import type {
 	ConsultaSubsistemas,
 	ResumoSubsistemas,
 } from '../../../services/equipeTypes'
+import { Notifications } from '../../shared/Notifications'
 import { AdministrarSubsistemaDialog } from './AdministrarSubsistemaDialog'
 import { DefinirLiderDialog } from './DefinirLiderDialog'
 import { DetalhesSubsistemaDialog } from './DetalhesSubsistemaDialog'
@@ -95,6 +96,7 @@ export function SubsistemasContent({
 
 	return (
 		<>
+			<Notifications id="lideranca" />
 			<div className="min-w-0">
 				{state.status === 'loading' ? (
 					<section
