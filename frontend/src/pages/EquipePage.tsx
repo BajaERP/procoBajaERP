@@ -4,10 +4,14 @@ import { AlertCircle, Plus, RotateCcw } from 'lucide-react'
 import { useAuth, type AuthUser } from '../contexts/AuthContext'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
 import { equipeService } from '../services/equipe'
-import type { ConsultaIntegrantes } from '../services/equipeTypes'
+import type {
+	ConsultaIntegrantes,
+	ResumoSubsistemas,
+} from '../services/equipeTypes'
 import { perfisParaCadastro } from '../services/cadastroIntegrante'
 import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroIntegranteDialog'
 import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
+import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
 
 type LoadState =
 	| { status: 'loading' }
@@ -22,17 +26,28 @@ export default function EquipePage() {
 	const [detalheIntegrante, setDetalheIntegrante] = useState<string | null>(
 		null,
 	)
+	const [resumoSubsistemas, setResumoSubsistemas] =
+		useState<ResumoSubsistemas | null>(null)
+	const [createSubsystemRequest, setCreateSubsystemRequest] = useState(false)
 	const podeCadastrar =
 		import.meta.env.DEV &&
 		!!user &&
 		perfisParaCadastro(user.role).length > 0
+	const podeAdministrarSubsistemas =
+		import.meta.env.DEV &&
+		!!user &&
+		['capitao', 'gestor'].includes(user.role)
 	useEffect(() => {
 		setCadastroAtor(null)
 		setDetalheIntegrante(null)
+		setResumoSubsistemas(null)
+		setCreateSubsystemRequest(false)
 	}, [user?.id, user?.role, location.pathname])
 
 	return (
-		<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
+		<div
+			className={`mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10 ${subsistemas && podeAdministrarSubsistemas ? 'pb-24 md:pb-10' : ''}`}
+		>
 			<header className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
@@ -42,8 +57,27 @@ export default function EquipePage() {
 						Organize as pessoas e as áreas do projeto em um só
 						lugar.
 					</p>
+					{subsistemas && resumoSubsistemas && (
+						<p className="mt-2 text-sm text-mute">
+							{resumoSubsistemas.subsistemasAtivos} subsistemas
+							ativos
+							{resumoSubsistemas.integrantesAssociados !== null &&
+								` · ${resumoSubsistemas.integrantesAssociados} integrantes associados`}
+						</p>
+					)}
 				</div>
-				{podeCadastrar && !subsistemas && (
+				{subsistemas && podeAdministrarSubsistemas ? (
+					<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
+						<button
+							type="button"
+							onClick={() => setCreateSubsystemRequest(true)}
+							className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed md:w-auto"
+						>
+							<Plus size={18} aria-hidden="true" /> Novo
+							subsistema
+						</button>
+					</div>
+				) : podeCadastrar && !subsistemas ? (
 					<button
 						type="button"
 						onClick={() => setCadastroAtor(user.id)}
@@ -52,7 +86,7 @@ export default function EquipePage() {
 						<Plus size={18} aria-hidden="true" />
 						Novo integrante
 					</button>
-				)}
+				) : null}
 			</header>
 
 			<nav
@@ -95,15 +129,16 @@ export default function EquipePage() {
 						após a integração com o servidor.
 					</p>
 				</section>
-			) : subsistemas ? (
-				<section className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body">
-					<h2 className="text-lg font-semibold text-ink">
-						Subsistemas
-					</h2>
-					<p className="mt-2">
-						A consulta dos subsistemas está em construção.
-					</p>
-				</section>
+			) : subsistemas && user ? (
+				<SubsistemasContent
+					key={`${user.id}:${user.role}:${demoRevision}`}
+					user={user}
+					createRequest={createSubsystemRequest}
+					onCreateRequestConsumed={() =>
+						setCreateSubsystemRequest(false)
+					}
+					onSummary={setResumoSubsistemas}
+				/>
 			) : user ? (
 				<IntegrantesContent
 					key={`${user.id}:${user.role}:${demoRevision}`}

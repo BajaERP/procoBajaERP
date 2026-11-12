@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createDemoStore } from './equipeStore.ts'
 
-function storage() {
+function storage(failWrites = false) {
 	const values = new Map<string, string>()
-	let writesFail = false
+	let writesFail = failWrites
 	return {
 		getItem: (key: string) => values.get(key) ?? null,
 		setItem: (key: string, value: string) => {
@@ -181,6 +181,522 @@ test('nome, identificador e subsistema inválidos retornam erros associados aos 
 		)
 	}
 	assert.equal(store.data().integrantes.length, 9)
+})
+
+test('consulta subsistemas mostra resumo ativo a todos e composição autorizada por identidade', () => {
+	const store = createDemoStore(storage())
+	const membro = store.listarSubsistemas({
+		id: 'carla',
+		perfil: 'membro',
+		subsistemaId: 'inativo',
+	}).subsistemas
+	assert.ok(membro.some((item: { id: string }) => item.id === 'inativo'))
+	assert.ok(
+		membro
+			.find((item: { id: string }) => item.id === 'inativo')
+			?.integrantes?.some((item: { id: string }) => item.id === 'carla'),
+	)
+	assert.equal(store.identity('carla')?.subsistemaId, 'inativo')
+	assert.ok(
+		!(
+			'identificador' in
+			membro.find((item: { id: string }) => item.id === 'inativo')!
+				.integrantes![0]
+		),
+	)
+	assert.ok(
+		!membro.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes,
+	)
+	assert.ok(membro.some((item: { id: string }) => item.id === 'projeto'))
+	assert.deepEqual(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo,
+		{
+			subsistemasAtivos: 4,
+			integrantesAssociados: 7,
+		},
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'carla',
+			perfil: 'membro',
+			subsistemaId: 'inativo',
+		}).resumo.integrantesAssociados,
+		null,
+	)
+	store.updateIntegrante('elisa', { ativo: false })
+	const orientador = store.listarSubsistemas({
+		id: 'joao',
+		perfil: 'orientador',
+		subsistemaId: null,
+	}).subsistemas
+	assert.ok(
+		!orientador
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const lider = store.listarSubsistemas({
+		id: 'diego',
+		perfil: 'lider',
+		subsistemaId: 'chassi',
+	}).subsistemas
+	assert.ok(
+		!lider
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const captain = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	assert.ok(
+		!captain
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo.integrantesAssociados,
+		6,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+			'elisa',
+		)?.ativo,
+		false,
+	)
+})
+
+test('definição inicial ativa o subsistema e persiste o novo Líder nas identidades', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+
+	store.definirLider('ana', 'inativo', 'carla')
+
+	const reloaded = createDemoStore(localStorage)
+	assert.equal(reloaded.identity('carla')?.role, 'lider')
+	assert.equal(reloaded.identity('carla')?.subsistemaId, 'inativo')
+	assert.equal(
+		reloaded
+			.listarSubsistemas({
+				id: 'ana',
+				perfil: 'capitao',
+				subsistemaId: null,
+			})
+			.subsistemas.find((item: { id: string }) => item.id === 'inativo')
+			?.ativo,
+		true,
+	)
+	assert.equal(
+		reloaded
+			.listarSubsistemas({
+				id: 'ana',
+				perfil: 'capitao',
+				subsistemaId: null,
+			})
+			.subsistemas.find((item: { id: string }) => item.id === 'inativo')
+			?.lider?.id,
+		'carla',
+	)
+})
+
+test('substituição atualiza o perfil e as identidades do Líder anterior e do novo', () => {
+	const store = createDemoStore(storage())
+
+	store.definirLider('bruno', 'chassi', 'elisa')
+
+	assert.equal(store.identity('diego')?.role, 'membro')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('elisa')?.role, 'lider')
+	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
+})
+
+test('transferência de outro subsistema troca a liderança e atualiza ambas as composições', () => {
+	const store = createDemoStore(storage())
+
+	store.definirLider('ana', 'chassi', 'helena')
+
+	const equipes = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	assert.equal(store.identity('helena')?.role, 'lider')
+	assert.equal(store.identity('helena')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('diego')?.role, 'membro')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.equal(
+		equipes.find((item: { id: string }) => item.id === 'chassi')?.lider?.id,
+		'helena',
+	)
+	assert.equal(
+		equipes.find((item: { id: string }) => item.id === 'eletrica')?.lider
+			?.id,
+		'gabriel',
+	)
+	assert.ok(
+		equipes
+			.find((item: { id: string }) => item.id === 'eletrica')
+			?.integrantes?.some(
+				(item: { id: string }) => item.id === 'helena',
+			) === false,
+	)
+})
+
+test('transferência comum aceita destino inativo, persiste vínculo e registra auditoria', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.transferirIntegrante('ana', 'elisa', 'inativo')
+
+	assert.equal(store.identity('elisa')?.subsistemaId, 'inativo')
+	assert.equal(
+		createDemoStore(localStorage).identity('elisa')?.subsistemaId,
+		'inativo',
+	)
+	const audit = store.read().auditoria.at(-1)!
+	assert.equal(typeof audit.registradoEm, 'string')
+	const { registradoEm: _, ...auditEntry } = audit
+	assert.deepEqual(auditEntry, {
+		tipo: 'transferencia_integrante',
+		atorId: 'ana',
+		integranteId: 'elisa',
+		origemId: 'chassi',
+		destinoId: 'inativo',
+		perfilAnterior: 'membro',
+		perfilAtual: 'membro',
+	})
+})
+
+test('transferência comum bloqueia Líder sem substituição e rejeita ator sem permissão', () => {
+	const store = createDemoStore(storage())
+	assert.throws(
+		() => store.transferirIntegrante('ana', 'diego', 'eletrica'),
+		/Defina outro Líder.*antes de transferir/i,
+	)
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.throws(
+		() => store.transferirIntegrante('elisa', 'helena', 'chassi'),
+		/permissão para transferir/i,
+	)
+})
+
+test('desativação transfere cada conta ativa ou desativada e converte Líder em Membro', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('helena', { subsistemaId: 'eletrica' })
+	store.updateIntegrante('gabriel', { ativo: false })
+	store.desativarSubsistema('ana', 'eletrica', {
+		helena: 'chassi',
+		gabriel: 'projeto',
+	})
+
+	assert.equal(
+		store.read().subsistemas.find((item) => item.id === 'eletrica')?.ativo,
+		false,
+	)
+	assert.equal(store.identity('helena')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('gabriel'), null)
+	assert.equal(
+		store.read().integrantes.find((item) => item.id === 'gabriel')
+			?.subsistemaId,
+		'projeto',
+	)
+	assert.equal(
+		store.read().integrantes.find((item) => item.id === 'gabriel')?.perfil,
+		'membro',
+	)
+	const audit = store.read().auditoria.at(-1)!
+	const { registradoEm: _, ...auditEntry } = audit
+	assert.deepEqual(auditEntry, {
+		tipo: 'desativacao_subsistema',
+		atorId: 'ana',
+		subsistemaId: 'eletrica',
+		transferencias: [
+			{
+				integranteId: 'gabriel',
+				origemId: 'eletrica',
+				destinoId: 'projeto',
+				perfilAnterior: 'lider',
+				perfilAtual: 'membro',
+			},
+			{
+				integranteId: 'helena',
+				origemId: 'eletrica',
+				destinoId: 'chassi',
+				perfilAnterior: 'membro',
+				perfilAtual: 'membro',
+			},
+		],
+	})
+	assert.equal(
+		createDemoStore(localStorage)
+			.read()
+			.subsistemas.find((item) => item.id === 'eletrica')?.ativo,
+		false,
+	)
+})
+
+test('desativação bloqueia sem destinos ativos e não altera dados; vazio não exige destino', () => {
+	const localStorage = storage()
+	const seed = createDemoStore(localStorage)
+	const noDestinations = seed.read()
+	noDestinations.subsistemas.forEach(
+		(item) => (item.ativo = item.id === 'chassi'),
+	)
+	localStorage.setItem('proco.demo.equipe.v1', JSON.stringify(noDestinations))
+	const store = createDemoStore(localStorage)
+	assert.throws(
+		() => store.desativarSubsistema('ana', 'chassi', {}),
+		/Não há subsistema ativo para receber os integrantes/i,
+	)
+	assert.equal(
+		store.read().subsistemas.find((item) => item.id === 'chassi')?.ativo,
+		true,
+	)
+	assert.equal(
+		store.read().integrantes.find((item) => item.id === 'diego')
+			?.subsistemaId,
+		'chassi',
+	)
+	store.updateIntegrante('diego', { subsistemaId: null, perfil: 'membro' })
+	store.updateIntegrante('elisa', { subsistemaId: null })
+	store.desativarSubsistema('ana', 'chassi', {})
+	assert.equal(
+		store.read().subsistemas.find((item) => item.id === 'chassi')?.ativo,
+		false,
+	)
+})
+
+test('desativação valida todos os destinos antes de persistir e falha sem mutação parcial', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	const before = store.read()
+	assert.throws(
+		() =>
+			store.desativarSubsistema('ana', 'eletrica', {
+				gabriel: 'chassi',
+				helena: 'inativo',
+			}),
+		/Escolha um subsistema ativo para Helena/i,
+	)
+	assert.equal(
+		store.read().subsistemas.find((item) => item.id === 'eletrica')?.ativo,
+		true,
+	)
+	assert.equal(
+		store.read().integrantes.find((item) => item.id === 'gabriel')
+			?.subsistemaId,
+		'eletrica',
+	)
+	assert.equal(store.read().auditoria.length, before.auditoria.length)
+})
+
+test('falha de persistência mantém vínculos e auditoria da transferência', () => {
+	let failWrites = false
+	let writeCount = 0
+	const values = new Map<string, string>()
+	const localStorage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			writeCount += 1
+			if (failWrites) throw new Error('storage unavailable')
+			values.set(key, value)
+		},
+		removeItem: (key: string) => values.delete(key),
+	}
+	const store = createDemoStore(localStorage)
+	writeCount = 0
+	failWrites = true
+	assert.throws(
+		() => store.transferirIntegrante('ana', 'elisa', 'inativo'),
+		/Não foi possível salvar a transferência/i,
+	)
+	assert.equal(writeCount, 1)
+	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
+	assert.equal(store.read().auditoria.length, 0)
+})
+
+test('definição de Líder exige administrador e Membro ativo e falha sem alteração parcial', () => {
+	let failWrites = false
+	const values = new Map<string, string>()
+	const localStorage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			if (failWrites) throw new Error('storage unavailable')
+			values.set(key, value)
+		},
+		removeItem: (key: string) => values.delete(key),
+	}
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('carla', { ativo: false })
+
+	assert.throws(
+		() => store.definirLider('elisa', 'chassi', 'helena'),
+		/permissão/,
+	)
+	assert.throws(
+		() => store.definirLider('ana', 'chassi', 'gabriel'),
+		/Membro ativo/,
+	)
+	assert.throws(
+		() => store.definirLider('ana', 'chassi', 'carla'),
+		/Membro ativo/,
+	)
+	failWrites = true
+	assert.throws(() => store.definirLider('ana', 'chassi', 'helena'), /salvar/)
+	assert.equal(store.identity('diego')?.role, 'lider')
+	assert.equal(store.identity('helena')?.role, 'membro')
+})
+
+test('Capitão cria subsistema inativo sem Líder e prepara composição com integrantes autorizados', () => {
+	const store = createDemoStore(storage())
+	const created = store.salvarSubsistema('ana', {
+		nome: '  Ergonomia  ',
+		integranteIds: ['joao'],
+	})
+	assert.equal(created.nome, 'Ergonomia')
+	assert.equal(created.ativo, false)
+	assert.equal(created.lider, null)
+	assert.deepEqual(
+		created.integrantes?.map((item: { id: string }) => item.id),
+		['joao'],
+	)
+	assert.equal(store.identity('joao')?.subsistemaId, created.id)
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				nome: 'Não transfere',
+				integranteIds: ['elisa'],
+			}),
+		/transferências precisam do fluxo próprio/i,
+	)
+	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
+})
+
+test('descrição opcional de subsistema é normalizada e persistida ao criar e editar', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	const created = store.salvarSubsistema('ana', {
+		nome: 'Aerodinâmica',
+		descricao: '  Estudo de fluxo de ar.  ',
+		integranteIds: [],
+	})
+	assert.equal(created.descricao, 'Estudo de fluxo de ar.')
+	assert.equal(
+		createDemoStore(localStorage)
+			.data()
+			.subsistemas.find((item) => item.id === created.id)?.descricao,
+		'Estudo de fluxo de ar.',
+	)
+	store.salvarSubsistema('ana', {
+		id: created.id,
+		nome: created.nome,
+		descricao: '  ',
+		integranteIds: [],
+	})
+	assert.equal(
+		createDemoStore(localStorage)
+			.data()
+			.subsistemas.find((item) => item.id === created.id)?.descricao,
+		null,
+	)
+})
+
+test('subsistema exige permissão, nome de até 120 caracteres único sem diferenciar caixa', () => {
+	const store = createDemoStore(storage())
+	assert.throws(
+		() =>
+			store.salvarSubsistema('carla', {
+				nome: 'Vendas',
+				integranteIds: [],
+			}),
+		/permissão/,
+	)
+	for (const [input, field] of [
+		[{ nome: ' ' }, 'nome'],
+		[{ nome: 'x'.repeat(121) }, 'nome'],
+		[{ nome: 'cHaSsI' }, 'nome'],
+	] as const) {
+		assert.throws(
+			() => {
+				const dados = Object.assign(
+					{ nome: 'Vendas', integranteIds: [] },
+					input,
+				)
+				store.salvarSubsistema('ana', dados)
+			},
+			(error: unknown) => {
+				assert.ok(error instanceof Error)
+				assert.ok(
+					'campos' in error &&
+						(error.campos as Record<string, string>)[field],
+				)
+				return true
+			},
+		)
+	}
+})
+
+test('edição mantém subsistema inativo e não permite alterar sua liderança pelo fluxo básico', () => {
+	const store = createDemoStore(storage())
+	const saved = store.salvarSubsistema('bruno', {
+		id: 'chassi',
+		nome: 'Chassi e Estrutura',
+		integranteIds: ['elisa'],
+	})
+	assert.equal(saved.ativo, true)
+	assert.equal(saved.lider?.id, 'diego')
+	assert.equal(store.identity('diego')?.role, 'lider')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				id: 'ausente',
+				nome: 'Novo',
+				integranteIds: [],
+			}),
+		/não foi encontrado/i,
+	)
+})
+
+test('edição preserva vínculos de integrantes desativados da composição', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('elisa', { ativo: false })
+	const options = store.opcoesSubsistema('ana', 'chassi')
+	assert.ok(!options.integranteIds.includes('elisa'))
+	store.salvarSubsistema('ana', {
+		id: 'chassi',
+		nome: 'Chassi',
+		integranteIds: [],
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		'chassi',
+	)
+})
+
+test('falha ao persistir subsistema é reportada e não confirma a alteração', () => {
+	const localStorage = storage(true)
+	const store = createDemoStore(localStorage)
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				nome: 'Aerodinâmica',
+				integranteIds: [],
+			}),
+		/Não foi possível salvar o subsistema/,
+	)
+	assert.equal(localStorage.getItem('proco.demo.equipe.v1'), null)
 })
 
 test('duplicidade só orienta reativação quando o ator pode administrar a conta desativada', () => {
@@ -394,6 +910,19 @@ test('falha ao persistir redefinição não retorna senha e preserva o estado an
 	)
 	localStorage.setWritesFail(false)
 	assert.equal(store.identity('elisa')?.passwordChangePending, false)
+})
+
+test('falha ao persistir atualização genérica retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.updateIntegrante('elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
 })
 
 test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {

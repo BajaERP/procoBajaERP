@@ -14,6 +14,7 @@ export interface Integrante {
 export interface SubsistemaDemo {
 	id: string
 	nome: string
+	descricao?: string | null
 	ativo: boolean
 }
 
@@ -48,8 +49,103 @@ export interface ConsultaIntegrantes {
 	subsistemas: { id: string; nome: string }[]
 }
 
+export interface IntegranteDeSubsistema {
+	id: string
+	nome: string
+	perfil: UserRole
+	ativo: boolean
+	financeiro?: boolean
+	subsistemaId?: string | null
+}
+
+export interface SubsistemaConsultavel {
+	id: string
+	nome: string
+	descricao: string | null
+	ativo: boolean
+	lider: Pick<IntegranteDeSubsistema, 'id' | 'nome'> | null
+	integrantes?: IntegranteDeSubsistema[]
+}
+
+export interface ConsultaSubsistemas {
+	subsistemas: SubsistemaConsultavel[]
+	resumo: ResumoSubsistemas
+}
+
+export interface ResumoSubsistemas {
+	subsistemasAtivos: number
+	integrantesAssociados: number | null
+}
+
+export interface OpcoesSubsistema {
+	podeAdministrar: boolean
+	integrantesDisponiveis: IntegranteDeSubsistema[]
+	integranteIds: string[]
+}
+
+export interface OpcoesTransferenciaIntegrante {
+	destinos: SubsistemaDemo[]
+	bloqueio: string | null
+}
+
+export interface OpcoesDesativacaoSubsistema {
+	integrantes: IntegranteDeSubsistema[]
+	destinos: SubsistemaDemo[]
+	bloqueio: string | null
+}
+
+export interface OpcoesDefinicaoLider {
+	integrantesDisponiveis: (IntegranteDeSubsistema & {
+		subsistemaNome: string | null
+	})[]
+	liderAtual: Pick<IntegranteDeSubsistema, 'id' | 'nome'> | null
+	subsistemaAtivo: boolean
+}
+
+export interface DadosSubsistema {
+	id?: string
+	nome: string
+	descricao?: string | null
+	integranteIds: string[]
+}
+
+export type ErrosSubsistema = Partial<Record<'nome' | 'integranteIds', string>>
+
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
+	listarSubsistemas(visualizador: Visualizador): Promise<ConsultaSubsistemas>
+	opcoesSubsistema(
+		atorId: string,
+		subsistemaId?: string,
+	): Promise<OpcoesSubsistema>
+	opcoesDefinicaoLider(
+		atorId: string,
+		subsistemaId: string,
+	): Promise<OpcoesDefinicaoLider>
+	definirLider(
+		atorId: string,
+		subsistemaId: string,
+		integranteId: string,
+	): Promise<void>
+	salvarSubsistema(atorId: string, dados: DadosSubsistema): Promise<void>
+	opcoesTransferenciaIntegrante(
+		atorId: string,
+		integranteId: string,
+	): Promise<OpcoesTransferenciaIntegrante>
+	transferirIntegrante(
+		atorId: string,
+		integranteId: string,
+		destinoId: string,
+	): Promise<void>
+	opcoesDesativacaoSubsistema(
+		atorId: string,
+		subsistemaId: string,
+	): Promise<OpcoesDesativacaoSubsistema>
+	desativarSubsistema(
+		atorId: string,
+		subsistemaId: string,
+		destinosPorIntegrante: Record<string, string>,
+	): Promise<void>
 	obterDetalheIntegrante?(
 		visualizador: Visualizador,
 		integranteId: string,

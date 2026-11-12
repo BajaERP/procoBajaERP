@@ -1,9 +1,10 @@
-import { filtrarIntegrantesVisiveis } from '../services/equipePolicy'
+import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
 import type {
 	ConsultaIntegrantes,
+	ConsultaSubsistemas,
 	EquipeService,
 } from '../services/equipeTypes'
-import { createDemoStore } from './equipeStore'
+import { createDemoStore } from './equipeStore.ts'
 
 const store = createDemoStore(window.localStorage)
 
@@ -58,6 +59,48 @@ export const mockEquipeService: EquipeService = {
 				.filter((item) => item.ativo)
 				.map(({ id, nome }) => ({ id, nome })),
 		}
+	},
+	async listarSubsistemas(visualizador): Promise<ConsultaSubsistemas> {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		const data = store.read()
+		const identidade = store.identity(visualizador.id)
+		if (!identidade)
+			throw new Error('A identidade demonstrativa não está disponível.')
+		return store.listarSubsistemas({
+			id: identidade.id,
+			perfil: identidade.role,
+			subsistemaId: identidade.subsistemaId,
+		})
+	},
+	async opcoesSubsistema(atorId, subsistemaId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 150))
+		return store.opcoesSubsistema(atorId, subsistemaId)
+	},
+	async opcoesDefinicaoLider(atorId, subsistemaId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 150))
+		return store.opcoesDefinicaoLider(atorId, subsistemaId)
+	},
+	async definirLider(atorId, subsistemaId, integranteId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.definirLider(atorId, subsistemaId, integranteId)
+	},
+	async salvarSubsistema(atorId, dados) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.salvarSubsistema(atorId, dados)
+	},
+	async opcoesTransferenciaIntegrante(atorId, integranteId) {
+		return store.opcoesTransferenciaIntegrante(atorId, integranteId)
+	},
+	async transferirIntegrante(atorId, integranteId, destinoId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.transferirIntegrante(atorId, integranteId, destinoId)
+	},
+	async opcoesDesativacaoSubsistema(atorId, subsistemaId) {
+		return store.opcoesDesativacaoSubsistema(atorId, subsistemaId)
+	},
+	async desativarSubsistema(atorId, subsistemaId, destinosPorIntegrante) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.desativarSubsistema(atorId, subsistemaId, destinosPorIntegrante)
 	},
 	simularFalhaNaProximaConsulta() {
 		store.failNextRead()
