@@ -233,3 +233,133 @@ test('falhas de cadastro e armazenamento não anunciam nem persistem criação; 
 	)
 	assert.equal(unavailable.data().integrantes.length, 9)
 })
+
+test('administração autoriza campos e preserva privacidade nos detalhes', () => {
+	const store = createDemoStore(storage())
+	const managerOptions = store.administrationOptions('bruno', 'elisa')
+	assert.deepEqual(managerOptions.perfis, ['membro', 'orientador'])
+	assert.equal(managerOptions.podeEditarDados, true)
+	assert.equal(managerOptions.podeAlterarStatus, true)
+	assert.equal(
+		store.administrationOptions('bruno', 'ana').podeEditarDados,
+		false,
+	)
+	assert.equal(
+		store.administrationOptions('carla', 'elisa').podeEditarDados,
+		false,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'diego',
+		),
+		null,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'bruno',
+		)?.identificador,
+		null,
+	)
+	store.administer('bruno', 'elisa', {
+		nome: '  Elisa Nova  ',
+		identificador: '009876',
+		perfil: 'orientador',
+	})
+	assert.equal(
+		store.detail(
+			{ id: 'bruno', perfil: 'gestor', subsistemaId: 'gestao' },
+			'elisa',
+		)?.nome,
+		'Elisa Nova',
+	)
+	assert.equal(store.identity('elisa')?.role, 'orientador')
+})
+
+test('liderança não muda por edição comum e Gestor Financeiro exige tratar a atribuição à parte', () => {
+	const store = createDemoStore(storage())
+	assert.deepEqual(store.administrationOptions('bruno', 'diego').perfis, [])
+	assert.throws(
+		() => store.administer('bruno', 'diego', { perfil: 'membro' }),
+		/fluxo próprio/,
+	)
+	assert.match(
+		store.administrationOptions('bruno', 'diego').bloqueioStatus ?? '',
+		/Defina outro Líder/,
+	)
+	assert.throws(
+		() => store.administer('bruno', 'diego', { ativo: false }),
+		/Defina outro Líder/,
+	)
+	const financial = store.administrationOptions('ana', 'bruno')
+	assert.match(financial.bloqueioStatus ?? '', /responsabilidade financeira/)
+	assert.equal(financial.podeAlterarStatus, false)
+	assert.deepEqual(financial.perfis, [])
+	assert.throws(
+		() => store.administer('ana', 'bruno', { ativo: false }),
+		/responsabilidade financeira/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'bruno', { perfil: 'membro' }),
+		/responsabilidade financeira/,
+	)
+	assert.equal(store.identity('bruno')?.financial, true)
+})
+
+test('administração valida duplicidade, dados próprios e mantém Capitão ativo', () => {
+	const store = createDemoStore(storage())
+	assert.throws(
+		() => store.administer('bruno', 'elisa', { identificador: '2345680' }),
+		/em uso/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { nome: 'Outra Ana' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { ativo: false }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { perfil: 'gestor' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { ativo: false }),
+		/próprios dados/,
+	)
+	store.updateIntegrante('ana', { ativo: false })
+	store.updateIntegrante('ana', { ativo: true })
+	assert.throws(
+		() => store.administer('ana', 'ana', { nome: 'Ana' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'bruno', { ativo: false }),
+		/responsabilidade financeira/,
+	)
+	assert.equal(
+		store
+			.data()
+			.integrantes.filter(
+				(item) => item.ativo && item.perfil === 'capitao',
+			).length,
+		1,
+	)
+})
+
+test('redefinição mostra senha uma vez, exige troca e não persiste o texto', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('bruno', { passwordChangePending: false })
+	const password = store.resetTemporaryPassword('ana', 'elisa')
+	assert.ok(password.length >= 12)
+	assert.equal(store.identity('elisa')?.passwordChangePending, true)
+	assert.ok(!JSON.stringify(store.data()).includes(password))
+	assert.ok(!localStorage.getItem('proco.demo.equipe.v1')?.includes(password))
+	assert.throws(
+		() => store.resetTemporaryPassword('carla', 'elisa'),
+		/permissão/,
+	)
+})

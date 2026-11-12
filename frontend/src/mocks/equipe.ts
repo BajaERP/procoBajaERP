@@ -8,6 +8,18 @@ import { createDemoStore } from './equipeStore'
 const store = createDemoStore(window.localStorage)
 
 export const mockEquipeService: EquipeService = {
+	async obterDetalheIntegrante(visualizador, integranteId) {
+		return store.detail(visualizador, integranteId)
+	},
+	async opcoesAdministracaoIntegrante(atorId, integranteId) {
+		return store.administrationOptions(atorId, integranteId)
+	},
+	async administrarIntegrante(atorId, integranteId, alteracoes) {
+		store.administer(atorId, integranteId, alteracoes)
+	},
+	async redefinirSenhaProvisoria(atorId, integranteId) {
+		return store.resetTemporaryPassword(atorId, integranteId)
+	},
 	async opcoesCadastroIntegrante(atorId) {
 		return store.createOptions(atorId)
 	},
