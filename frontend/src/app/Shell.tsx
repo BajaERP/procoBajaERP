@@ -2,6 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Sidebar } from '../components/layout/Sidebar'
 import { TopBar } from '../components/layout/TopBar'
+import { useAuth } from '../contexts/AuthContext'
 import {
 	LayoutGrid as GridIcon,
 	UsersRound as PeopleIcon,
@@ -86,6 +87,7 @@ const ROUTE_LABELS: Record<string, string> = Object.fromEntries(
 ROUTE_LABELS.gestao = 'Gestão'
 
 export function Shell() {
+	const { demoNotice } = useAuth()
 	const navigate = useNavigate()
 	const location = useLocation()
 	const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -99,28 +101,16 @@ export function Shell() {
 
 	const pageLabel = ROUTE_LABELS[segment] ?? segment
 
-	const submenus: Record<string, readonly { id: string; label: string }[]> = {
-		equipe: [
-			{ id: 'integrantes', label: 'Integrantes' },
-			{ id: 'subsistemas', label: 'Subsistemas' },
-			{ id: 'cargos', label: 'Cargos e permissões' },
-		],
-		atividades: [
-			{ id: 'quadro', label: 'Quadro de atividades' },
-			{ id: 'backlog', label: 'Backlog' },
-			{ id: 'sprints', label: 'Sprints' },
-		],
-		financeiro: [
-			{ id: 'solicitacoes', label: 'Solicitações de compra' },
-			{ id: 'compras', label: 'Compras e aprovações' },
-			{ id: 'movimentacoes', label: 'Movimentações' },
-		],
-	}
-	const navItems = NAV.map((item) => ({
-		...item,
-		children: submenus[item.id],
-	}))
-	const child = submenus[segment]?.find((item) => item.id === subsegment)
+	const childLabel =
+		segment === 'equipe'
+			? (
+					{
+						integrantes: 'Integrantes',
+						subsistemas: 'Subsistemas',
+						cargos: 'Cargos e permissões',
+					} as Record<string, string>
+				)[subsegment]
+			: undefined
 
 	const closeMobileNav = useCallback(() => {
 		setMobileNavOpen(false)
@@ -166,20 +156,16 @@ export function Shell() {
 	}, [mobileNavOpen, closeMobileNav])
 
 	function handleNavChange(id: string) {
-		const [moduleId, childId] = id.split('/')
-		const item = NAV.find((n) => n.id === moduleId)
-		if (item) {
-			navigate(childId ? `${item.to}/${childId}` : item.to)
-		}
+		const item = NAV.find((n) => n.id === id)
+		if (item) navigate(item.to)
 	}
 
 	return (
 		<div className="flex h-dvh min-h-0 bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
 			<Sidebar
 				appName="ProcoBaja ERP"
-				nav={navItems}
+				nav={NAV}
 				activeId={segment}
-				activeChildId={subsegment}
 				onNavChange={handleNavChange}
 				mobileOpen={mobileNavOpen}
 				onMobileClose={closeMobileNav}
@@ -196,9 +182,9 @@ export function Shell() {
 						{ label: 'ProcoBaja ERP' },
 						{
 							label: pageLabel,
-							...(child ? { href: `#/app/${segment}` } : {}),
+							...(childLabel ? { href: `#/app/${segment}` } : {}),
 						},
-						...(child ? [{ label: child.label }] : []),
+						...(childLabel ? [{ label: childLabel }] : []),
 					]}
 					onOpenMobileMenu={() => setMobileNavOpen(true)}
 					mobileMenuOpen={mobileNavOpen}
@@ -206,6 +192,14 @@ export function Shell() {
 				/>
 
 				<main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-surface-soft dark:bg-surface-dark transition-colors">
+					{import.meta.env.DEV && demoNotice && (
+						<p
+							role="status"
+							className="border-b border-state-warning bg-state-warning-bg px-4 py-2 text-sm text-state-warning"
+						>
+							{demoNotice}
+						</p>
+					)}
 					<Outlet />
 				</main>
 			</div>

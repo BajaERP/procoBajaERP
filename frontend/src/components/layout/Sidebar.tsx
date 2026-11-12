@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import {
 	ChevronLeft as ChevronLeftIcon,
 	ChevronRight as ChevronRightIcon,
@@ -12,14 +12,12 @@ export interface NavItem {
 	label: string
 	icon: React.ComponentType
 	group: string
-	children?: readonly { id: string; label: string }[]
 }
 
 export interface SidebarProps {
 	appName?: string
 	nav?: readonly NavItem[]
 	activeId?: string
-	activeChildId?: string
 	onNavChange?: (id: string) => void
 	defaultCollapsed?: boolean
 	mobileOpen?: boolean
@@ -32,7 +30,6 @@ export function Sidebar({
 	appName = 'ProcoBaja ERP',
 	nav = [],
 	activeId,
-	activeChildId,
 	onNavChange,
 	defaultCollapsed = false,
 	mobileOpen = false,
@@ -41,24 +38,11 @@ export function Sidebar({
 	mobileDialogRef,
 }: SidebarProps) {
 	const [collapsed, setCollapsed] = useState(defaultCollapsed)
-	const [expandedId, setExpandedId] = useState<string | null>(
-		activeChildId ? (activeId ?? null) : null,
-	)
 	const { user } = useAuth()
-
-	useEffect(() => {
-		setExpandedId((current) =>
-			activeChildId && activeId
-				? activeId
-				: current === activeId
-					? current
-					: null,
-		)
-	}, [activeId, activeChildId])
 
 	const name = user?.name ?? 'Visitante'
 	const role = user
-		? `${ROLE_LABELS[user.role]}${user.id === 'demo' ? ' · demonstração' : ''}`
+		? `${user.financial ? 'Gestor Financeiro' : ROLE_LABELS[user.role]}${user.isDemo ? ' · demonstração' : ''}`
 		: 'Sem sessão'
 
 	const content = (isMobile: boolean, isCollapsed: boolean) => (
@@ -111,106 +95,49 @@ export function Sidebar({
 				aria-label="Navegação principal"
 				className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2 space-y-0.5 ${isCollapsed ? 'px-1' : 'px-2'}`}
 			>
-				{nav.map(
-					({ id, label, icon: Icon, group, children }, index) => {
-						const active = activeId === id
-						return (
-							<div key={id}>
-								{!isCollapsed &&
-									group &&
-									(index === 0 ||
-										nav[index - 1].group !== group) && (
-										<p className="px-0.5 pt-1 pb-1 text-[9px] font-bold text-mute">
-											{group}
-										</p>
-									)}
-								<button
-									type="button"
-									onClick={() => {
-										if (children?.length && !isCollapsed) {
-											setExpandedId(
-												expandedId === id ? null : id,
-											)
-											if (activeId !== id)
-												onNavChange?.(id)
-										} else {
-											setExpandedId(null)
-											onNavChange?.(id)
-											if (isMobile) onMobileClose?.()
-										}
-									}}
-									aria-expanded={
-										children?.length && !isCollapsed
-											? expandedId === id
-											: undefined
-									}
-									title={isCollapsed ? label : undefined}
-									aria-label={isCollapsed ? label : undefined}
-									aria-current={
-										active && !activeChildId
-											? 'page'
-											: undefined
-									}
-									className={`w-full flex items-center gap-3 rounded-md py-2 text-xs font-medium transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red ${isCollapsed ? 'justify-center px-0' : 'px-3'}
+				{nav.map(({ id, label, icon: Icon, group }, index) => {
+					const active = activeId === id
+					return (
+						<div key={id}>
+							{!isCollapsed &&
+								group &&
+								(index === 0 ||
+									nav[index - 1].group !== group) && (
+									<p className="px-0.5 pt-1 pb-1 text-[9px] font-bold text-mute">
+										{group}
+									</p>
+								)}
+							<button
+								type="button"
+								onClick={() => {
+									onNavChange?.(id)
+									if (isMobile) onMobileClose?.()
+								}}
+								title={isCollapsed ? label : undefined}
+								aria-label={isCollapsed ? label : undefined}
+								aria-current={active ? 'page' : undefined}
+								className={`w-full flex items-center gap-3 rounded-md py-2 text-xs font-medium transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red ${isCollapsed ? 'justify-center px-0' : 'px-3'}
                 ${
-					active || expandedId === id
+					active
 						? 'bg-selected text-link'
 						: 'bg-canvas dark:bg-surface-chrome-dark text-body hover:bg-surface-soft dark:hover:bg-white/5 hover:text-ink'
 				}`}
+							>
+								<span
+									aria-hidden="true"
+									className={`shrink-0 [&_svg]:h-4 [&_svg]:w-4 transition-colors ${active ? 'text-link' : 'text-mute group-hover:text-ink'}`}
 								>
-									<span
-										aria-hidden="true"
-										className={`shrink-0 [&_svg]:h-4 [&_svg]:w-4 transition-colors ${active ? 'text-link' : 'text-mute group-hover:text-ink'}`}
-									>
-										<Icon />
+									<Icon />
+								</span>
+								{!isCollapsed && (
+									<span className="min-w-0 flex-1 truncate text-left">
+										{label}
 									</span>
-									{!isCollapsed && (
-										<span className="min-w-0 flex-1 truncate text-left">
-											{label}
-										</span>
-									)}
-									{!isCollapsed && children?.length ? (
-										<span
-											aria-hidden="true"
-											className={`[&_svg]:h-3 [&_svg]:w-3 transition-transform ${expandedId === id ? 'rotate-90' : ''}`}
-										>
-											<ChevronRightIcon
-												size={16}
-												aria-hidden="true"
-											/>
-										</span>
-									) : null}
-								</button>
-								{!isCollapsed &&
-									expandedId === id &&
-									children?.map((child) => (
-										<button
-											key={child.id}
-											type="button"
-											onClick={() => {
-												onNavChange?.(
-													`${id}/${child.id}`,
-												)
-												if (isMobile) onMobileClose?.()
-											}}
-											aria-current={
-												active &&
-												activeChildId === child.id
-													? 'page'
-													: undefined
-											}
-											className={`ml-6 mt-0.5 flex w-[calc(100%-1.5rem)] items-center rounded-md px-3 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red ${active && activeChildId === child.id ? 'bg-selected font-semibold text-link' : 'bg-canvas text-mute hover:bg-surface-soft dark:bg-surface-chrome-dark dark:hover:bg-white/5'}`}
-										>
-											<span
-												className={`mr-3 h-4 w-px ${active && activeChildId === child.id ? 'bg-red-light' : 'bg-hairline'}`}
-											/>
-											{child.label}
-										</button>
-									))}
-							</div>
-						)
-					},
-				)}
+								)}
+							</button>
+						</div>
+					)
+				})}
 			</nav>
 
 			<div
