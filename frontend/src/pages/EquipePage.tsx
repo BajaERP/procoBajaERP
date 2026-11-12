@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { AlertCircle, RotateCcw } from 'lucide-react'
+import { AlertCircle, Plus, RotateCcw } from 'lucide-react'
 import { useAuth, type AuthUser } from '../contexts/AuthContext'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
 import { equipeService } from '../services/equipe'
 import type { ConsultaIntegrantes } from '../services/equipeTypes'
+import { perfisParaCadastro } from '../services/cadastroIntegrante'
+import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroIntegranteDialog'
 
 type LoadState =
 	| { status: 'loading' }
@@ -15,16 +17,37 @@ export default function EquipePage() {
 	const { user, demoRevision } = useAuth()
 	const location = useLocation()
 	const subsistemas = location.pathname.endsWith('/subsistemas')
+	const [cadastroAtor, setCadastroAtor] = useState<string | null>(null)
+	const podeCadastrar =
+		import.meta.env.DEV &&
+		!!user &&
+		perfisParaCadastro(user.role).length > 0
+	useEffect(() => {
+		setCadastroAtor(null)
+	}, [user?.id, user?.role, location.pathname])
 
 	return (
 		<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
-			<header>
-				<h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-					Equipe e subsistemas
-				</h1>
-				<p className="mt-1 text-sm text-mute">
-					Organize as pessoas e as áreas do projeto em um só lugar.
-				</p>
+			<header className="flex flex-wrap items-start justify-between gap-4">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+						Equipe e subsistemas
+					</h1>
+					<p className="mt-1 text-sm text-mute">
+						Organize as pessoas e as áreas do projeto em um só
+						lugar.
+					</p>
+				</div>
+				{podeCadastrar && !subsistemas && (
+					<button
+						type="button"
+						onClick={() => setCadastroAtor(user.id)}
+						className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed sm:w-auto"
+					>
+						<Plus size={18} aria-hidden="true" />
+						Novo integrante
+					</button>
+				)}
 			</header>
 
 			<nav
@@ -82,6 +105,13 @@ export default function EquipePage() {
 					user={user}
 				/>
 			) : null}
+			{cadastroAtor === user?.id && podeCadastrar && !subsistemas && (
+				<CadastroIntegranteDialog
+					key={`${user.id}:${user.role}`}
+					atorId={user.id}
+					onClose={() => setCadastroAtor(null)}
+				/>
+			)}
 		</div>
 	)
 }
