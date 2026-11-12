@@ -79,6 +79,16 @@ export function DetalhesSubsistemaDialog({
 				</button>
 			</header>
 			<div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+				{subsistema.descricao && (
+					<section>
+						<h3 className="text-sm font-semibold text-body">
+							Descrição
+						</h3>
+						<p className="mt-1 whitespace-pre-wrap text-sm text-ink">
+							{subsistema.descricao}
+						</p>
+					</section>
+				)}
 				<section>
 					<h3 className="text-sm font-semibold text-body">Líder</h3>
 					<p className="mt-1 text-sm text-ink">

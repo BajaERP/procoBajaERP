@@ -17,6 +17,22 @@ export function labelPerfilSubsistema(
 	return PERFIL_LABELS[perfil]
 }
 
+export function siglaSubsistema(nome: string): string {
+	const palavras = nome.trim().split(/\s+/).filter(Boolean)
+	if (!palavras.length) return ''
+	const sigla =
+		palavras.length > 1
+			? palavras
+					.slice(0, 4)
+					.map((palavra) => Array.from(palavra)[0])
+					.join('')
+			: Array.from(palavras[0]).slice(0, 3).join('')
+	return sigla
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLocaleUpperCase('pt-BR')
+}
+
 export class SubsistemaError extends Error {
 	campos: ErrosSubsistema
 

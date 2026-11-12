@@ -34,6 +34,7 @@ export function AdministrarSubsistemaDialog({
 	const [options, setOptions] = useState<OptionsState>({ status: 'loading' })
 	const [attempt, setAttempt] = useState(0)
 	const [nome, setNome] = useState(subsistema?.nome ?? '')
+	const [descricao, setDescricao] = useState(subsistema?.descricao ?? '')
 	const [integranteIds, setIntegranteIds] = useState<string[]>([])
 	const [errors, setErrors] = useState<ErrosSubsistema>({})
 	const [failure, setFailure] = useState<string | null>(null)
@@ -101,6 +102,7 @@ export function AdministrarSubsistemaDialog({
 		const dados: DadosSubsistema = {
 			...(subsistema ? { id: subsistema.id } : {}),
 			nome,
+			descricao,
 			integranteIds,
 		}
 		const campos = validarSubsistema(dados)
@@ -260,6 +262,25 @@ export function AdministrarSubsistemaDialog({
 									{errors.nome}
 								</p>
 							)}
+							<label
+								htmlFor="subsistema-descricao-input"
+								className="block text-sm font-medium text-body"
+							>
+								Descrição{' '}
+								<span className="font-normal text-mute">
+									(opcional)
+								</span>
+								<textarea
+									id="subsistema-descricao-input"
+									name="descricao"
+									value={descricao}
+									onChange={(event) =>
+										setDescricao(event.target.value)
+									}
+									rows={3}
+									className="mt-1.5 min-h-24 w-full resize-y rounded-md border border-hairline bg-canvas px-3 py-2 text-sm text-ink dark:[color-scheme:dark]"
+								/>
+							</label>
 							<fieldset>
 								<legend className="text-sm font-medium text-body">
 									Composição

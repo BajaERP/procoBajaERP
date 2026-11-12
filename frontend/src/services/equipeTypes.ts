@@ -14,6 +14,7 @@ export interface Integrante {
 export interface SubsistemaDemo {
 	id: string
 	nome: string
+	descricao?: string | null
 	ativo: boolean
 }
 
@@ -60,6 +61,7 @@ export interface IntegranteDeSubsistema {
 export interface SubsistemaConsultavel {
 	id: string
 	nome: string
+	descricao: string | null
 	ativo: boolean
 	lider: Pick<IntegranteDeSubsistema, 'id' | 'nome'> | null
 	integrantes?: IntegranteDeSubsistema[]
@@ -84,6 +86,7 @@ export interface OpcoesSubsistema {
 export interface DadosSubsistema {
 	id?: string
 	nome: string
+	descricao?: string | null
 	integranteIds: string[]
 }
 
