@@ -260,18 +260,29 @@ export function createDemoStore(storage: StoragePort) {
 	let failNext = false
 	let failCreate = false
 
+	function administradorAtivo(
+		source: DemoData,
+		atorId: string,
+		mensagem: string,
+	): Integrante {
+		const ator = source.integrantes.find(
+			(item) => item.id === atorId && item.ativo,
+		)
+		if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
+			throw new SubsistemaError(mensagem)
+		return ator
+	}
+
 	function subsistemaParaDefinicaoLider(
 		source: DemoData,
 		atorId: string,
 		subsistemaId: string,
 	): SubsistemaDemo {
-		const ator = source.integrantes.find(
-			(item) => item.id === atorId && item.ativo,
+		administradorAtivo(
+			source,
+			atorId,
+			'Você não tem permissão para definir a liderança do subsistema.',
 		)
-		if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
-			throw new SubsistemaError(
-				'Você não tem permissão para definir a liderança do subsistema.',
-			)
 		const subsistema = source.subsistemas.find(
 			(item) => item.id === subsistemaId,
 		)
@@ -349,22 +360,18 @@ export function createDemoStore(storage: StoragePort) {
 			subsistemaId?: string,
 		): OpcoesSubsistema {
 			const source = data()
-			const ator = source.integrantes.find(
-				(item) => item.id === atorId && item.ativo,
+			administradorAtivo(
+				source,
+				atorId,
+				'Você não tem permissão para administrar subsistemas.',
 			)
-			const podeAdministrar =
-				!!ator && ['capitao', 'gestor'].includes(ator.perfil)
-			if (!podeAdministrar)
-				throw new SubsistemaError(
-					'Você não tem permissão para administrar subsistemas.',
-				)
 			if (
 				subsistemaId &&
 				!source.subsistemas.some((item) => item.id === subsistemaId)
 			)
 				throw new SubsistemaError('O subsistema não foi encontrado.')
 			return {
-				podeAdministrar,
+				podeAdministrar: true,
 				integrantesDisponiveis: source.integrantes
 					.filter(
 						(item) =>
@@ -465,13 +472,11 @@ export function createDemoStore(storage: StoragePort) {
 		},
 		salvarSubsistema(atorId: string, dados: DadosSubsistema) {
 			const next = data()
-			const ator = next.integrantes.find(
-				(item) => item.id === atorId && item.ativo,
+			administradorAtivo(
+				next,
+				atorId,
+				'Você não tem permissão para administrar subsistemas.',
 			)
-			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
-				throw new SubsistemaError(
-					'Você não tem permissão para administrar subsistemas.',
-				)
 			const target = dados.id
 				? next.subsistemas.find((item) => item.id === dados.id)
 				: undefined
