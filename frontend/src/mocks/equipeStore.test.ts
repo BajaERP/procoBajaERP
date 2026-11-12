@@ -4,13 +4,18 @@ import { createDemoStore } from './equipeStore.ts'
 
 function storage() {
 	const values = new Map<string, string>()
+	let writesFail = false
 	return {
 		getItem: (key: string) => values.get(key) ?? null,
 		setItem: (key: string, value: string) => {
+			if (writesFail) throw new Error('storage unavailable')
 			values.set(key, value)
 		},
 		removeItem: (key: string) => {
 			values.delete(key)
+		},
+		setWritesFail: (value: boolean) => {
+			writesFail = value
 		},
 	}
 }
@@ -278,6 +283,19 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	assert.equal(store.identity('elisa')?.role, 'orientador')
 })
 
+test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.administer('bruno', 'elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.administer('bruno', 'elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
+})
+
 test('liderança não muda por edição comum e Gestor Financeiro exige tratar a atribuição à parte', () => {
 	const store = createDemoStore(storage())
 	assert.deepEqual(store.administrationOptions('bruno', 'diego').perfis, [])
@@ -363,6 +381,19 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
 	)
+})
+
+test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { passwordChangePending: false })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.resetTemporaryPassword('ana', 'elisa'),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.passwordChangePending, false)
 })
 
 test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {
