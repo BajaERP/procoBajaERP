@@ -117,7 +117,7 @@ export function PermissoesDialog({
 						onChange={(event) =>
 							setPerspectiva(event.target.value as Perspectiva)
 						}
-						className="w-full appearance-none rounded-md border border-hairline bg-surface-soft py-2 pr-10 pl-3 text-sm text-ink"
+						className="min-h-11 w-full appearance-none rounded-md border border-hairline bg-surface-soft py-2 pr-10 pl-3 text-sm text-ink"
 					>
 						{PERFIS.map((item) => (
 							<option key={item.value} value={item.value}>

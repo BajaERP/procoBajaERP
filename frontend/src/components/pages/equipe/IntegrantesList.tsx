@@ -144,7 +144,7 @@ export function IntegrantesList({
 								setPagina(1)
 							}}
 							placeholder="Buscar por nome ou identificador permitido"
-							className="w-full rounded-md border border-hairline bg-canvas py-2 pl-10 pr-3 text-sm text-ink placeholder:text-ash focus-visible:border-red"
+							className="min-h-11 w-full rounded-md border border-hairline bg-canvas py-2 pl-10 pr-3 text-sm text-ink placeholder:text-ash focus-visible:border-red"
 						/>
 					</div>
 				</div>
@@ -162,7 +162,7 @@ export function IntegrantesList({
 							setPerfil(event.target.value)
 							setPagina(1)
 						}}
-						className="w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink dark:[color-scheme:dark]"
+						className="min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink dark:[color-scheme:dark]"
 					>
 						<option value="">Todos os perfis</option>
 						{PERFIS.map((item) => (
@@ -186,7 +186,7 @@ export function IntegrantesList({
 							setSubsistema(event.target.value)
 							setPagina(1)
 						}}
-						className="w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink dark:[color-scheme:dark]"
+						className="min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink dark:[color-scheme:dark]"
 					>
 						<option value="">Todos</option>
 						{subsistemas.map(({ id, nome }) => (
@@ -344,7 +344,7 @@ export function IntegrantesList({
 								type="button"
 								disabled={paginaAtual === 1}
 								onClick={() => setPagina((value) => value - 1)}
-								className="inline-flex items-center gap-1 rounded-md px-2 text-body hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
+								className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-body hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								<ChevronLeft size={14} aria-hidden="true" />{' '}
 								Anterior
@@ -356,7 +356,7 @@ export function IntegrantesList({
 								type="button"
 								disabled={paginaAtual === totalPaginas}
 								onClick={() => setPagina((value) => value + 1)}
-								className="inline-flex items-center gap-1 rounded-md px-2 text-body hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
+								className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-body hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								Próxima{' '}
 								<ChevronRight size={14} aria-hidden="true" />
