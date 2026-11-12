@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Search, Users, Pencil } from 'lucide-react'
 import type { ConsultaSubsistemas } from '../../../services/equipeTypes'
+import { labelPerfilSubsistema } from '../../../services/subsistemas'
 
 export function SubsistemasList({
 	data,
@@ -128,13 +129,10 @@ export function SubsistemasList({
 															{integrante.nome}
 														</span>
 														<span className="ml-2 text-xs text-mute">
-															{integrante.perfil ===
-															'lider'
-																? 'Líder'
-																: integrante.perfil ===
-																	  'orientador'
-																	? 'Orientador'
-																	: 'Membro'}
+															{labelPerfilSubsistema(
+																integrante.perfil,
+																integrante.financeiro,
+															)}
 														</span>
 													</li>
 												),

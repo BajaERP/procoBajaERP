@@ -53,6 +53,7 @@ export interface IntegranteDeSubsistema {
 	nome: string
 	perfil: UserRole
 	ativo: boolean
+	financeiro?: boolean
 	subsistemaId?: string | null
 }
 
@@ -66,6 +67,12 @@ export interface SubsistemaConsultavel {
 
 export interface ConsultaSubsistemas {
 	subsistemas: SubsistemaConsultavel[]
+	resumo: ResumoSubsistemas
+}
+
+export interface ResumoSubsistemas {
+	subsistemasAtivos: number
+	integrantesAssociados: number | null
 }
 
 export interface OpcoesSubsistema {
