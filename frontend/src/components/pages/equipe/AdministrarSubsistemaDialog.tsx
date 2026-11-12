@@ -159,9 +159,9 @@ export function AdministrarSubsistemaDialog({
 				onClick={(event) => {
 					if (event.target === event.currentTarget) close()
 				}}
-				className="fixed inset-0 m-auto max-h-dvh w-full max-w-none overflow-y-auto border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
+				className="fixed inset-0 m-auto flex h-[calc(100dvh-1rem)] max-h-dvh w-full max-w-none flex-col overflow-hidden border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
 			>
-				<div className="flex items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
+				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
 					<div>
 						<h2
 							id="subsistema-titulo"
@@ -190,7 +190,7 @@ export function AdministrarSubsistemaDialog({
 				{options.status === 'loading' ? (
 					<div
 						role="status"
-						className="px-5 py-12 text-center text-sm text-mute"
+						className="min-h-0 flex-1 overflow-y-auto px-5 py-12 text-center text-sm text-mute"
 					>
 						<LoaderCircle
 							size={20}
@@ -200,7 +200,10 @@ export function AdministrarSubsistemaDialog({
 						Carregando integrantes disponíveis...
 					</div>
 				) : options.status === 'error' ? (
-					<div role="alert" className="p-5 sm:p-7">
+					<div
+						role="alert"
+						className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-7"
+					>
 						<p className="text-sm text-state-error">
 							{options.message}
 						</p>
@@ -216,8 +219,12 @@ export function AdministrarSubsistemaDialog({
 						</button>
 					</div>
 				) : (
-					<form onSubmit={submit} noValidate>
-						<div className="space-y-5 p-5 sm:p-7">
+					<form
+						onSubmit={submit}
+						noValidate
+						className="flex min-h-0 flex-1 flex-col"
+					>
+						<div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
 							<label
 								htmlFor="subsistema-nome"
 								className="block text-sm font-medium text-body"
@@ -338,7 +345,7 @@ export function AdministrarSubsistemaDialog({
 								</p>
 							)}
 						</div>
-						<div className="flex flex-wrap justify-end gap-2 border-t border-hairline px-5 py-4 sm:px-7">
+						<div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-hairline bg-surface-card px-5 py-4 sm:px-7">
 							<button
 								type="button"
 								onClick={close}

@@ -7,6 +7,7 @@ import type {
 	ResumoSubsistemas,
 } from '../../../services/equipeTypes'
 import { AdministrarSubsistemaDialog } from './AdministrarSubsistemaDialog'
+import { DetalhesSubsistemaDialog } from './DetalhesSubsistemaDialog'
 import { SubsistemasList } from './SubsistemasList'
 
 type LoadState =
@@ -28,6 +29,7 @@ export function SubsistemasContent({
 	const [state, setState] = useState<LoadState>({ status: 'loading' })
 	const [attempt, setAttempt] = useState(0)
 	const [editor, setEditor] = useState<string | 'new' | null>(null)
+	const [detailsId, setDetailsId] = useState<string | null>(null)
 	const podeAdministrar =
 		import.meta.env.DEV && ['capitao', 'gestor'].includes(user.role)
 
@@ -83,6 +85,11 @@ export function SubsistemasContent({
 			? (state.data.subsistemas.find((item) => item.id === editor) ??
 				null)
 			: null
+	const details =
+		state.status === 'ready' && detailsId
+			? (state.data.subsistemas.find((item) => item.id === detailsId) ??
+				null)
+			: null
 
 	return (
 		<>
@@ -131,7 +138,7 @@ export function SubsistemasContent({
 						<SubsistemasList
 							data={state.data}
 							podeAdministrar={podeAdministrar}
-							onEdit={setEditor}
+							onOpen={setDetailsId}
 						/>
 						<div className="mt-4 flex justify-end">
 							<button
@@ -145,6 +152,18 @@ export function SubsistemasContent({
 					</>
 				)}
 			</div>
+			{details && (
+				<DetalhesSubsistemaDialog
+					key={details.id}
+					subsistema={details}
+					podeAdministrar={podeAdministrar}
+					onEdit={() => {
+						setDetailsId(null)
+						setEditor(details.id)
+					}}
+					onClose={() => setDetailsId(null)}
+				/>
+			)}
 			{editor !== null && podeAdministrar && (
 				<AdministrarSubsistemaDialog
 					key={`${user.id}:${editor}`}
