@@ -146,6 +146,7 @@ export function OperacaoSubsistemaDialog({
 			setFailure(message)
 			setToastFailure(true)
 			toast.error(message, {
+				toasterId: 'subsistema-operacao-erro',
 				onAutoClose: () => setToastFailure(false),
 				onDismiss: () => setToastFailure(false),
 			})
@@ -187,6 +188,7 @@ export function OperacaoSubsistemaDialog({
 			className="fixed inset-0 m-auto flex h-[calc(100dvh-1rem)] max-h-dvh w-full max-w-none flex-col overflow-hidden border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
 		>
 			<Notifications
+				id="subsistema-operacao-erro"
 				position="top-center"
 				offset={{ top: 112 }}
 				mobileOffset={{ top: 112, left: 16, right: 16 }}

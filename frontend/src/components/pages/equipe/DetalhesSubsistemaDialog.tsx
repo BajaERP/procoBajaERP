@@ -146,7 +146,7 @@ export function DetalhesSubsistemaDialog({
 															integrante.id,
 														)
 													}
-													className="min-h-9 rounded-md border border-hairline bg-canvas px-3 text-xs font-semibold text-ink hover:bg-surface-soft"
+													className="min-h-11 rounded-md border border-hairline bg-canvas px-3 text-xs font-semibold text-ink hover:bg-surface-soft"
 												>
 													Transferir
 												</button>
