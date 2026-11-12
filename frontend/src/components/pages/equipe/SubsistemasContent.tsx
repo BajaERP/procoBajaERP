@@ -10,6 +10,7 @@ import { Notifications } from '../../shared/Notifications'
 import { AdministrarSubsistemaDialog } from './AdministrarSubsistemaDialog'
 import { DefinirLiderDialog } from './DefinirLiderDialog'
 import { DetalhesSubsistemaDialog } from './DetalhesSubsistemaDialog'
+import { OperacaoSubsistemaDialog } from './OperacaoSubsistemaDialog'
 import { SubsistemasList } from './SubsistemasList'
 
 type LoadState =
@@ -33,6 +34,11 @@ export function SubsistemasContent({
 	const [editor, setEditor] = useState<string | 'new' | null>(null)
 	const [detailsId, setDetailsId] = useState<string | null>(null)
 	const [leaderChangeId, setLeaderChangeId] = useState<string | null>(null)
+	const [operation, setOperation] = useState<
+		| { kind: 'transfer'; integranteId: string; subsistemaId: string }
+		| { kind: 'deactivate'; subsistemaId: string }
+		| null
+	>(null)
 	const podeAdministrar =
 		import.meta.env.DEV && ['capitao', 'gestor'].includes(user.role)
 
@@ -92,6 +98,12 @@ export function SubsistemasContent({
 		state.status === 'ready' && detailsId
 			? (state.data.subsistemas.find((item) => item.id === detailsId) ??
 				null)
+			: null
+	const operationSubsystem =
+		state.status === 'ready' && operation
+			? (state.data.subsistemas.find(
+					(item) => item.id === operation.subsistemaId,
+				) ?? null)
 			: null
 
 	return (
@@ -161,12 +173,39 @@ export function SubsistemasContent({
 					key={details.id}
 					subsistema={details}
 					podeAdministrar={podeAdministrar}
+					atorId={user.id}
+					atorPerfil={user.role}
 					onEdit={() => {
 						setDetailsId(null)
 						setEditor(details.id)
 					}}
 					onChangeLeader={() => setLeaderChangeId(details.id)}
+					onTransfer={(integranteId) =>
+						setOperation({
+							kind: 'transfer',
+							integranteId,
+							subsistemaId: details.id,
+						})
+					}
+					onDeactivate={() =>
+						setOperation({
+							kind: 'deactivate',
+							subsistemaId: details.id,
+						})
+					}
 					onClose={() => setDetailsId(null)}
+				/>
+			)}
+			{operation && operationSubsystem && (
+				<OperacaoSubsistemaDialog
+					key={`${user.id}:${operation.kind}:${operation.subsistemaId}:${operation.kind === 'transfer' ? operation.integranteId : ''}`}
+					atorId={user.id}
+					subsistema={operationSubsystem}
+					{...(operation.kind === 'transfer'
+						? { integranteId: operation.integranteId }
+						: {})}
+					onSaved={retry}
+					onClose={() => setOperation(null)}
 				/>
 			)}
 			{leaderChangeId && podeAdministrar && details && (

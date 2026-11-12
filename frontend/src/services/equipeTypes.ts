@@ -83,6 +83,17 @@ export interface OpcoesSubsistema {
 	integranteIds: string[]
 }
 
+export interface OpcoesTransferenciaIntegrante {
+	destinos: SubsistemaDemo[]
+	bloqueio: string | null
+}
+
+export interface OpcoesDesativacaoSubsistema {
+	integrantes: IntegranteDeSubsistema[]
+	destinos: SubsistemaDemo[]
+	bloqueio: string | null
+}
+
 export interface OpcoesDefinicaoLider {
 	integrantesDisponiveis: (IntegranteDeSubsistema & {
 		subsistemaNome: string | null
@@ -117,6 +128,24 @@ export interface EquipeService {
 		integranteId: string,
 	): Promise<void>
 	salvarSubsistema(atorId: string, dados: DadosSubsistema): Promise<void>
+	opcoesTransferenciaIntegrante(
+		atorId: string,
+		integranteId: string,
+	): Promise<OpcoesTransferenciaIntegrante>
+	transferirIntegrante(
+		atorId: string,
+		integranteId: string,
+		destinoId: string,
+	): Promise<void>
+	opcoesDesativacaoSubsistema(
+		atorId: string,
+		subsistemaId: string,
+	): Promise<OpcoesDesativacaoSubsistema>
+	desativarSubsistema(
+		atorId: string,
+		subsistemaId: string,
+		destinosPorIntegrante: Record<string, string>,
+	): Promise<void>
 	obterDetalheIntegrante?(
 		visualizador: Visualizador,
 		integranteId: string,
