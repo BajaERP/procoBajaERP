@@ -1,11 +1,15 @@
 import type {
 	CadastroIntegrante,
 	AlteracaoIntegrante,
+	ConsultaSubsistemas,
+	DadosSubsistema,
 	DemoIdentity,
 	DemoPerspective,
 	Integrante,
 	IntegranteVisivel,
 	OpcoesAdministracaoIntegrante,
+	OpcoesSubsistema,
+	SubsistemaConsultavel,
 	SubsistemaDemo,
 	Visualizador,
 } from '../services/equipeTypes'
@@ -18,6 +22,7 @@ import {
 	validarCadastroIntegrante,
 } from '../services/cadastroIntegrante.ts'
 import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
+import { SubsistemaError, validarSubsistema } from '../services/subsistemas.ts'
 
 interface StoragePort {
 	getItem(key: string): string | null
@@ -62,7 +67,7 @@ const initialData: DemoData = {
 			nome: 'Carla Souza',
 			identificador: '2345680',
 			perfil: 'membro',
-			subsistemaId: 'gestao',
+			subsistemaId: 'inativo',
 			ativo: true,
 			financeiro: false,
 			passwordChangePending: true,
@@ -226,6 +231,178 @@ export function createDemoStore(storage: StoragePort) {
 	let failCreate = false
 	return {
 		data,
+		listarSubsistemas(visualizador: Visualizador): ConsultaSubsistemas {
+			const source = data()
+			const seeAllComposition =
+				visualizador.perfil === 'capitao' ||
+				visualizador.perfil === 'gestor' ||
+				visualizador.perfil === 'orientador'
+			return {
+				subsistemas: source.subsistemas
+					.filter(
+						(subsistema) =>
+							subsistema.ativo ||
+							seeAllComposition ||
+							visualizador.subsistemaId === subsistema.id,
+					)
+					.map((subsistema): SubsistemaConsultavel => {
+						const pessoas = source.integrantes.filter(
+							(item) =>
+								item.subsistemaId === subsistema.id &&
+								(seeAllComposition || item.ativo),
+						)
+						const lider = pessoas.find(
+							(item) => item.perfil === 'lider' && item.ativo,
+						)
+						const podeVerComposicao =
+							seeAllComposition ||
+							visualizador.subsistemaId === subsistema.id
+						return {
+							id: subsistema.id,
+							nome: subsistema.nome,
+							ativo: subsistema.ativo,
+							lider: lider
+								? { id: lider.id, nome: lider.nome }
+								: null,
+							...(podeVerComposicao
+								? {
+										integrantes: pessoas.map((item) => ({
+											id: item.id,
+											nome: item.nome,
+											perfil: item.perfil,
+											ativo: item.ativo,
+										})),
+									}
+								: {}),
+						}
+					}),
+			}
+		},
+		opcoesSubsistema(
+			atorId: string,
+			subsistemaId?: string,
+		): OpcoesSubsistema {
+			const source = data()
+			const ator = source.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			const podeAdministrar =
+				!!ator && ['capitao', 'gestor'].includes(ator.perfil)
+			if (!podeAdministrar)
+				throw new SubsistemaError(
+					'Você não tem permissão para administrar subsistemas.',
+				)
+			if (
+				subsistemaId &&
+				!source.subsistemas.some((item) => item.id === subsistemaId)
+			)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			return {
+				podeAdministrar,
+				integrantesDisponiveis: source.integrantes
+					.filter(
+						(item) =>
+							item.ativo &&
+							['membro', 'orientador'].includes(item.perfil),
+					)
+					.map(({ id, nome, perfil, ativo, subsistemaId }) => ({
+						id,
+						nome,
+						perfil,
+						ativo,
+						subsistemaId,
+					})),
+				integranteIds: source.integrantes
+					.filter(
+						(item) =>
+							item.subsistemaId === subsistemaId &&
+							item.ativo &&
+							['membro', 'orientador'].includes(item.perfil),
+					)
+					.map((item) => item.id),
+			}
+		},
+		salvarSubsistema(atorId: string, dados: DadosSubsistema) {
+			const next = data()
+			const ator = next.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
+				throw new SubsistemaError(
+					'Você não tem permissão para administrar subsistemas.',
+				)
+			const target = dados.id
+				? next.subsistemas.find((item) => item.id === dados.id)
+				: undefined
+			if (dados.id && !target)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			const nome = dados.nome.trim()
+			const erros = validarSubsistema(dados)
+			if (Object.keys(erros).length)
+				throw new SubsistemaError('Confira os campos indicados.', erros)
+			const normalizado = nome.toLocaleLowerCase('pt-BR')
+			if (
+				next.subsistemas.some(
+					(item) =>
+						item.id !== target?.id &&
+						item.nome.toLocaleLowerCase('pt-BR') === normalizado,
+				)
+			)
+				throw new SubsistemaError(
+					'Já existe um subsistema com esse nome.',
+					{ nome: 'Esse nome já está em uso.' },
+				)
+			if (!Array.isArray(dados.integranteIds))
+				throw new SubsistemaError('Selecione integrantes válidos.', {
+					integranteIds: 'Selecione integrantes válidos.',
+				})
+			const selecionados = new Set(dados.integranteIds)
+			const elegiveis = new Set(
+				next.integrantes
+					.filter(
+						(item) =>
+							item.ativo &&
+							['membro', 'orientador'].includes(item.perfil) &&
+							(item.subsistemaId === null ||
+								item.subsistemaId === target?.id),
+					)
+					.map((item) => item.id),
+			)
+			if ([...selecionados].some((id) => !elegiveis.has(id)))
+				throw new SubsistemaError(
+					'Escolha integrantes ativos sem vínculo. Transferências precisam do fluxo próprio.',
+					{
+						integranteIds:
+							'Integrantes vinculados a outro subsistema não podem ser transferidos neste fluxo.',
+					},
+				)
+			const subsystem = target ?? {
+				id: crypto.randomUUID(),
+				nome,
+				ativo: false,
+			}
+			subsystem.nome = nome
+			if (!target) next.subsistemas.push(subsystem)
+			for (const item of next.integrantes) {
+				if (selecionados.has(item.id) && item.subsistemaId === null)
+					item.subsistemaId = subsystem.id
+			}
+			persist(next)
+			const people = next.integrantes.filter(
+				(item) => item.subsistemaId === subsystem.id && item.ativo,
+			)
+			const lider = people.find((item) => item.perfil === 'lider')
+			return {
+				...subsystem,
+				lider: lider ? { id: lider.id, nome: lider.nome } : null,
+				integrantes: people.map(({ id, nome, perfil, ativo }) => ({
+					id,
+					nome,
+					perfil,
+					ativo,
+				})),
+			}
+		},
 		createOptions(atorId: string) {
 			const source = data()
 			const ator = source.integrantes.find(
