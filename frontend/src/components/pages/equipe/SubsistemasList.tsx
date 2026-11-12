@@ -83,7 +83,7 @@ export function SubsistemasList({
 								type="button"
 								onClick={() => onOpen(subsistema.id)}
 								aria-label={`Ver detalhes de ${subsistema.nome}`}
-								className="flex min-h-[84px] w-full flex-col justify-between p-3 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red md:min-h-[190px] md:p-6"
+								className="subsistema-card-button flex w-full flex-col justify-between p-3 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red md:p-6"
 							>
 								<div className="flex min-w-0 items-center justify-between gap-2">
 									<div className="flex min-w-0 items-center gap-2">
