@@ -198,11 +198,11 @@ export function PermissoesDialog({
 					</div>
 					<p className="mt-3">
 						Em operações comuns, o Líder precisa ser substituído
-						antes de sair do subsistema; na desativação do
-						subsistema, passa a Membro. O último Capitão ativo não
-						pode ser desativado ou deixar o perfil. Antes de
-						desativar o Gestor Financeiro ou mudar seu perfil,
-						retire ou transfira a atribuição.
+						antes de sair do subsistema, ser desativado ou mudar de
+						perfil. Na desativação do subsistema, passa a Membro. O
+						último Capitão ativo não pode ser desativado ou deixar o
+						perfil. Antes de desativar o Gestor Financeiro ou mudar
+						seu perfil, retire ou transfira a atribuição.
 					</p>
 				</aside>
 				<p className="mt-4 text-xs leading-relaxed text-mute">
