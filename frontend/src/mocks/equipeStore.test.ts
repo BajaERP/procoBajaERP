@@ -75,6 +75,57 @@ test('falha simulada na troca mantém a pendência e descarta os campos recebido
 	)
 })
 
+test('migra dados antigos uma vez, preserva a demonstração e não reativa a troca após recarga', () => {
+	const localStorage = storage()
+	const seed = createDemoStore(storage())
+	const legacyData = seed.data()
+	delete (legacyData as { schemaVersion?: number }).schemaVersion
+	legacyData.integrantes.find(
+		(item) => item.id === 'ana',
+	)!.passwordChangePending = false
+	legacyData.integrantes.find((item) => item.id === 'elisa')!.nome =
+		'Elisa editada antes da migração'
+	localStorage.setItem('proco.demo.equipe.v1', JSON.stringify(legacyData))
+
+	const missingPendingStorage = storage()
+	const missingPendingData = seed.data()
+	delete (missingPendingData as { schemaVersion?: number }).schemaVersion
+	delete missingPendingData.integrantes.find((item) => item.id === 'ana')!
+		.passwordChangePending
+	missingPendingStorage.setItem(
+		'proco.demo.equipe.v1',
+		JSON.stringify(missingPendingData),
+	)
+	assert.equal(
+		createDemoStore(missingPendingStorage).identity('ana')
+			?.passwordChangePending,
+		true,
+	)
+
+	const migratedStore = createDemoStore(localStorage)
+	assert.equal(migratedStore.identity('ana')?.passwordChangePending, true)
+	assert.equal(
+		migratedStore.identity('elisa')?.name,
+		'Elisa editada antes da migração',
+	)
+	assert.equal(
+		JSON.parse(localStorage.getItem('proco.demo.equipe.v1')!).schemaVersion,
+		2,
+	)
+
+	migratedStore.changeOwnPassword(
+		'ana',
+		'senha-atual-ficticia',
+		'nova-senha-ficticia-2026',
+	)
+	const reloadedStore = createDemoStore(localStorage)
+	assert.equal(reloadedStore.identity('ana')?.passwordChangePending, false)
+	assert.equal(
+		reloadedStore.identity('elisa')?.name,
+		'Elisa editada antes da migração',
+	)
+})
+
 test('somente o Capitão atribui a responsabilidade a Gestor ativo, mesmo em subsistema inativo', () => {
 	const store = createDemoStore(storage())
 	store.removeFinancialManager('ana')
