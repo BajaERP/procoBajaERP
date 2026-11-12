@@ -11,7 +11,7 @@ const PERFIS = [
 	{ value: 'orientador', label: 'Orientador' },
 	{
 		value: 'gestor-financeiro',
-		label: 'Gestor Financeiro · atribuição adicional',
+		label: 'Gestor Financeiro',
 	},
 ] as const
 
