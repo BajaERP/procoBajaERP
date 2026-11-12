@@ -8,6 +8,7 @@ import type { ConsultaIntegrantes } from '../services/equipeTypes'
 import { perfisParaCadastro } from '../services/cadastroIntegrante'
 import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroIntegranteDialog'
 import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
+import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
 
 type LoadState =
 	| { status: 'loading' }
@@ -95,15 +96,11 @@ export default function EquipePage() {
 						após a integração com o servidor.
 					</p>
 				</section>
-			) : subsistemas ? (
-				<section className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body">
-					<h2 className="text-lg font-semibold text-ink">
-						Subsistemas
-					</h2>
-					<p className="mt-2">
-						A consulta dos subsistemas está em construção.
-					</p>
-				</section>
+			) : subsistemas && user ? (
+				<SubsistemasContent
+					key={`${user.id}:${user.role}:${demoRevision}`}
+					user={user}
+				/>
 			) : user ? (
 				<IntegrantesContent
 					key={`${user.id}:${user.role}:${demoRevision}`}

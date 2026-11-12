@@ -63,6 +63,19 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async listarIntegrantes(visualizador) {
 				return (await mockService()).listarIntegrantes(visualizador)
 			},
+			async listarSubsistemas(visualizador) {
+				return (await mockService()).listarSubsistemas(visualizador)
+			},
+			async opcoesSubsistema(atorId, subsistemaId) {
+				return (await mockService()).opcoesSubsistema(
+					atorId,
+					subsistemaId,
+				)
+			},
+			async salvarSubsistema(atorId, dados) {
+				await (await mockService()).salvarSubsistema(atorId, dados)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
 			async simularFalhaNaProximaConsulta() {
 				;(await mockService()).simularFalhaNaProximaConsulta?.()
 			},
@@ -119,6 +132,21 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async listarIntegrantes() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',
+				)
+			},
+			async listarSubsistemas() {
+				throw new Error(
+					'Módulo indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesSubsistema() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async salvarSubsistema() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
 				)
 			},
 		}

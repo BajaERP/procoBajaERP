@@ -178,6 +178,143 @@ test('nome, identificador e subsistema inválidos retornam erros associados aos 
 	assert.equal(store.data().integrantes.length, 9)
 })
 
+test('consulta subsistemas mostra resumo ativo a todos e composição autorizada por identidade', () => {
+	const store = createDemoStore(storage())
+	const membro = store.listarSubsistemas({
+		id: 'carla',
+		perfil: 'membro',
+		subsistemaId: 'inativo',
+	}).subsistemas
+	assert.ok(membro.some((item: { id: string }) => item.id === 'inativo'))
+	assert.ok(
+		membro
+			.find((item: { id: string }) => item.id === 'inativo')
+			?.integrantes?.some((item: { id: string }) => item.id === 'carla'),
+	)
+	assert.equal(store.identity('carla')?.subsistemaId, 'inativo')
+	assert.ok(
+		!(
+			'identificador' in
+			membro.find((item: { id: string }) => item.id === 'inativo')!
+				.integrantes![0]
+		),
+	)
+	assert.ok(
+		!membro.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes,
+	)
+	assert.ok(membro.some((item: { id: string }) => item.id === 'projeto'))
+	const orientador = store.listarSubsistemas({
+		id: 'joao',
+		perfil: 'orientador',
+		subsistemaId: null,
+	}).subsistemas
+	assert.ok(
+		orientador
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+})
+
+test('Capitão cria subsistema inativo sem Líder e prepara composição com integrantes autorizados', () => {
+	const store = createDemoStore(storage())
+	const created = store.salvarSubsistema('ana', {
+		nome: '  Ergonomia  ',
+		integranteIds: ['joao'],
+	})
+	assert.equal(created.nome, 'Ergonomia')
+	assert.equal(created.ativo, false)
+	assert.equal(created.lider, null)
+	assert.deepEqual(
+		created.integrantes?.map((item: { id: string }) => item.id),
+		['joao'],
+	)
+	assert.equal(store.identity('joao')?.subsistemaId, created.id)
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				nome: 'Não transfere',
+				integranteIds: ['elisa'],
+			}),
+		/transferências precisam do fluxo próprio/i,
+	)
+	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
+})
+
+test('subsistema exige permissão, nome de até 120 caracteres único sem diferenciar caixa', () => {
+	const store = createDemoStore(storage())
+	assert.throws(
+		() =>
+			store.salvarSubsistema('carla', {
+				nome: 'Vendas',
+				integranteIds: [],
+			}),
+		/permissão/,
+	)
+	for (const [input, field] of [
+		[{ nome: ' ' }, 'nome'],
+		[{ nome: 'x'.repeat(121) }, 'nome'],
+		[{ nome: 'cHaSsI' }, 'nome'],
+	] as const) {
+		assert.throws(
+			() => {
+				const dados = Object.assign(
+					{ nome: 'Vendas', integranteIds: [] },
+					input,
+				)
+				store.salvarSubsistema('ana', dados)
+			},
+			(error: unknown) => {
+				assert.ok(error instanceof Error)
+				assert.ok(
+					'campos' in error &&
+						(error.campos as Record<string, string>)[field],
+				)
+				return true
+			},
+		)
+	}
+})
+
+test('edição mantém subsistema inativo e não permite alterar sua liderança pelo fluxo básico', () => {
+	const store = createDemoStore(storage())
+	const saved = store.salvarSubsistema('bruno', {
+		id: 'chassi',
+		nome: 'Chassi e Estrutura',
+		integranteIds: ['elisa'],
+	})
+	assert.equal(saved.ativo, true)
+	assert.equal(saved.lider?.id, 'diego')
+	assert.equal(store.identity('diego')?.role, 'lider')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.throws(
+		() =>
+			store.salvarSubsistema('ana', {
+				id: 'ausente',
+				nome: 'Novo',
+				integranteIds: [],
+			}),
+		/não foi encontrado/i,
+	)
+})
+
+test('edição preserva vínculos de integrantes desativados da composição', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('elisa', { ativo: false })
+	const options = store.opcoesSubsistema('ana', 'chassi')
+	assert.ok(!options.integranteIds.includes('elisa'))
+	store.salvarSubsistema('ana', {
+		id: 'chassi',
+		nome: 'Chassi',
+		integranteIds: [],
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		'chassi',
+	)
+})
+
 test('duplicidade só orienta reativação quando o ator pode administrar a conta desativada', () => {
 	const store = createDemoStore(storage())
 	store.updateIntegrante('ana', { ativo: false })

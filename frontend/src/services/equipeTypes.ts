@@ -48,8 +48,48 @@ export interface ConsultaIntegrantes {
 	subsistemas: { id: string; nome: string }[]
 }
 
+export interface IntegranteDeSubsistema {
+	id: string
+	nome: string
+	perfil: UserRole
+	ativo: boolean
+	subsistemaId?: string | null
+}
+
+export interface SubsistemaConsultavel {
+	id: string
+	nome: string
+	ativo: boolean
+	lider: Pick<IntegranteDeSubsistema, 'id' | 'nome'> | null
+	integrantes?: IntegranteDeSubsistema[]
+}
+
+export interface ConsultaSubsistemas {
+	subsistemas: SubsistemaConsultavel[]
+}
+
+export interface OpcoesSubsistema {
+	podeAdministrar: boolean
+	integrantesDisponiveis: IntegranteDeSubsistema[]
+	integranteIds: string[]
+}
+
+export interface DadosSubsistema {
+	id?: string
+	nome: string
+	integranteIds: string[]
+}
+
+export type ErrosSubsistema = Partial<Record<'nome' | 'integranteIds', string>>
+
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
+	listarSubsistemas(visualizador: Visualizador): Promise<ConsultaSubsistemas>
+	opcoesSubsistema(
+		atorId: string,
+		subsistemaId?: string,
+	): Promise<OpcoesSubsistema>
+	salvarSubsistema(atorId: string, dados: DadosSubsistema): Promise<void>
 	obterDetalheIntegrante?(
 		visualizador: Visualizador,
 		integranteId: string,
