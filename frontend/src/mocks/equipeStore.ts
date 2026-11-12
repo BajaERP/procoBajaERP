@@ -34,9 +34,36 @@ interface StoragePort {
 export interface DemoData {
 	integrantes: Integrante[]
 	subsistemas: SubsistemaDemo[]
+	auditoria: RegistroAuditoriaDemo[]
 }
 
+export type RegistroAuditoriaDemo = {
+	registradoEm: string
+	atorId: string
+} & (
+	| {
+			tipo: 'transferencia_integrante'
+			integranteId: string
+			origemId: string
+			destinoId: string
+			perfilAnterior: Integrante['perfil']
+			perfilAtual: Integrante['perfil']
+	  }
+	| {
+			tipo: 'desativacao_subsistema'
+			subsistemaId: string
+			transferencias: {
+				integranteId: string
+				origemId: string
+				destinoId: string
+				perfilAnterior: Integrante['perfil']
+				perfilAtual: Integrante['perfil']
+			}[]
+	  }
+)
+
 const initialData: DemoData = {
+	auditoria: [],
 	subsistemas: [
 		{
 			id: 'gestao',
@@ -161,7 +188,46 @@ function copy(data: DemoData): DemoData {
 	return {
 		integrantes: data.integrantes.map((item) => ({ ...item })),
 		subsistemas: data.subsistemas.map((item) => ({ ...item })),
+		auditoria: [...(data.auditoria ?? [])].map((item) => ({
+			...item,
+			...('transferencias' in item
+				? {
+						transferencias: item.transferencias.map((entry) => ({
+							...entry,
+						})),
+					}
+				: {}),
+		})),
 	}
+}
+
+function validAuditEntry(value: unknown): value is RegistroAuditoriaDemo {
+	if (!value || typeof value !== 'object') return false
+	const entry = value as Partial<RegistroAuditoriaDemo>
+	if (
+		typeof entry.registradoEm !== 'string' ||
+		typeof entry.atorId !== 'string'
+	)
+		return false
+	if (entry.tipo === 'transferencia_integrante')
+		return (
+			typeof entry.integranteId === 'string' &&
+			typeof entry.origemId === 'string' &&
+			typeof entry.destinoId === 'string'
+		)
+	if (entry.tipo === 'desativacao_subsistema')
+		return (
+			typeof entry.subsistemaId === 'string' &&
+			Array.isArray(entry.transferencias) &&
+			entry.transferencias.every(
+				(item) =>
+					item &&
+					typeof item.integranteId === 'string' &&
+					typeof item.origemId === 'string' &&
+					typeof item.destinoId === 'string',
+			)
+		)
+	return false
 }
 
 function validData(value: unknown): value is DemoData {
@@ -170,6 +236,9 @@ function validData(value: unknown): value is DemoData {
 	return (
 		Array.isArray(data.integrantes) &&
 		Array.isArray(data.subsistemas) &&
+		(data.auditoria === undefined ||
+			(Array.isArray(data.auditoria) &&
+				data.auditoria.every(validAuditEntry))) &&
 		data.integrantes.every(
 			(item) =>
 				item &&
@@ -215,6 +284,7 @@ function safeData(value: DemoData): DemoData {
 			descricao: item.descricao ?? null,
 			ativo: item.ativo,
 		})),
+		auditoria: (value.auditoria ?? []).map((item) => ({ ...item })),
 	}
 }
 
@@ -468,6 +538,185 @@ export function createDemoStore(storage: StoragePort) {
 			if (!persist(next))
 				throw new SubsistemaError(
 					'Não foi possível salvar a liderança neste navegador. Verifique o armazenamento e tente novamente.',
+				)
+		},
+		opcoesTransferenciaIntegrante(atorId: string, integranteId: string) {
+			const source = data()
+			const ator = administradorAtivo(
+				source,
+				atorId,
+				'Você não tem permissão para transferir integrantes.',
+			)
+			const integrante = source.integrantes.find(
+				(item) => item.id === integranteId,
+			)
+			if (
+				!integrante ||
+				atorId === integranteId ||
+				!podeAdministrarPerfil(ator.perfil, integrante.perfil)
+			)
+				throw new SubsistemaError(
+					'Você não tem permissão para transferir este integrante.',
+				)
+			const bloqueio =
+				integrante.perfil === 'lider'
+					? 'Defina outro Líder para este subsistema antes de transferir o integrante.'
+					: integrante.subsistemaId === null
+						? 'Este integrante não está vinculado a um subsistema.'
+						: null
+			return {
+				destinos: source.subsistemas
+					.filter((item) => item.id !== integrante.subsistemaId)
+					.map((item) => ({ ...item })),
+				bloqueio,
+			}
+		},
+		transferirIntegrante(
+			atorId: string,
+			integranteId: string,
+			destinoId: string,
+		) {
+			const next = data()
+			const ator = administradorAtivo(
+				next,
+				atorId,
+				'Você não tem permissão para transferir integrantes.',
+			)
+			const integrante = next.integrantes.find(
+				(item) => item.id === integranteId,
+			)
+			if (
+				!integrante ||
+				atorId === integranteId ||
+				!podeAdministrarPerfil(ator.perfil, integrante.perfil)
+			)
+				throw new SubsistemaError(
+					'Você não tem permissão para transferir este integrante.',
+				)
+			if (integrante.perfil === 'lider')
+				throw new SubsistemaError(
+					'Defina outro Líder para este subsistema antes de transferir o integrante.',
+				)
+			const origemId = integrante.subsistemaId
+			if (!origemId)
+				throw new SubsistemaError(
+					'Este integrante não está vinculado a um subsistema.',
+				)
+			const destino = next.subsistemas.find(
+				(item) => item.id === destinoId && item.id !== origemId,
+			)
+			if (!destino)
+				throw new SubsistemaError(
+					'Selecione outro subsistema como destino.',
+				)
+			const perfil = integrante.perfil
+			integrante.subsistemaId = destino.id
+			next.auditoria.push({
+				tipo: 'transferencia_integrante',
+				registradoEm: new Date().toISOString(),
+				atorId,
+				integranteId,
+				origemId,
+				destinoId: destino.id,
+				perfilAnterior: perfil,
+				perfilAtual: perfil,
+			})
+			if (!persist(next))
+				throw new SubsistemaError(
+					'Não foi possível salvar a transferência neste navegador. Verifique o armazenamento e tente novamente.',
+				)
+		},
+		opcoesDesativacaoSubsistema(atorId: string, subsistemaId: string) {
+			const source = data()
+			administradorAtivo(
+				source,
+				atorId,
+				'Você não tem permissão para administrar subsistemas.',
+			)
+			const subsistema = source.subsistemas.find(
+				(item) => item.id === subsistemaId,
+			)
+			if (!subsistema)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			const integrantes = source.integrantes.filter(
+				(item) => item.subsistemaId === subsistemaId,
+			)
+			const destinos = source.subsistemas.filter(
+				(item) => item.ativo && item.id !== subsistemaId,
+			)
+			return {
+				integrantes: integrantes.map((item) => ({
+					id: item.id,
+					nome: item.nome,
+					perfil: item.perfil,
+					ativo: item.ativo,
+					subsistemaId: item.subsistemaId,
+				})),
+				destinos: destinos.map((item) => ({ ...item })),
+				bloqueio:
+					integrantes.length > 0 && destinos.length === 0
+						? 'Não há subsistema ativo para receber os integrantes. Ative outro subsistema antes de desativar este.'
+						: null,
+			}
+		},
+		desativarSubsistema(
+			atorId: string,
+			subsistemaId: string,
+			destinosPorIntegrante: Record<string, string>,
+		) {
+			const next = data()
+			administradorAtivo(
+				next,
+				atorId,
+				'Você não tem permissão para administrar subsistemas.',
+			)
+			const subsistema = next.subsistemas.find(
+				(item) => item.id === subsistemaId,
+			)
+			if (!subsistema)
+				throw new SubsistemaError('O subsistema não foi encontrado.')
+			if (!subsistema.ativo)
+				throw new SubsistemaError('Este subsistema já está desativado.')
+			const integrantes = next.integrantes.filter(
+				(item) => item.subsistemaId === subsistemaId,
+			)
+			const destinos = next.subsistemas.filter(
+				(item) => item.ativo && item.id !== subsistemaId,
+			)
+			if (integrantes.length && !destinos.length)
+				throw new SubsistemaError(
+					'Não há subsistema ativo para receber os integrantes. Ative outro subsistema antes de desativar este.',
+				)
+			const destinosValidos = new Set(destinos.map((item) => item.id))
+			for (const integrante of integrantes) {
+				if (!destinosValidos.has(destinosPorIntegrante[integrante.id]))
+					throw new SubsistemaError(
+						`Escolha um subsistema ativo para ${integrante.nome}.`,
+					)
+			}
+			const transferencias = integrantes.map((integrante) => {
+				const perfilAnterior = integrante.perfil
+				if (integrante.perfil === 'lider') integrante.perfil = 'membro'
+				integrante.subsistemaId = destinosPorIntegrante[integrante.id]
+				return {
+					integranteId: integrante.id,
+					origemId: subsistemaId,
+					destinoId: integrante.subsistemaId!,
+					perfilAnterior,
+					perfilAtual: integrante.perfil,
+				}
+			})
+			subsistema.ativo = false
+			next.auditoria.push({
+				tipo: 'desativacao_subsistema',
+				registradoEm: new Date().toISOString(),
+				atorId,
+				subsistemaId,
+				transferencias,
+			})
+			if (!persist(next))
+				throw new SubsistemaError(
+					'Não foi possível salvar a desativação neste navegador. Verifique o armazenamento e tente novamente.',
 				)
 		},
 		salvarSubsistema(atorId: string, dados: DadosSubsistema) {

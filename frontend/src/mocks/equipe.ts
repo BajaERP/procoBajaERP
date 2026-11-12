@@ -1,10 +1,10 @@
-import { filtrarIntegrantesVisiveis } from '../services/equipePolicy'
+import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
 import type {
 	ConsultaIntegrantes,
 	ConsultaSubsistemas,
 	EquipeService,
 } from '../services/equipeTypes'
-import { createDemoStore } from './equipeStore'
+import { createDemoStore } from './equipeStore.ts'
 
 const store = createDemoStore(window.localStorage)
 
@@ -87,6 +87,20 @@ export const mockEquipeService: EquipeService = {
 	async salvarSubsistema(atorId, dados) {
 		await new Promise((resolve) => window.setTimeout(resolve, 250))
 		store.salvarSubsistema(atorId, dados)
+	},
+	async opcoesTransferenciaIntegrante(atorId, integranteId) {
+		return store.opcoesTransferenciaIntegrante(atorId, integranteId)
+	},
+	async transferirIntegrante(atorId, integranteId, destinoId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.transferirIntegrante(atorId, integranteId, destinoId)
+	},
+	async opcoesDesativacaoSubsistema(atorId, subsistemaId) {
+		return store.opcoesDesativacaoSubsistema(atorId, subsistemaId)
+	},
+	async desativarSubsistema(atorId, subsistemaId, destinosPorIntegrante) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.desativarSubsistema(atorId, subsistemaId, destinosPorIntegrante)
 	},
 	simularFalhaNaProximaConsulta() {
 		store.failNextRead()

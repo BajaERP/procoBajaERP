@@ -1,19 +1,29 @@
 import { useEffect, useRef } from 'react'
 import { Crown, Pencil, Users, X } from 'lucide-react'
+import type { AuthUser } from '../../../contexts/AuthContext'
 import type { SubsistemaConsultavel } from '../../../services/equipeTypes'
+import { podeAdministrarPerfil } from '../../../services/cadastroIntegrante'
 import { labelPerfilSubsistema } from '../../../services/subsistemas'
 
 export function DetalhesSubsistemaDialog({
 	subsistema,
 	podeAdministrar,
+	atorId,
+	atorPerfil,
 	onEdit,
 	onChangeLeader,
+	onTransfer,
+	onDeactivate,
 	onClose,
 }: {
 	subsistema: SubsistemaConsultavel
 	podeAdministrar: boolean
+	atorId: string
+	atorPerfil: AuthUser['role']
 	onEdit: () => void
 	onChangeLeader: () => void
+	onTransfer: (integranteId: string) => void
+	onDeactivate: () => void
 	onClose: () => void
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
@@ -113,16 +123,34 @@ export function DetalhesSubsistemaDialog({
 										key={integrante.id}
 										className="flex min-h-12 flex-wrap items-center justify-between gap-2 px-3 py-2"
 									>
-										<span className="min-w-0 break-words text-sm text-ink">
+										<span className="min-w-0 flex-1 break-words text-sm text-ink">
 											{integrante.nome}
 										</span>
-										<span className="text-xs text-mute">
+										<span className="text-right text-xs text-mute">
 											{labelPerfilSubsistema(
 												integrante.perfil,
 												integrante.financeiro,
 											)}
 											{!integrante.ativo && ' · Inativo'}
 										</span>
+										{podeAdministrar &&
+											integrante.id !== atorId &&
+											podeAdministrarPerfil(
+												atorPerfil,
+												integrante.perfil,
+											) && (
+												<button
+													type="button"
+													onClick={() =>
+														onTransfer(
+															integrante.id,
+														)
+													}
+													className="min-h-9 rounded-md border border-hairline bg-canvas px-3 text-xs font-semibold text-ink hover:bg-surface-soft"
+												>
+													Transferir
+												</button>
+											)}
 									</li>
 								))}
 							</ul>
@@ -144,6 +172,15 @@ export function DetalhesSubsistemaDialog({
 				</button>
 				{podeAdministrar && (
 					<>
+						{subsistema.ativo && (
+							<button
+								type="button"
+								onClick={onDeactivate}
+								className="inline-flex min-h-11 items-center gap-2 rounded-md border border-state-error bg-canvas px-4 text-sm font-semibold text-state-error hover:bg-state-error-bg"
+							>
+								Desativar subsistema
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={onEdit}

@@ -88,6 +88,30 @@ export const equipeService: EquipeService = import.meta.env.DEV
 				await (await mockService()).salvarSubsistema(atorId, dados)
 				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
 			},
+			async opcoesTransferenciaIntegrante(atorId, integranteId) {
+				return (await mockService()).opcoesTransferenciaIntegrante(
+					atorId,
+					integranteId,
+				)
+			},
+			async transferirIntegrante(atorId, integranteId, destinoId) {
+				await (
+					await mockService()
+				).transferirIntegrante(atorId, integranteId, destinoId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
+			async opcoesDesativacaoSubsistema(atorId, subsistemaId) {
+				return (await mockService()).opcoesDesativacaoSubsistema(
+					atorId,
+					subsistemaId,
+				)
+			},
+			async desativarSubsistema(atorId, subsistemaId, destinos) {
+				await (
+					await mockService()
+				).desativarSubsistema(atorId, subsistemaId, destinos)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
 			async simularFalhaNaProximaConsulta() {
 				;(await mockService()).simularFalhaNaProximaConsulta?.()
 			},
@@ -167,6 +191,26 @@ export const equipeService: EquipeService = import.meta.env.DEV
 				)
 			},
 			async salvarSubsistema() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesTransferenciaIntegrante() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async transferirIntegrante() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesDesativacaoSubsistema() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async desativarSubsistema() {
 				throw new Error(
 					'Administração indisponível até a integração com o servidor.',
 				)
