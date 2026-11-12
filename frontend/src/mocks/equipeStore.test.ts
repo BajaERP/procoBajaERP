@@ -238,6 +238,7 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	const store = createDemoStore(storage())
 	const managerOptions = store.administrationOptions('bruno', 'elisa')
 	assert.deepEqual(managerOptions.perfis, ['membro', 'orientador'])
+	assert.equal(managerOptions.subsistemas.length, 5)
 	assert.equal(managerOptions.podeEditarDados, true)
 	assert.equal(managerOptions.podeAlterarStatus, true)
 	assert.equal(
@@ -361,5 +362,57 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 	assert.throws(
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
+	)
+})
+
+test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {
+	const store = createDemoStore(storage())
+	store.administer('ana', 'elisa', { perfil: 'capitao' })
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		null,
+	)
+	assert.throws(
+		() => store.administer('ana', 'elisa', { perfil: 'membro' }),
+		/subsistema/,
+	)
+	store.administer('ana', 'elisa', {
+		perfil: 'membro',
+		subsistemaId: 'chassi',
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		'chassi',
+	)
+	assert.throws(
+		() =>
+			store.administer('ana', 'elisa', {
+				perfil: 'orientador',
+				subsistemaId: 'eletrica',
+			}),
+		/fluxo próprio/,
+	)
+	assert.throws(
+		() =>
+			store.administer('ana', 'joao', {
+				perfil: 'membro',
+				subsistemaId: 'inexistente',
+			}),
+		/subsistema disponível/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'joao', { perfil: 'membro' }),
+		/subsistema/,
+	)
+	store.administer('ana', 'joao', {
+		perfil: 'membro',
+		subsistemaId: 'gestao',
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'joao')
+			?.subsistemaId,
+		'gestao',
 	)
 })
