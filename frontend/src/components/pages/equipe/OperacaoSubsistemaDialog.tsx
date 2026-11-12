@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+	type FormEvent,
+} from 'react'
 import { ArrowLeft, LoaderCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { equipeService } from '../../../services/equipe'
@@ -29,6 +35,7 @@ export function OperacaoSubsistemaDialog({
 	onClose: () => void
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
+	const headerRef = useRef<HTMLElement>(null)
 	const transferindo = integranteId !== undefined
 	const [options, setOptions] = useState<
 		State<OpcoesTransferenciaIntegrante | OpcoesDesativacaoSubsistema>
@@ -38,15 +45,29 @@ export function OperacaoSubsistemaDialog({
 	const [review, setReview] = useState(false)
 	const [failure, setFailure] = useState<string | null>(null)
 	const [toastFailure, setToastFailure] = useState(false)
+	const [toastTop, setToastTop] = useState(112)
 	const [saving, setSaving] = useState(false)
+
+	function updateToastTop() {
+		const dialog = dialogRef.current
+		const header = headerRef.current
+		if (!dialog?.open || !header) return
+		const next = Math.ceil(header.getBoundingClientRect().bottom + 8)
+		setToastTop((current) => (current === next ? current : next))
+	}
 
 	useEffect(() => {
 		const dialog = dialogRef.current!
 		const previousFocus = document.activeElement
 		const previousOverflow = document.body.style.overflow
 		dialog.showModal()
+		updateToastTop()
+		const header = headerRef.current
+		const observer = new ResizeObserver(updateToastTop)
+		if (header) observer.observe(header)
 		document.body.style.overflow = 'hidden'
 		return () => {
+			observer.disconnect()
 			dialog.close()
 			document.body.style.overflow = previousOverflow
 			if (
@@ -56,6 +77,10 @@ export function OperacaoSubsistemaDialog({
 				previousFocus.focus()
 		}
 	}, [])
+
+	useLayoutEffect(() => {
+		updateToastTop()
+	}, [review])
 
 	useEffect(() => {
 		let active = true
@@ -190,10 +215,13 @@ export function OperacaoSubsistemaDialog({
 			<Notifications
 				id="subsistema-operacao-erro"
 				position="top-center"
-				offset={{ top: 112 }}
-				mobileOffset={{ top: 112, left: 16, right: 16 }}
+				offset={{ top: toastTop }}
+				mobileOffset={{ top: toastTop, left: 16, right: 16 }}
 			/>
-			<header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
+			<header
+				ref={headerRef}
+				className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7"
+			>
 				<div>
 					<h2
 						id="operacao-subsistema-titulo"
@@ -226,7 +254,7 @@ export function OperacaoSubsistemaDialog({
 				</button>
 			</header>
 			{toastFailure && (
-				<div aria-hidden="true" className="h-[124px] shrink-0" />
+				<div aria-hidden="true" className="h-[132px] shrink-0" />
 			)}
 			{options.status === 'loading' ? (
 				<div
