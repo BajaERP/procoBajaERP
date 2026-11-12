@@ -37,6 +37,7 @@ export function OperacaoSubsistemaDialog({
 	const [destinos, setDestinos] = useState<Record<string, string>>({})
 	const [review, setReview] = useState(false)
 	const [failure, setFailure] = useState<string | null>(null)
+	const [toastFailure, setToastFailure] = useState(false)
 	const [saving, setSaving] = useState(false)
 
 	useEffect(() => {
@@ -89,6 +90,7 @@ export function OperacaoSubsistemaDialog({
 		if (options.status !== 'ready') return
 		if (transferindo && !destinoId) {
 			setFailure('Escolha um subsistema de destino.')
+			setToastFailure(false)
 			return
 		}
 		if (!transferindo) {
@@ -96,10 +98,12 @@ export function OperacaoSubsistemaDialog({
 			const missing = integrantes.find((item) => !destinos[item.id])
 			if (missing) {
 				setFailure(`Escolha um destino para ${missing.nome}.`)
+				setToastFailure(false)
 				return
 			}
 		}
 		setFailure(null)
+		setToastFailure(false)
 		setReview(true)
 	}
 
@@ -107,6 +111,7 @@ export function OperacaoSubsistemaDialog({
 		if (saving || options.status !== 'ready') return
 		setSaving(true)
 		setFailure(null)
+		setToastFailure(false)
 		try {
 			if (transferindo) {
 				await equipeService.transferirIntegrante(
@@ -139,7 +144,11 @@ export function OperacaoSubsistemaDialog({
 					? error.message
 					: 'Não foi possível concluir a operação.'
 			setFailure(message)
-			toast.error(message)
+			setToastFailure(true)
+			toast.error(message, {
+				onAutoClose: () => setToastFailure(false),
+				onDismiss: () => setToastFailure(false),
+			})
 		} finally {
 			setSaving(false)
 		}
@@ -177,7 +186,11 @@ export function OperacaoSubsistemaDialog({
 			}}
 			className="fixed inset-0 m-auto flex h-[calc(100dvh-1rem)] max-h-dvh w-full max-w-none flex-col overflow-hidden border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
 		>
-			<Notifications />
+			<Notifications
+				position="top-center"
+				offset={{ top: 112 }}
+				mobileOffset={{ top: 112, left: 16, right: 16 }}
+			/>
 			<header className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
 				<div>
 					<h2
@@ -210,6 +223,9 @@ export function OperacaoSubsistemaDialog({
 					<X size={19} aria-hidden="true" />
 				</button>
 			</header>
+			{toastFailure && (
+				<div aria-hidden="true" className="h-[124px] shrink-0" />
+			)}
 			{options.status === 'loading' ? (
 				<div
 					role="status"
@@ -276,6 +292,7 @@ export function OperacaoSubsistemaDialog({
 										onChange={(event) => {
 											setDestinoId(event.target.value)
 											setFailure(null)
+											setToastFailure(false)
 										}}
 										className="mt-1.5 min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink"
 									>
@@ -393,6 +410,7 @@ export function OperacaoSubsistemaDialog({
 															}),
 														)
 														setFailure(null)
+														setToastFailure(false)
 													}}
 													className="mt-1 min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink"
 												>
