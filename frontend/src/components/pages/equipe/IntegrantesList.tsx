@@ -76,21 +76,24 @@ export function IntegrantesList({
 					{
 						value: data.integrantes.length,
 						label: 'integrantes visíveis',
+						action: undefined,
 					},
 					{
 						value: data.subsistemasAtivos,
 						label: 'subsistemas ativos',
+						action: undefined,
 					},
 					{
 						value: data.gestoresFinanceirosAtivos,
 						label: 'Gestor Financeiro ativo',
+						action: 'financial',
 					},
 				].map((metric, index) => (
 					<div
 						key={metric.label}
 						className={`${index > 0 ? 'border-t border-hairline sm:border-l sm:border-t-0' : ''}`}
 					>
-						{index === 2 ? (
+						{metric.action === 'financial' ? (
 							<button
 								type="button"
 								onClick={onOpenFinancial}

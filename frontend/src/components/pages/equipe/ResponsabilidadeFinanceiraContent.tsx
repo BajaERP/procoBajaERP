@@ -140,7 +140,7 @@ export function ResponsabilidadeFinanceiraContent({
 					type="button"
 					onClick={onClose}
 					disabled={saving}
-					className="inline-flex min-h-10 items-center gap-2 rounded-md text-sm font-semibold text-ink hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red disabled:opacity-50 md:hidden"
+					className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-semibold text-ink hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red disabled:opacity-50 md:hidden"
 				>
 					<LogoMark size={28} className="shrink-0" />
 					<ChevronLeft size={18} aria-hidden="true" /> Equipe e
@@ -153,7 +153,7 @@ export function ResponsabilidadeFinanceiraContent({
 					type="button"
 					onClick={onClose}
 					disabled={saving}
-					className="hidden size-10 items-center justify-center rounded-md text-mute hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red disabled:opacity-50 md:inline-flex"
+					className="hidden size-11 items-center justify-center rounded-md text-mute hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red disabled:opacity-50 md:inline-flex"
 					aria-label="Fechar Gestor Financeiro"
 				>
 					<X size={19} aria-hidden="true" />
@@ -349,7 +349,7 @@ export function ResponsabilidadeFinanceiraContent({
 					type="button"
 					onClick={onClose}
 					disabled={saving}
-					className="w-full rounded-md border border-hairline bg-canvas px-4 py-2.5 text-sm font-semibold text-ink hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red"
+					className="min-h-11 w-full rounded-md border border-hairline bg-canvas px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red disabled:opacity-50"
 				>
 					Concluir
 				</button>
@@ -502,7 +502,7 @@ function FinancialOperationDialog({
 					<button
 						type="button"
 						onClick={onClose}
-						className="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-mute hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red"
+						className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-mute hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red"
 						aria-label="Fechar"
 						disabled={saving}
 					>
