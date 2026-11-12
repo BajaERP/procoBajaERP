@@ -1,6 +1,6 @@
 # 05: Consulta e administração básica de subsistemas
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Blocked by:** [02](02-identidades-mocks-permissoes.md).
 
@@ -12,7 +12,7 @@ Permitir consultar subsistemas e preparar sua composição com dados fictícios 
 - [x] Líder e Membro podem consultar seu próprio subsistema e composição mesmo inativo, sem ver usuários desativados ou identificadores restritos; uma conta ativa nesse subsistema continua acessando o ERP.
 - [x] Capitão e Gestor podem criar e editar subsistemas, incluindo um subsistema inativo sem Líder, e preparar sua composição com integrantes autorizados.
 - [x] Validar nome de até 120 caracteres e unicidade sem diferenciar maiúsculas e minúsculas; persistir dados e usar Sonner e erros próximos aos campos.
-- [ ] Verificar consulta por diferentes perfis, privacidade, subsistema inativo, validação e interface responsiva nos dois temas.
+- [x] Verificar consulta por diferentes perfis, privacidade, subsistema inativo, validação e interface responsiva nos dois temas.
 
 Consulte a [especificação do módulo](../spec.md) para as regras completas, o Figma e os critérios transversais de interface e verificação.
 
@@ -22,4 +22,4 @@ Consulte a [especificação do módulo](../spec.md) para as regras completas, o 
 
 Adicionada consulta de subsistemas com busca por nome/Líder, composição conforme perfil, estados de carregamento, vazio e falha, e administração para Capitão/Gestor. O cabeçalho principal mostra o total de subsistemas ativos e, para perfis que veem todas as composições, o total real de integrantes associados; o CTA fica nesse cabeçalho no desktop e numa barra fixa com fundo/divisor no mobile. Cards compactos mostram sigla derivada, nome, descrição, Líder, contagem somente quando autorizada e ação “Ver detalhes”; composição e ação Editar ficam no painel conforme permissão, em drawer lateral no desktop e tela cheia no mobile. O formulário mantém Cancelar/Salvar fora da área rolável. Os rótulos de composição cobrem os cinco perfis e a atribuição financeira de Gestor. Subsistemas novos são persistidos inativos e sem Líder; descrição é opcional, nome tem limite de 120 caracteres e é único sem diferenciar maiúsculas/minúsculas. A sigla não é persistida. A composição permite incluir Membros e Orientadores ativos ainda sem subsistema. Vínculos existentes e Líderes não são alterados nesta issue. Falhas de persistência são reportadas à interface. Dados continuam na fronteira mock/service e o build de produção mantém o módulo indisponível.
 
-Verificado: `npm run format:check`, `npm run build`, 36 testes com `node --experimental-strip-types --test src/services/*.test.ts src/mocks/*.test.ts` e `git diff --check`. As correções visuais de desktop e a nova descrição/sigla aguardam conferência no navegador.
+Verificado: `npm run format:check`, `npm run build`, 36 testes com `node --experimental-strip-types --test src/services/*.test.ts src/mocks/*.test.ts` e `git diff --check`. Na revisão integrada, conferi lista e detalhes em desktop claro/escuro e mobile de 320 px claro/escuro. O drawer de composição ocupa a largura disponível no mobile, mantém ações no rodapé e não causa overflow; axe encontrou zero violações. A composição, a descrição e a sigla derivada aparecem corretamente.
