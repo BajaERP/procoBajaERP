@@ -50,6 +50,12 @@ export interface ConsultaIntegrantes {
 
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
+	opcoesCadastroIntegrante(atorId: string): Promise<OpcoesCadastroIntegrante>
+	cadastrarIntegrante(
+		atorId: string,
+		dados: CadastroIntegrante,
+	): Promise<IntegranteCadastrado>
+	simularFalhaNoProximoCadastro?(): void | Promise<void>
 	simularFalhaNaProximaConsulta?(): void
 	listarIdentidades?(): Promise<DemoIdentity[]>
 	obterIdentidade?(id: string): Promise<DemoIdentity | null>
@@ -60,3 +66,26 @@ export interface EquipeService {
 		changes: Partial<Integrante>,
 	): Promise<void>
 }
+
+export type PerfilCadastro = Exclude<UserRole, 'lider'>
+
+export interface CadastroIntegrante {
+	nome: string
+	identificador: string
+	perfil: PerfilCadastro
+	subsistemaId: string | null
+}
+
+export interface OpcoesCadastroIntegrante {
+	perfis: PerfilCadastro[]
+	subsistemas: SubsistemaDemo[]
+}
+
+export interface IntegranteCadastrado {
+	integrante: Integrante
+	senhaProvisoria: string
+}
+
+export type ErrosCadastroIntegrante = Partial<
+	Record<keyof CadastroIntegrante, string>
+>

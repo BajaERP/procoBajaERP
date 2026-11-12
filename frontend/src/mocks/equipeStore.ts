@@ -1,10 +1,17 @@
 import type {
+	CadastroIntegrante,
 	DemoIdentity,
 	DemoPerspective,
 	Integrante,
 	SubsistemaDemo,
 } from '../services/equipeTypes'
 import { DEMO_DATA_KEY } from '../services/demoStorage.ts'
+import {
+	CadastroIntegranteError,
+	perfisParaCadastro,
+	podeAdministrarPerfil,
+	validarCadastroIntegrante,
+} from '../services/cadastroIntegrante.ts'
 
 interface StoragePort {
 	getItem(key: string): string | null
@@ -208,8 +215,91 @@ export function createDemoStore(storage: StoragePort) {
 	}
 
 	let failNext = false
+	let failCreate = false
 	return {
 		data,
+		createOptions(atorId: string) {
+			const source = data()
+			const ator = source.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			if (!ator || !perfisParaCadastro(ator.perfil).length)
+				throw new CadastroIntegranteError(
+					'Você não tem permissão para cadastrar integrantes.',
+				)
+			return {
+				perfis: perfisParaCadastro(ator.perfil),
+				subsistemas: source.subsistemas,
+			}
+		},
+		createIntegrante(atorId: string, dados: CadastroIntegrante) {
+			const next = data()
+			const ator = next.integrantes.find(
+				(item) => item.id === atorId && item.ativo,
+			)
+			if (!ator || !perfisParaCadastro(ator.perfil).length)
+				throw new CadastroIntegranteError(
+					'Você não tem permissão para cadastrar integrantes.',
+				)
+			const campos = validarCadastroIntegrante(dados, {
+				perfis: perfisParaCadastro(ator.perfil),
+				subsistemas: next.subsistemas,
+			})
+			if (Object.keys(campos).length)
+				throw new CadastroIntegranteError(
+					'Confira os campos indicados.',
+					campos,
+				)
+			const existente = next.integrantes.find(
+				(item) => item.identificador === dados.identificador,
+			)
+			if (existente) {
+				const message =
+					!existente.ativo &&
+					podeAdministrarPerfil(ator.perfil, existente.perfil)
+						? 'Este identificador pertence a uma conta desativada. Reative a conta existente em vez de cadastrar outra.'
+						: 'Este identificador já está em uso. Confira o RA ou SIAPE informado.'
+				throw new CadastroIntegranteError(message, {
+					identificador: message,
+				})
+			}
+			if (failCreate) {
+				failCreate = false
+				throw new CadastroIntegranteError(
+					'Não foi possível cadastrar o integrante. Tente novamente.',
+				)
+			}
+			const integrante: Integrante = {
+				id: crypto.randomUUID(),
+				nome: dados.nome.trim(),
+				identificador: dados.identificador,
+				perfil: dados.perfil,
+				subsistemaId: dados.subsistemaId,
+				ativo: true,
+				financeiro: false,
+				passwordChangePending: true,
+			}
+			// The generated value is returned once; only account metadata is persisted.
+			const alphabet =
+				'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
+			const random = crypto.getRandomValues(new Uint8Array(20))
+			const senhaProvisoria = Array.from(
+				random,
+				(value) => alphabet[value % alphabet.length],
+			).join('')
+			next.integrantes.push(integrante)
+			try {
+				storage.setItem(DEMO_DATA_KEY, JSON.stringify(safeData(next)))
+			} catch {
+				throw new CadastroIntegranteError(
+					'Não foi possível salvar o integrante neste navegador. Verifique o armazenamento e tente novamente.',
+				)
+			}
+			return { integrante, senhaProvisoria }
+		},
+		failNextCreate() {
+			failCreate = true
+		},
 		read(): DemoData {
 			if (failNext) {
 				failNext = false

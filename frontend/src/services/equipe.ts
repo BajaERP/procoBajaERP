@@ -9,6 +9,19 @@ async function mockService() {
 
 export const equipeService: EquipeService = import.meta.env.DEV
 	? {
+			async opcoesCadastroIntegrante(atorId) {
+				return (await mockService()).opcoesCadastroIntegrante(atorId)
+			},
+			async cadastrarIntegrante(atorId, dados) {
+				const result = await (
+					await mockService()
+				).cadastrarIntegrante(atorId, dados)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+				return result
+			},
+			async simularFalhaNoProximoCadastro() {
+				await (await mockService()).simularFalhaNoProximoCadastro?.()
+			},
 			async listarIntegrantes(visualizador) {
 				return (await mockService()).listarIntegrantes(visualizador)
 			},
@@ -35,6 +48,16 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			},
 		}
 	: {
+			async opcoesCadastroIntegrante() {
+				throw new Error(
+					'Cadastro indisponível até a integração com o servidor.',
+				)
+			},
+			async cadastrarIntegrante() {
+				throw new Error(
+					'Cadastro indisponível até a integração com o servidor.',
+				)
+			},
 			async listarIntegrantes() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',
