@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Eye, Search } from 'lucide-react'
 import type { ConsultaSubsistemas } from '../../../services/equipeTypes'
-import { labelPerfilSubsistema } from '../../../services/subsistemas'
+import { siglaSubsistema } from '../../../services/subsistemas'
 
 export function SubsistemasList({
 	data,
@@ -86,15 +86,25 @@ export function SubsistemasList({
 								className="block min-h-[84px] w-full p-4 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red"
 							>
 								<div className="flex min-w-0 items-center justify-between gap-2">
-									<h2 className="min-w-0 break-words text-base font-semibold text-ink">
-										{subsistema.nome}
-									</h2>
+									<div className="flex min-w-0 items-center gap-2">
+										<span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-selected text-xs font-bold text-link">
+											{siglaSubsistema(subsistema.nome)}
+										</span>
+										<h2 className="min-w-0 break-words text-base font-semibold text-ink">
+											{subsistema.nome}
+										</h2>
+									</div>
 									<span
 										className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${subsistema.ativo ? 'bg-state-success-bg text-state-success' : 'bg-state-warning-bg text-state-warning'}`}
 									>
 										{subsistema.ativo ? 'Ativo' : 'Inativo'}
 									</span>
 								</div>
+								{subsistema.descricao && (
+									<p className="mt-1 hidden truncate text-sm text-mute md:block">
+										{subsistema.descricao}
+									</p>
+								)}
 								<div className="mt-1 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm text-body">
 									<p className="min-w-0 truncate">
 										Líder:{' '}

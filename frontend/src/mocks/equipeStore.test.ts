@@ -265,6 +265,35 @@ test('Capitão cria subsistema inativo sem Líder e prepara composição com int
 	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
 })
 
+test('descrição opcional de subsistema é normalizada e persistida ao criar e editar', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	const created = store.salvarSubsistema('ana', {
+		nome: 'Aerodinâmica',
+		descricao: '  Estudo de fluxo de ar.  ',
+		integranteIds: [],
+	})
+	assert.equal(created.descricao, 'Estudo de fluxo de ar.')
+	assert.equal(
+		createDemoStore(localStorage)
+			.data()
+			.subsistemas.find((item) => item.id === created.id)?.descricao,
+		'Estudo de fluxo de ar.',
+	)
+	store.salvarSubsistema('ana', {
+		id: created.id,
+		nome: created.nome,
+		descricao: '  ',
+		integranteIds: [],
+	})
+	assert.equal(
+		createDemoStore(localStorage)
+			.data()
+			.subsistemas.find((item) => item.id === created.id)?.descricao,
+		null,
+	)
+})
+
 test('subsistema exige permissão, nome de até 120 caracteres único sem diferenciar caixa', () => {
 	const store = createDemoStore(storage())
 	assert.throws(

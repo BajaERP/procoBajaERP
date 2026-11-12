@@ -37,11 +37,36 @@ export interface DemoData {
 
 const initialData: DemoData = {
 	subsistemas: [
-		{ id: 'gestao', nome: 'Gestão', ativo: true },
-		{ id: 'chassi', nome: 'Chassi', ativo: true },
-		{ id: 'eletrica', nome: 'Elétrica', ativo: true },
-		{ id: 'projeto', nome: 'Projeto', ativo: true },
-		{ id: 'inativo', nome: 'Suspensão', ativo: false },
+		{
+			id: 'gestao',
+			nome: 'Gestão',
+			descricao: 'Planejamento e coordenação da equipe.',
+			ativo: true,
+		},
+		{
+			id: 'chassi',
+			nome: 'Chassi',
+			descricao: 'Estrutura e sistemas de suspensão do veículo.',
+			ativo: true,
+		},
+		{
+			id: 'eletrica',
+			nome: 'Elétrica',
+			descricao: 'Sistema elétrico e instrumentação.',
+			ativo: true,
+		},
+		{
+			id: 'projeto',
+			nome: 'Projeto',
+			descricao: 'Integração dos projetos técnicos.',
+			ativo: true,
+		},
+		{
+			id: 'inativo',
+			nome: 'Suspensão',
+			descricao: 'Área de teste da organização.',
+			ativo: false,
+		},
 	],
 	integrantes: [
 		{
@@ -163,6 +188,9 @@ function validData(value: unknown): value is DemoData {
 				item &&
 				typeof item.id === 'string' &&
 				typeof item.nome === 'string' &&
+				(item.descricao === undefined ||
+					item.descricao === null ||
+					typeof item.descricao === 'string') &&
 				typeof item.ativo === 'boolean',
 		)
 	)
@@ -183,6 +211,7 @@ function safeData(value: DemoData): DemoData {
 		subsistemas: value.subsistemas.map((item) => ({
 			id: item.id,
 			nome: item.nome,
+			descricao: item.descricao ?? null,
 			ativo: item.ativo,
 		})),
 	}
@@ -270,6 +299,7 @@ export function createDemoStore(storage: StoragePort) {
 						return {
 							id: subsistema.id,
 							nome: subsistema.nome,
+							descricao: subsistema.descricao ?? null,
 							ativo: subsistema.ativo,
 							lider: lider
 								? { id: lider.id, nome: lider.nome }
@@ -392,9 +422,12 @@ export function createDemoStore(storage: StoragePort) {
 			const subsystem = target ?? {
 				id: crypto.randomUUID(),
 				nome,
+				descricao: null,
 				ativo: false,
 			}
 			subsystem.nome = nome
+			const descricao = dados.descricao?.trim() || null
+			subsystem.descricao = descricao
 			if (!target) next.subsistemas.push(subsystem)
 			for (const item of next.integrantes) {
 				if (selecionados.has(item.id) && item.subsistemaId === null)
