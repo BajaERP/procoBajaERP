@@ -139,7 +139,7 @@ export function OperacaoSubsistemaDialog({
 					? error.message
 					: 'Não foi possível concluir a operação.'
 			setFailure(message)
-			toast.error(message, { toasterId: 'subsistema-operacao' })
+			toast.error(message)
 		} finally {
 			setSaving(false)
 		}
@@ -165,7 +165,7 @@ export function OperacaoSubsistemaDialog({
 
 	return (
 		<>
-			<Notifications id="subsistema-operacao" />
+			<Notifications />
 			<dialog
 				ref={dialogRef}
 				aria-labelledby="operacao-subsistema-titulo"
