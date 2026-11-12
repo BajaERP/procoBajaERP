@@ -276,6 +276,114 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 	)
 })
 
+test('definição inicial ativa o subsistema e persiste o novo Líder nas identidades', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+
+	store.definirLider('ana', 'inativo', 'carla')
+
+	const reloaded = createDemoStore(localStorage)
+	assert.equal(reloaded.identity('carla')?.role, 'lider')
+	assert.equal(reloaded.identity('carla')?.subsistemaId, 'inativo')
+	assert.equal(
+		reloaded
+			.listarSubsistemas({
+				id: 'ana',
+				perfil: 'capitao',
+				subsistemaId: null,
+			})
+			.subsistemas.find((item: { id: string }) => item.id === 'inativo')
+			?.ativo,
+		true,
+	)
+	assert.equal(
+		reloaded
+			.listarSubsistemas({
+				id: 'ana',
+				perfil: 'capitao',
+				subsistemaId: null,
+			})
+			.subsistemas.find((item: { id: string }) => item.id === 'inativo')
+			?.lider?.id,
+		'carla',
+	)
+})
+
+test('substituição atualiza o perfil e as identidades do Líder anterior e do novo', () => {
+	const store = createDemoStore(storage())
+
+	store.definirLider('bruno', 'chassi', 'elisa')
+
+	assert.equal(store.identity('diego')?.role, 'membro')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('elisa')?.role, 'lider')
+	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
+})
+
+test('transferência de outro subsistema troca a liderança e atualiza ambas as composições', () => {
+	const store = createDemoStore(storage())
+
+	store.definirLider('ana', 'chassi', 'helena')
+
+	const equipes = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	assert.equal(store.identity('helena')?.role, 'lider')
+	assert.equal(store.identity('helena')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('diego')?.role, 'membro')
+	assert.equal(store.identity('diego')?.subsistemaId, 'chassi')
+	assert.equal(
+		equipes.find((item: { id: string }) => item.id === 'chassi')?.lider?.id,
+		'helena',
+	)
+	assert.equal(
+		equipes.find((item: { id: string }) => item.id === 'eletrica')?.lider
+			?.id,
+		'gabriel',
+	)
+	assert.ok(
+		equipes
+			.find((item: { id: string }) => item.id === 'eletrica')
+			?.integrantes?.some(
+				(item: { id: string }) => item.id === 'helena',
+			) === false,
+	)
+})
+
+test('definição de Líder exige administrador e Membro ativo e falha sem alteração parcial', () => {
+	let failWrites = false
+	const values = new Map<string, string>()
+	const localStorage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			if (failWrites) throw new Error('storage unavailable')
+			values.set(key, value)
+		},
+		removeItem: (key: string) => values.delete(key),
+	}
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('carla', { ativo: false })
+
+	assert.throws(
+		() => store.definirLider('elisa', 'chassi', 'helena'),
+		/permissão/,
+	)
+	assert.throws(
+		() => store.definirLider('ana', 'chassi', 'gabriel'),
+		/Membro ativo/,
+	)
+	assert.throws(
+		() => store.definirLider('ana', 'chassi', 'carla'),
+		/Membro ativo/,
+	)
+	failWrites = true
+	assert.throws(() => store.definirLider('ana', 'chassi', 'helena'), /salvar/)
+	assert.equal(store.identity('diego')?.role, 'lider')
+	assert.equal(store.identity('helena')?.role, 'membro')
+})
+
 test('Capitão cria subsistema inativo sem Líder e prepara composição com integrantes autorizados', () => {
 	const store = createDemoStore(storage())
 	const created = store.salvarSubsistema('ana', {

@@ -76,6 +76,14 @@ export const mockEquipeService: EquipeService = {
 		await new Promise((resolve) => window.setTimeout(resolve, 150))
 		return store.opcoesSubsistema(atorId, subsistemaId)
 	},
+	async opcoesDefinicaoLider(atorId, subsistemaId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 150))
+		return store.opcoesDefinicaoLider(atorId, subsistemaId)
+	},
+	async definirLider(atorId, subsistemaId, integranteId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.definirLider(atorId, subsistemaId, integranteId)
+	},
 	async salvarSubsistema(atorId, dados) {
 		await new Promise((resolve) => window.setTimeout(resolve, 250))
 		store.salvarSubsistema(atorId, dados)
