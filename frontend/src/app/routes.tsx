@@ -50,8 +50,12 @@ export const router = createHashRouter([
 			{ path: 'equipe/integrantes', Component: EquipePage },
 			{ path: 'equipe/subsistemas', Component: EquipePage },
 			{ path: 'equipe/financeiro', Component: EquipePage },
+			{ path: 'equipe/permissoes', Component: EquipePage },
+			{
+				path: 'equipe/cargos',
+				element: <Navigate to="/app/equipe/permissoes" replace />,
+			},
 			...[
-				['equipe/cargos', 'Cargos e permissões'],
 				['atividades/quadro', 'Quadro de atividades'],
 				['atividades/backlog', 'Backlog'],
 				['atividades/sprints', 'Sprints'],
