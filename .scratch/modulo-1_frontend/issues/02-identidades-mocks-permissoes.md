@@ -1,6 +1,6 @@
 # 02: Identidades demonstrativas e dados compartilhados
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Blocked by:** [01](01-navegacao-listagem-integrantes.md).
 
