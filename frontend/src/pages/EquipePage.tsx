@@ -67,13 +67,16 @@ export default function EquipePage() {
 					)}
 				</div>
 				{subsistemas && podeAdministrarSubsistemas ? (
-					<button
-						type="button"
-						onClick={() => setCreateSubsystemRequest(true)}
-						className="fixed inset-x-4 bottom-4 z-30 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white shadow-lg hover:bg-red-pressed md:static md:w-auto md:shadow-none"
-					>
-						<Plus size={18} aria-hidden="true" /> Novo subsistema
-					</button>
+					<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
+						<button
+							type="button"
+							onClick={() => setCreateSubsystemRequest(true)}
+							className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-red px-4 text-sm font-semibold text-white hover:bg-red-pressed md:w-auto"
+						>
+							<Plus size={18} aria-hidden="true" /> Novo
+							subsistema
+						</button>
+					</div>
 				) : podeCadastrar && !subsistemas ? (
 					<button
 						type="button"

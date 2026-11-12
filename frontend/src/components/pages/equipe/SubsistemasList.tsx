@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
-import { Search, Users, Pencil } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import type { ConsultaSubsistemas } from '../../../services/equipeTypes'
 import { labelPerfilSubsistema } from '../../../services/subsistemas'
 
 export function SubsistemasList({
 	data,
 	podeAdministrar,
-	onEdit,
+	onOpen,
 }: {
 	data: ConsultaSubsistemas
 	podeAdministrar: boolean
-	onEdit: (subsistemaId: string) => void
+	onOpen: (subsistemaId: string) => void
 }) {
 	const [busca, setBusca] = useState('')
 	const subsistemas = useMemo(() => {
@@ -77,45 +77,42 @@ export function SubsistemasList({
 					{subsistemas.map((subsistema) => (
 						<li
 							key={subsistema.id}
-							className="min-w-0 rounded-lg border border-hairline bg-surface-card p-4 sm:p-5"
+							className="min-w-0 overflow-hidden rounded-lg border border-hairline bg-surface-card"
 						>
-							<div className="flex flex-wrap items-start justify-between gap-3">
-								<div className="min-w-0">
-									<div className="flex flex-wrap items-center gap-2">
-										<h2 className="break-words text-lg font-semibold text-ink">
-											{subsistema.nome}
-										</h2>
-										<span
-											className={`rounded-full px-2.5 py-1 text-xs font-semibold ${subsistema.ativo ? 'bg-state-success-bg text-state-success' : 'bg-state-warning-bg text-state-warning'}`}
-										>
-											{subsistema.ativo
-												? 'Ativo'
-												: 'Inativo'}
-										</span>
-									</div>
-									<p className="mt-2 text-sm text-body">
+							<button
+								type="button"
+								onClick={() => onOpen(subsistema.id)}
+								aria-label={`Ver detalhes de ${subsistema.nome}`}
+								className="block min-h-[84px] w-full p-4 text-left hover:bg-surface-soft focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-red"
+							>
+								<div className="flex min-w-0 items-center justify-between gap-2">
+									<h2 className="min-w-0 break-words text-base font-semibold text-ink">
+										{subsistema.nome}
+									</h2>
+									<span
+										className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${subsistema.ativo ? 'bg-state-success-bg text-state-success' : 'bg-state-warning-bg text-state-warning'}`}
+									>
+										{subsistema.ativo ? 'Ativo' : 'Inativo'}
+									</span>
+								</div>
+								<div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-sm text-body">
+									<p className="min-w-0 truncate">
 										Líder:{' '}
 										{subsistema.lider?.nome ?? 'Sem Líder'}
 									</p>
+									{subsistema.integrantes && (
+										<span className="shrink-0 text-xs text-mute">
+											{subsistema.integrantes.length}{' '}
+											integrantes
+										</span>
+									)}
 								</div>
-								{podeAdministrar && (
-									<button
-										type="button"
-										onClick={() => onEdit(subsistema.id)}
-										className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-canvas px-3 text-sm font-semibold text-ink hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red"
-										aria-label={`Editar ${subsistema.nome}`}
-									>
-										<Pencil size={15} aria-hidden="true" />
-										Editar
-									</button>
-								)}
-							</div>
+							</button>
 							{subsistema.integrantes && (
-								<div className="mt-4 border-t border-hairline-soft pt-3">
+								<div className="hidden border-t border-hairline-soft px-4 py-3 md:block">
 									<h3 className="flex items-center gap-2 text-sm font-semibold text-body">
 										<Users size={16} aria-hidden="true" />
-										Composição (
-										{subsistema.integrantes.length})
+										Composição
 									</h3>
 									{subsistema.integrantes.length ? (
 										<ul className="mt-2 flex flex-wrap gap-2">
