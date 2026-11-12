@@ -4,13 +4,18 @@ import { createDemoStore } from './equipeStore.ts'
 
 function storage() {
 	const values = new Map<string, string>()
+	let writesFail = false
 	return {
 		getItem: (key: string) => values.get(key) ?? null,
 		setItem: (key: string, value: string) => {
+			if (writesFail) throw new Error('storage unavailable')
 			values.set(key, value)
 		},
 		removeItem: (key: string) => {
 			values.delete(key)
+		},
+		setWritesFail: (value: boolean) => {
+			writesFail = value
 		},
 	}
 }
@@ -78,4 +83,367 @@ test('falha simulada vale para uma consulta e depois permite recuperação', () 
 	store.failNextRead()
 	assert.throws(() => store.read(), /Não foi possível carregar/)
 	assert.equal(store.read().integrantes.length > 0, true)
+})
+
+const cadastro = {
+	nome: '  Lucas Martins  ',
+	identificador: '00123456789012345678',
+	perfil: 'membro' as const,
+	subsistemaId: 'chassi',
+}
+
+test('cadastro persiste uma conta pendente para outras identidades, sem a senha apresentada', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	const result = store.createIntegrante('bruno', cadastro)
+	assert.ok(result.senhaProvisoria.length >= 12)
+	const reloaded = createDemoStore(localStorage)
+	const identity = reloaded.identity(result.integrante.id)
+	assert.equal(identity?.name, 'Lucas Martins')
+	assert.equal(identity?.ra, cadastro.identificador)
+	assert.equal(identity?.passwordChangePending, true)
+	assert.equal(identity?.financial, false)
+	assert.ok(!JSON.stringify(reloaded.data()).includes(result.senhaProvisoria))
+	assert.ok(
+		!localStorage
+			.getItem('proco.demo.equipe.v1')
+			?.includes(result.senhaProvisoria),
+	)
+	assert.ok(!('senhaProvisoria' in (identity ?? {})))
+})
+
+test('cadastro usa o perfil persistido do ator e rejeita perfis fora da responsabilidade', () => {
+	const store = createDemoStore(storage())
+	for (const id of ['carla', 'diego', 'joao', 'inexistente']) {
+		assert.throws(
+			() => store.createIntegrante(id, cadastro),
+			/permissão|disponível/,
+		)
+	}
+	for (const perfil of ['capitao', 'gestor', 'lider', 'financeiro']) {
+		assert.throws(() =>
+			store.createIntegrante('bruno', { ...cadastro, perfil } as never),
+		)
+	}
+	store.updateIntegrante('bruno', { perfil: 'membro' })
+	assert.throws(() => store.createIntegrante('bruno', cadastro), /permissão/)
+	assert.equal(store.data().integrantes.length, 9)
+})
+
+test('Capitão cadastra Capitão sem subsistema e Gestor; Orientador tem SIAPE e subsistema opcional', () => {
+	const store = createDemoStore(storage())
+	const captain = store.createIntegrante('ana', {
+		...cadastro,
+		perfil: 'capitao',
+		subsistemaId: null,
+	})
+	assert.equal(captain.integrante.subsistemaId, null)
+	const manager = store.createIntegrante('ana', {
+		...cadastro,
+		identificador: '2',
+		perfil: 'gestor',
+		subsistemaId: 'inativo',
+	})
+	assert.equal(manager.integrante.perfil, 'gestor')
+	const advisor = store.createIntegrante('bruno', {
+		...cadastro,
+		identificador: '3',
+		perfil: 'orientador',
+		subsistemaId: null,
+	})
+	assert.equal(advisor.integrante.perfil, 'orientador')
+	assert.notEqual(captain.senhaProvisoria, manager.senhaProvisoria)
+})
+
+test('nome, identificador e subsistema inválidos retornam erros associados aos campos sem criar conta', () => {
+	const store = createDemoStore(storage())
+	const cases = [
+		[{ nome: ' ' }, 'nome'],
+		[{ nome: 'A'.repeat(151) }, 'nome'],
+		[{ identificador: '' }, 'identificador'],
+		[{ identificador: '12a' }, 'identificador'],
+		[{ identificador: '1'.repeat(21) }, 'identificador'],
+		[{ subsistemaId: null }, 'subsistemaId'],
+		[{ subsistemaId: 'ausente' }, 'subsistemaId'],
+		[{ perfil: 'capitao' }, 'subsistemaId'],
+	] as const
+	for (const [changes, field] of cases) {
+		assert.throws(
+			() => store.createIntegrante('ana', { ...cadastro, ...changes }),
+			(error: unknown) => {
+				assert.ok(error instanceof Error)
+				assert.ok(
+					'campos' in error &&
+						(error.campos as Record<string, string>)[field],
+				)
+				return true
+			},
+		)
+	}
+	assert.equal(store.data().integrantes.length, 9)
+})
+
+test('duplicidade só orienta reativação quando o ator pode administrar a conta desativada', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('ana', { ativo: false })
+	assert.throws(
+		() =>
+			store.createIntegrante('bruno', {
+				...cadastro,
+				identificador: '2345678',
+			}),
+		(error: unknown) => {
+			assert.ok(error instanceof Error)
+			assert.doesNotMatch(error.message, /desativad|reativ|Ana/)
+			return true
+		},
+	)
+	store.updateIntegrante('elisa', { ativo: false })
+	assert.throws(
+		() =>
+			store.createIntegrante('bruno', {
+				...cadastro,
+				identificador: '2345682',
+			}),
+		/[Rr]eativ/,
+	)
+	assert.throws(
+		() =>
+			store.createIntegrante('bruno', {
+				...cadastro,
+				identificador: '2345683',
+			}),
+		/em uso/,
+	)
+	assert.equal(store.data().integrantes.length, 9)
+})
+
+test('falhas de cadastro e armazenamento não anunciam nem persistem criação; nova tentativa funciona', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.failNextCreate()
+	assert.throws(() => store.createIntegrante('bruno', cadastro), /cadastrar/)
+	assert.equal(store.data().integrantes.length, 9)
+	store.createIntegrante('bruno', cadastro)
+	assert.equal(store.data().integrantes.length, 10)
+	const unavailable = createDemoStore({
+		...storage(),
+		setItem() {
+			throw new Error('QuotaExceededError')
+		},
+	})
+	assert.throws(
+		() => unavailable.createIntegrante('bruno', cadastro),
+		/salvar/,
+	)
+	assert.equal(unavailable.data().integrantes.length, 9)
+})
+
+test('administração autoriza campos e preserva privacidade nos detalhes', () => {
+	const store = createDemoStore(storage())
+	const managerOptions = store.administrationOptions('bruno', 'elisa')
+	assert.deepEqual(managerOptions.perfis, ['membro', 'orientador'])
+	assert.equal(managerOptions.subsistemas.length, 5)
+	assert.equal(managerOptions.podeEditarDados, true)
+	assert.equal(managerOptions.podeAlterarStatus, true)
+	assert.equal(
+		store.administrationOptions('bruno', 'ana').podeEditarDados,
+		false,
+	)
+	assert.equal(
+		store.administrationOptions('carla', 'elisa').podeEditarDados,
+		false,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'diego',
+		),
+		null,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'bruno',
+		)?.identificador,
+		null,
+	)
+	store.administer('bruno', 'elisa', {
+		nome: '  Elisa Nova  ',
+		identificador: '009876',
+		perfil: 'orientador',
+	})
+	assert.equal(
+		store.detail(
+			{ id: 'bruno', perfil: 'gestor', subsistemaId: 'gestao' },
+			'elisa',
+		)?.nome,
+		'Elisa Nova',
+	)
+	assert.equal(store.identity('elisa')?.role, 'orientador')
+})
+
+test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.administer('bruno', 'elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.administer('bruno', 'elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
+})
+
+test('liderança não muda por edição comum e Gestor Financeiro exige tratar a atribuição à parte', () => {
+	const store = createDemoStore(storage())
+	assert.deepEqual(store.administrationOptions('bruno', 'diego').perfis, [])
+	assert.throws(
+		() => store.administer('bruno', 'diego', { perfil: 'membro' }),
+		/fluxo próprio/,
+	)
+	assert.match(
+		store.administrationOptions('bruno', 'diego').bloqueioStatus ?? '',
+		/Defina outro Líder/,
+	)
+	assert.throws(
+		() => store.administer('bruno', 'diego', { ativo: false }),
+		/Defina outro Líder/,
+	)
+	const financial = store.administrationOptions('ana', 'bruno')
+	assert.match(financial.bloqueioStatus ?? '', /responsabilidade financeira/)
+	assert.equal(financial.podeAlterarStatus, false)
+	assert.deepEqual(financial.perfis, [])
+	assert.throws(
+		() => store.administer('ana', 'bruno', { ativo: false }),
+		/responsabilidade financeira/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'bruno', { perfil: 'membro' }),
+		/responsabilidade financeira/,
+	)
+	assert.equal(store.identity('bruno')?.financial, true)
+})
+
+test('administração valida duplicidade, dados próprios e mantém Capitão ativo', () => {
+	const store = createDemoStore(storage())
+	assert.throws(
+		() => store.administer('bruno', 'elisa', { identificador: '2345680' }),
+		/em uso/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { nome: 'Outra Ana' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { ativo: false }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { perfil: 'gestor' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'ana', { ativo: false }),
+		/próprios dados/,
+	)
+	store.updateIntegrante('ana', { ativo: false })
+	store.updateIntegrante('ana', { ativo: true })
+	assert.throws(
+		() => store.administer('ana', 'ana', { nome: 'Ana' }),
+		/próprios dados/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'bruno', { ativo: false }),
+		/responsabilidade financeira/,
+	)
+	assert.equal(
+		store
+			.data()
+			.integrantes.filter(
+				(item) => item.ativo && item.perfil === 'capitao',
+			).length,
+		1,
+	)
+})
+
+test('redefinição mostra senha uma vez, exige troca e não persiste o texto', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('bruno', { passwordChangePending: false })
+	const password = store.resetTemporaryPassword('ana', 'elisa')
+	assert.ok(password.length >= 12)
+	assert.equal(store.identity('elisa')?.passwordChangePending, true)
+	assert.ok(!JSON.stringify(store.data()).includes(password))
+	assert.ok(!localStorage.getItem('proco.demo.equipe.v1')?.includes(password))
+	assert.throws(
+		() => store.resetTemporaryPassword('carla', 'elisa'),
+		/permissão/,
+	)
+})
+
+test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { passwordChangePending: false })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.resetTemporaryPassword('ana', 'elisa'),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.passwordChangePending, false)
+})
+
+test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {
+	const store = createDemoStore(storage())
+	store.administer('ana', 'elisa', { perfil: 'capitao' })
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		null,
+	)
+	assert.throws(
+		() => store.administer('ana', 'elisa', { perfil: 'membro' }),
+		/subsistema/,
+	)
+	store.administer('ana', 'elisa', {
+		perfil: 'membro',
+		subsistemaId: 'chassi',
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'elisa')
+			?.subsistemaId,
+		'chassi',
+	)
+	assert.throws(
+		() =>
+			store.administer('ana', 'elisa', {
+				perfil: 'orientador',
+				subsistemaId: 'eletrica',
+			}),
+		/fluxo próprio/,
+	)
+	assert.throws(
+		() =>
+			store.administer('ana', 'joao', {
+				perfil: 'membro',
+				subsistemaId: 'inexistente',
+			}),
+		/subsistema disponível/,
+	)
+	assert.throws(
+		() => store.administer('ana', 'joao', { perfil: 'membro' }),
+		/subsistema/,
+	)
+	store.administer('ana', 'joao', {
+		perfil: 'membro',
+		subsistemaId: 'gestao',
+	})
+	assert.equal(
+		store.data().integrantes.find((item) => item.id === 'joao')
+			?.subsistemaId,
+		'gestao',
+	)
 })

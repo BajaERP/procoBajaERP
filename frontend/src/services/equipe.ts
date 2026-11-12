@@ -9,6 +9,57 @@ async function mockService() {
 
 export const equipeService: EquipeService = import.meta.env.DEV
 	? {
+			async obterDetalheIntegrante(visualizador, integranteId) {
+				return (
+					(await mockService()).obterDetalheIntegrante?.(
+						visualizador,
+						integranteId,
+					) ?? null
+				)
+			},
+			async opcoesAdministracaoIntegrante(atorId, integranteId) {
+				return (
+					(await mockService()).opcoesAdministracaoIntegrante?.(
+						atorId,
+						integranteId,
+					) ?? {
+						perfis: [],
+						subsistemas: [],
+						podeEditarDados: false,
+						podeAlterarStatus: false,
+						podeRedefinirSenha: false,
+						bloqueioStatus: null,
+					}
+				)
+			},
+			async administrarIntegrante(atorId, integranteId, alteracoes) {
+				await (
+					await mockService()
+				).administrarIntegrante?.(atorId, integranteId, alteracoes)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
+			async redefinirSenhaProvisoria(atorId, integranteId) {
+				const password = await (
+					await mockService()
+				).redefinirSenhaProvisoria?.(atorId, integranteId)
+				if (!password)
+					throw new Error('Não foi possível redefinir a senha.')
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+				return password
+			},
+			async opcoesCadastroIntegrante(atorId) {
+				return (await mockService()).opcoesCadastroIntegrante(atorId)
+			},
+			async cadastrarIntegrante(atorId, dados) {
+				const result = await (
+					await mockService()
+				).cadastrarIntegrante(atorId, dados)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+				return result
+			},
+			async simularFalhaNoProximoCadastro() {
+				await (await mockService()).simularFalhaNoProximoCadastro?.()
+			},
 			async listarIntegrantes(visualizador) {
 				return (await mockService()).listarIntegrantes(visualizador)
 			},
@@ -35,6 +86,36 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			},
 		}
 	: {
+			async obterDetalheIntegrante() {
+				throw new Error(
+					'Detalhes indisponíveis até a integração com o servidor.',
+				)
+			},
+			async opcoesAdministracaoIntegrante() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async administrarIntegrante() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async redefinirSenhaProvisoria() {
+				throw new Error(
+					'Redefinição indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesCadastroIntegrante() {
+				throw new Error(
+					'Cadastro indisponível até a integração com o servidor.',
+				)
+			},
+			async cadastrarIntegrante() {
+				throw new Error(
+					'Cadastro indisponível até a integração com o servidor.',
+				)
+			},
 			async listarIntegrantes() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',

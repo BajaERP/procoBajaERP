@@ -50,6 +50,29 @@ export interface ConsultaIntegrantes {
 
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
+	obterDetalheIntegrante?(
+		visualizador: Visualizador,
+		integranteId: string,
+	): Promise<IntegranteVisivel | null>
+	opcoesAdministracaoIntegrante?(
+		atorId: string,
+		integranteId: string,
+	): Promise<OpcoesAdministracaoIntegrante>
+	administrarIntegrante?(
+		atorId: string,
+		integranteId: string,
+		alteracoes: AlteracaoIntegrante,
+	): Promise<void>
+	redefinirSenhaProvisoria?(
+		atorId: string,
+		integranteId: string,
+	): Promise<string>
+	opcoesCadastroIntegrante(atorId: string): Promise<OpcoesCadastroIntegrante>
+	cadastrarIntegrante(
+		atorId: string,
+		dados: CadastroIntegrante,
+	): Promise<IntegranteCadastrado>
+	simularFalhaNoProximoCadastro?(): void | Promise<void>
 	simularFalhaNaProximaConsulta?(): void
 	listarIdentidades?(): Promise<DemoIdentity[]>
 	obterIdentidade?(id: string): Promise<DemoIdentity | null>
@@ -60,3 +83,47 @@ export interface EquipeService {
 		changes: Partial<Integrante>,
 	): Promise<void>
 }
+
+export interface AlteracaoIntegrante {
+	nome?: string
+	identificador?: string
+	perfil?: Exclude<UserRole, 'lider'>
+	subsistemaId?: string | null
+	ativo?: boolean
+}
+
+export interface OpcoesAdministracaoIntegrante {
+	perfis: Exclude<UserRole, 'lider'>[]
+	subsistemas: SubsistemaDemo[]
+	podeEditarDados: boolean
+	podeAlterarStatus: boolean
+	podeRedefinirSenha: boolean
+	bloqueioStatus: string | null
+}
+
+export type ErrosEdicaoIntegrante = Partial<
+	Record<keyof AlteracaoIntegrante, string>
+>
+
+export type PerfilCadastro = Exclude<UserRole, 'lider'>
+
+export interface CadastroIntegrante {
+	nome: string
+	identificador: string
+	perfil: PerfilCadastro
+	subsistemaId: string | null
+}
+
+export interface OpcoesCadastroIntegrante {
+	perfis: PerfilCadastro[]
+	subsistemas: SubsistemaDemo[]
+}
+
+export interface IntegranteCadastrado {
+	integrante: Integrante
+	senhaProvisoria: string
+}
+
+export type ErrosCadastroIntegrante = Partial<
+	Record<keyof CadastroIntegrante, string>
+>
