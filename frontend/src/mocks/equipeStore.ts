@@ -259,6 +259,27 @@ export function createDemoStore(storage: StoragePort) {
 
 	let failNext = false
 	let failCreate = false
+
+	function subsistemaParaDefinicaoLider(
+		source: DemoData,
+		atorId: string,
+		subsistemaId: string,
+	): SubsistemaDemo {
+		const ator = source.integrantes.find(
+			(item) => item.id === atorId && item.ativo,
+		)
+		if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
+			throw new SubsistemaError(
+				'Você não tem permissão para definir a liderança do subsistema.',
+			)
+		const subsistema = source.subsistemas.find(
+			(item) => item.id === subsistemaId,
+		)
+		if (!subsistema)
+			throw new SubsistemaError('O subsistema não foi encontrado.')
+		return subsistema
+	}
+
 	return {
 		data,
 		listarSubsistemas(visualizador: Visualizador): ConsultaSubsistemas {
@@ -372,18 +393,11 @@ export function createDemoStore(storage: StoragePort) {
 			subsistemaId: string,
 		): OpcoesDefinicaoLider {
 			const source = data()
-			const ator = source.integrantes.find(
-				(item) => item.id === atorId && item.ativo,
+			const subsistema = subsistemaParaDefinicaoLider(
+				source,
+				atorId,
+				subsistemaId,
 			)
-			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
-				throw new SubsistemaError(
-					'Você não tem permissão para definir a liderança do subsistema.',
-				)
-			const subsistema = source.subsistemas.find(
-				(item) => item.id === subsistemaId,
-			)
-			if (!subsistema)
-				throw new SubsistemaError('O subsistema não foi encontrado.')
 			const liderAtual = source.integrantes.find(
 				(item) =>
 					item.ativo &&
@@ -417,18 +431,11 @@ export function createDemoStore(storage: StoragePort) {
 			integranteId: string,
 		) {
 			const next = data()
-			const ator = next.integrantes.find(
-				(item) => item.id === atorId && item.ativo,
+			const subsistema = subsistemaParaDefinicaoLider(
+				next,
+				atorId,
+				subsistemaId,
 			)
-			if (!ator || !['capitao', 'gestor'].includes(ator.perfil))
-				throw new SubsistemaError(
-					'Você não tem permissão para definir a liderança do subsistema.',
-				)
-			const subsistema = next.subsistemas.find(
-				(item) => item.id === subsistemaId,
-			)
-			if (!subsistema)
-				throw new SubsistemaError('O subsistema não foi encontrado.')
 			const integrante = next.integrantes.find(
 				(item) => item.id === integranteId,
 			)
