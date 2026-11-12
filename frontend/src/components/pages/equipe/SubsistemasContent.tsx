@@ -109,6 +109,7 @@ export function SubsistemasContent({
 	return (
 		<>
 			<Notifications id="lideranca" />
+			<Notifications id="subsistema-operacao" />
 			<div className="min-w-0">
 				{state.status === 'loading' ? (
 					<section
