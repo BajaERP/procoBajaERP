@@ -180,8 +180,8 @@ export default function EquipePage() {
 							Consulta restrita
 						</h2>
 						<p className="mt-2">
-							A matriz de permissões está disponível para Capitão e
-							Gestor.
+							A matriz de permissões está disponível para Capitão
+							e Gestor.
 						</p>
 						<Link
 							to="/app/equipe/integrantes"
