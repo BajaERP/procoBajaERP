@@ -13,7 +13,7 @@ test('falha de definição emite toast Sonner para o toaster da liderança', () 
 	assert.ok(emitted && 'title' in emitted)
 	assert.equal(emitted?.title, 'Não foi possível salvar.')
 	assert.equal(emitted?.type, 'error')
-	assert.equal(emitted?.toasterId, 'lideranca-modal')
+	assert.equal(emitted?.toasterId, undefined)
 })
 
 test('sucesso de definição emite toast Sonner para o toaster da liderança', () => {

@@ -125,7 +125,7 @@ export function DefinirLiderDialog({
 				}}
 				className="fixed inset-0 m-auto flex h-[calc(100dvh-1rem)] max-h-dvh w-full max-w-none flex-col overflow-hidden border border-hairline bg-surface-card p-0 text-ink backdrop:bg-overlay sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:rounded-lg"
 			>
-				<Notifications id="lideranca-modal" />
+				<Notifications />
 				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-hairline px-5 py-4 sm:px-7">
 					<div>
 						<h2
