@@ -197,11 +197,13 @@ export function createDemoStore(storage: StoragePort) {
 		return copy(initialData)
 	}
 
-	function persist(next: DemoData) {
+	function persist(next: DemoData): boolean {
 		try {
 			storage.setItem(DEMO_DATA_KEY, JSON.stringify(safeData(next)))
+			return true
 		} catch {
 			// Keep the current page usable when persistence is unavailable.
+			return false
 		}
 	}
 
@@ -562,7 +564,10 @@ export function createDemoStore(storage: StoragePort) {
 			if (changes.perfil !== undefined) target.perfil = changes.perfil
 			target.subsistemaId = proximoSubsistemaId
 			if (changes.ativo !== undefined) target.ativo = changes.ativo
-			persist(next)
+			if (!persist(next))
+				throw new AdministracaoIntegranteError(
+					'Não foi possível salvar as alterações neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 		},
 		resetTemporaryPassword(atorId: string, integranteId: string) {
 			const next = data()
@@ -581,7 +586,10 @@ export function createDemoStore(storage: StoragePort) {
 					'Você não tem permissão para redefinir esta senha.',
 				)
 			target.passwordChangePending = true
-			persist(next)
+			if (!persist(next))
+				throw new AdministracaoIntegranteError(
+					'Não foi possível salvar a redefinição neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 			const alphabet =
 				'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
 			const random = crypto.getRandomValues(new Uint8Array(20))
