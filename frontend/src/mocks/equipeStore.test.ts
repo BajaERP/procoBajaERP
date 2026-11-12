@@ -228,15 +228,51 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 		}).resumo.integrantesAssociados,
 		null,
 	)
+	store.updateIntegrante('elisa', { ativo: false })
 	const orientador = store.listarSubsistemas({
 		id: 'joao',
 		perfil: 'orientador',
 		subsistemaId: null,
 	}).subsistemas
 	assert.ok(
-		orientador
+		!orientador
 			.find((item: { id: string }) => item.id === 'chassi')
 			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const lider = store.listarSubsistemas({
+		id: 'diego',
+		perfil: 'lider',
+		subsistemaId: 'chassi',
+	}).subsistemas
+	assert.ok(
+		!lider
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	const captain = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	assert.ok(
+		!captain
+			.find((item: { id: string }) => item.id === 'chassi')
+			?.integrantes?.some((item: { id: string }) => item.id === 'elisa'),
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo.integrantesAssociados,
+		6,
+	)
+	assert.equal(
+		store.detail(
+			{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+			'elisa',
+		)?.ativo,
+		false,
 	)
 })
 
@@ -593,6 +629,19 @@ test('falha ao persistir redefinição não retorna senha e preserva o estado an
 	)
 	localStorage.setWritesFail(false)
 	assert.equal(store.identity('elisa')?.passwordChangePending, false)
+})
+
+test('falha ao persistir atualização genérica retorna erro e preserva os dados anteriores', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	store.updateIntegrante('elisa', { nome: 'Elisa Persistida' })
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.updateIntegrante('elisa', { nome: 'Elisa Não Salva' }),
+		/Não foi possível salvar/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
 })
 
 test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {

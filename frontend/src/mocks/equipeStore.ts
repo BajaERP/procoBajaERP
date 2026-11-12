@@ -273,7 +273,8 @@ export function createDemoStore(storage: StoragePort) {
 					).length,
 					integrantesAssociados: seeAllComposition
 						? source.integrantes.filter(
-								(item) => item.subsistemaId !== null,
+								(item) =>
+									item.subsistemaId !== null && item.ativo,
 							).length
 						: null,
 				},
@@ -288,7 +289,7 @@ export function createDemoStore(storage: StoragePort) {
 						const pessoas = source.integrantes.filter(
 							(item) =>
 								item.subsistemaId === subsistema.id &&
-								(seeAllComposition || item.ativo),
+								item.ativo,
 						)
 						const lider = pessoas.find(
 							(item) => item.perfil === 'lider' && item.ativo,
@@ -870,7 +871,10 @@ export function createDemoStore(storage: StoragePort) {
 				for (const other of next.integrantes)
 					if (other.id !== id) other.financeiro = false
 			}
-			persist(next)
+			if (!persist(next))
+				throw new Error(
+					'Não foi possível salvar as alterações neste navegador. Verifique o armazenamento e tente novamente.',
+				)
 		},
 		reset() {
 			try {
