@@ -1,7 +1,9 @@
 import type { UserRole } from '../contexts/AuthContext'
 import type {
 	CadastroIntegrante,
+	AlteracaoIntegrante,
 	ErrosCadastroIntegrante,
+	ErrosEdicaoIntegrante,
 	OpcoesCadastroIntegrante,
 	PerfilCadastro,
 } from './equipeTypes'
@@ -56,4 +58,30 @@ export class CadastroIntegranteError extends Error {
 		this.name = 'CadastroIntegranteError'
 		this.campos = campos
 	}
+}
+
+export class AdministracaoIntegranteError extends Error {
+	campos: ErrosEdicaoIntegrante
+	constructor(message: string, campos: ErrosEdicaoIntegrante = {}) {
+		super(message)
+		this.name = 'AdministracaoIntegranteError'
+		this.campos = campos
+	}
+}
+
+export function validarEdicaoIntegrante(
+	dados: AlteracaoIntegrante,
+): ErrosEdicaoIntegrante {
+	const erros: ErrosEdicaoIntegrante = {}
+	if (dados.nome !== undefined) {
+		if (!dados.nome.trim()) erros.nome = 'Informe o nome completo.'
+		else if (dados.nome.trim().length > 150)
+			erros.nome = 'O nome deve ter até 150 caracteres.'
+	}
+	if (
+		dados.identificador !== undefined &&
+		!/^\d{1,20}$/.test(dados.identificador)
+	)
+		erros.identificador = 'Use de 1 a 20 números.'
+	return erros
 }
