@@ -4,6 +4,7 @@ import type {
 	SubsistemaDemo,
 	Visualizador,
 } from './equipeTypes'
+import { podeAdministrarPerfil } from './cadastroIntegrante.ts'
 
 export function subsistemasVisiveis(
 	subsistemas: readonly SubsistemaDemo[],
@@ -48,14 +49,31 @@ export function filtrarIntegrantesVisiveis(
 				integrante.subsistemaId === visualizador.subsistemaId
 			)
 		})
-		.map((integrante) => ({
-			...integrante,
-			identificador:
-				administra || integrante.id === visualizador.id
-					? integrante.identificador
-					: null,
-			subsistema: null,
-		}))
+		.map((integrante) => {
+			const podeConsultarPendenciaDeSenha =
+				integrante.id !== visualizador.id &&
+				podeAdministrarPerfil(visualizador.perfil, integrante.perfil)
+			return {
+				id: integrante.id,
+				nome: integrante.nome,
+				perfil: integrante.perfil,
+				subsistemaId: integrante.subsistemaId,
+				ativo: integrante.ativo,
+				financeiro: integrante.financeiro,
+				...(podeConsultarPendenciaDeSenha &&
+				integrante.passwordChangePending !== undefined
+					? {
+							passwordChangePending:
+								integrante.passwordChangePending,
+						}
+					: {}),
+				identificador:
+					administra || integrante.id === visualizador.id
+						? integrante.identificador
+						: null,
+				subsistema: null,
+			}
+		})
 }
 
 function normalize(value: string): string {
