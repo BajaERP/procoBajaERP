@@ -9,8 +9,9 @@ interface ProtectedRouteProps {
 // Guards /app/* — redirects unauthenticated users to /login while
 // remembering the attempted destination.
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-	const { isAuthenticated } = useAuth()
+	const { isAuthenticated, isReady } = useAuth()
 	const location = useLocation()
+	if (!isReady) return <div role="status">Carregando sessão...</div>
 
 	if (!isAuthenticated) {
 		const from = `${location.pathname}${location.search}${location.hash}`
