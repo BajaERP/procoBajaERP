@@ -39,6 +39,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: 'gestao',
 		ativo: true,
 		financeiro: false,
+		passwordChangePending: true,
 	},
 	{
 		id: 'diego',
@@ -112,6 +113,7 @@ test('Membro consulta apenas ativos do próprio subsistema e seu identificador',
 	)
 	assert.equal(resultado[0].identificador, null)
 	assert.equal(resultado[1].identificador, '789')
+	assert.equal('passwordChangePending' in resultado[1], false)
 	assert.deepEqual(pesquisarIntegrantes(resultado, '456', '', ''), [])
 })
 
@@ -228,5 +230,17 @@ test('Busca e filtros operam sobre dados recebidos', () => {
 			(item) => item.id,
 		),
 		['elisa'],
+	)
+})
+
+test('Capitão e Gestor podem ver troca pendente para administrar contas', () => {
+	const resultado = filtrarIntegrantesVisiveis(integrantes, {
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	})
+	assert.equal(
+		resultado.find((item) => item.id === 'carla')?.passwordChangePending,
+		true,
 	)
 })

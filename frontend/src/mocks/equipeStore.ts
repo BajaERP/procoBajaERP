@@ -133,6 +133,23 @@ function copy(data: DemoData): DemoData {
 	}
 }
 
+function gerarSenhaProvisoria(): string {
+	const alphabet =
+		'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
+	const limite = 256 - (256 % alphabet.length)
+	const senha: string[] = []
+
+	while (senha.length < 20) {
+		const bytes = crypto.getRandomValues(new Uint8Array(32))
+		for (const value of bytes) {
+			if (value < limite) senha.push(alphabet[value % alphabet.length])
+			if (senha.length === 20) break
+		}
+	}
+
+	return senha.join('')
+}
+
 function validData(value: unknown): value is DemoData {
 	if (!value || typeof value !== 'object') return false
 	const data = value as Partial<DemoData>
@@ -288,13 +305,7 @@ export function createDemoStore(storage: StoragePort) {
 				passwordChangePending: true,
 			}
 			// The generated value is returned once; only account metadata is persisted.
-			const alphabet =
-				'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
-			const random = crypto.getRandomValues(new Uint8Array(20))
-			const senhaProvisoria = Array.from(
-				random,
-				(value) => alphabet[value % alphabet.length],
-			).join('')
+			const senhaProvisoria = gerarSenhaProvisoria()
 			next.integrantes.push(integrante)
 			try {
 				storage.setItem(DEMO_DATA_KEY, JSON.stringify(safeData(next)))
@@ -377,7 +388,7 @@ export function createDemoStore(storage: StoragePort) {
 				subsistemas: permitted ? source.subsistemas : [],
 				podeEditarDados: permitted && !self,
 				podeAlterarStatus: permitted && !self && !bloqueioStatus,
-				podeRedefinirSenha: permitted,
+				podeRedefinirSenha: permitted && !self,
 				bloqueioStatus,
 			}
 		},
@@ -580,23 +591,19 @@ export function createDemoStore(storage: StoragePort) {
 			if (
 				!ator ||
 				!target ||
+				atorId === integranteId ||
 				!podeAdministrarPerfil(ator.perfil, target.perfil)
 			)
 				throw new AdministracaoIntegranteError(
 					'Você não tem permissão para redefinir esta senha.',
 				)
+			const senhaProvisoria = gerarSenhaProvisoria()
 			target.passwordChangePending = true
 			if (!persist(next))
 				throw new AdministracaoIntegranteError(
 					'Não foi possível salvar a redefinição neste navegador. Verifique o armazenamento e tente novamente.',
 				)
-			const alphabet =
-				'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*+-'
-			const random = crypto.getRandomValues(new Uint8Array(20))
-			return Array.from(
-				random,
-				(value) => alphabet[value % alphabet.length],
-			).join('')
+			return senhaProvisoria
 		},
 		failNextRead() {
 			failNext = true

@@ -106,8 +106,8 @@ export default function EquipePage() {
 				</section>
 			) : user ? (
 				<IntegrantesContent
-					key={`${user.id}:${user.role}:${demoRevision}`}
 					user={user}
+					demoRevision={demoRevision}
 					onOpen={setDetalheIntegrante}
 				/>
 			) : null}
@@ -132,9 +132,11 @@ export default function EquipePage() {
 
 function IntegrantesContent({
 	user,
+	demoRevision,
 	onOpen,
 }: {
 	user: AuthUser
+	demoRevision: number
 	onOpen: (id: string) => void
 }) {
 	const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
@@ -164,7 +166,7 @@ function IntegrantesContent({
 		return () => {
 			cancelled = true
 		}
-	}, [user.id, user.role, attempt])
+	}, [user.id, user.role, demoRevision, attempt])
 
 	function retry() {
 		setLoadState({ status: 'loading' })
