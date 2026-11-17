@@ -23,7 +23,7 @@ Consulte a tabela 8 do PDF para a matriz integral.
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-06%20-%20Competi%C3%A7%C3%B5es%20e%20Eventos.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_37_Competicoes_e_Eventos_Organizacao.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v4.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-06%20-%20Competi%C3%A7%C3%B5es%20e%20Eventos.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_37_Competicoes_e_Eventos_Organizacao.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
 
 No modelo proposto, as tabelas relacionadas incluem `eventos`, `evento_responsaveis`, `reunioes`, `reunioes_subsistemas`, `competicoes`, `logistica_eventos`, `inscricoes_competicao`, `resultados_competicao`. A lista orienta a leitura e não substitui o dicionário de dados ou as migrações efetivas.
 

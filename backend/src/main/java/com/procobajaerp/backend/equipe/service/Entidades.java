@@ -5,7 +5,7 @@ final class Entidades {
 
     static final String USUARIO = "USUARIO";
     static final String SUBSISTEMA = "SUBSISTEMA";
-    static final String VINCULO = "VINCULO_FINANCEIRO_GESTOR";
+    static final String ATRIBUICAO_FINANCEIRA = "ATRIBUICAO_FINANCEIRA";
 
     private Entidades() {
     }
