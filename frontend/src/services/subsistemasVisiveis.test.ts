@@ -7,8 +7,8 @@ const subsistemas = [
 	{ id: 'inativo', nome: 'Inativo', ativo: false },
 ]
 
-test('administração e orientação podem filtrar por qualquer subsistema', () => {
-	for (const perfil of ['capitao', 'gestor', 'orientador'] as const) {
+test('Capitão e Gestor podem filtrar por qualquer subsistema', () => {
+	for (const perfil of ['capitao', 'gestor'] as const) {
 		assert.deepEqual(
 			subsistemasVisiveis(subsistemas, {
 				id: 'visualizador',
@@ -18,6 +18,17 @@ test('administração e orientação podem filtrar por qualquer subsistema', () 
 			subsistemas,
 		)
 	}
+})
+
+test('Orientador pode filtrar apenas subsistemas ativos', () => {
+	assert.deepEqual(
+		subsistemasVisiveis(subsistemas, {
+			id: 'orientador',
+			perfil: 'orientador',
+			subsistemaId: null,
+		}),
+		[subsistemas[0]],
+	)
 })
 
 test('Líder e Membro podem filtrar apenas o próprio subsistema', () => {

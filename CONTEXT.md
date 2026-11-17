@@ -59,7 +59,7 @@ Divisão interna da equipe, técnica ou administrativa, coordenada por um Líder
 _Avoid_: Setor, área, módulo
 
 **Composição**:
-Lista dos Integrantes de um Subsistema, com seu Líder. Capitão, Gestor e Orientador veem a de todos os Subsistemas; Líder e Membro, só a do próprio, inclusive quando ele está inativo. Já os nomes dos Subsistemas ativos e de seus Líderes são visíveis a todos. A visibilidade da Composição não concede acesso a Usuários desativados ou informações restritas.
+Lista dos Integrantes de um Subsistema, com seu Líder. Capitão e Gestor veem a de todos os Subsistemas; Orientador vê a dos Subsistemas ativos; Líder e Membro veem só a do próprio, inclusive quando ele está inativo. Já os nomes dos Subsistemas ativos e de seus Líderes são visíveis a todos. A visibilidade da Composição não concede acesso a Usuários desativados ou informações restritas.
 
 **Desativação**:
 Retirada de um Usuário ou de um Subsistema de uso, preservando seu histórico; Usuário desativado não acessa o ERP. É a única forma de retirada, porque o ERP não exclui Usuários nem Subsistemas. A Reativação a desfaz e exige a mesma permissão; ninguém desativa a si mesmo.

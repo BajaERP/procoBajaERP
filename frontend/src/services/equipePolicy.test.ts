@@ -6,6 +6,12 @@ import {
 } from './equipePolicy.ts'
 import type { Integrante, Visualizador } from './equipeTypes.ts'
 
+const subsistemas = [
+	{ id: 'gestao', nome: 'Gestão', ativo: true },
+	{ id: 'chassi', nome: 'Chassi', ativo: true },
+	{ id: 'inativo', nome: 'Suspensão', ativo: false },
+]
+
 const integrantes: Integrante[] = [
 	{
 		id: 'ana',
@@ -55,21 +61,29 @@ const integrantes: Integrante[] = [
 ]
 
 test('Gestor consulta integrantes autorizados e identificadores', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.equal(resultado.length, 5)
 	assert.equal(resultado[0].identificador, '123')
 })
 
 test('Gestor com atribuição financeira conserva a consulta de Gestor', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.equal(resultado.length, 5)
 	assert.equal(
 		resultado.find((item) => item.id === 'ana')?.identificador,
@@ -87,7 +101,11 @@ test('Membro consulta apenas ativos do próprio subsistema e seu identificador',
 		perfil: 'membro',
 		subsistemaId: 'gestao',
 	}
-	const resultado = filtrarIntegrantesVisiveis(integrantes, visualizador)
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		visualizador,
+		subsistemas,
+	)
 	assert.deepEqual(
 		resultado.map((item) => item.id),
 		['bruno', 'carla'],
@@ -98,11 +116,15 @@ test('Membro consulta apenas ativos do próprio subsistema e seu identificador',
 })
 
 test('Líder não consulta integrante desativado do próprio subsistema', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'diego',
-		perfil: 'lider',
-		subsistemaId: 'chassi',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'diego',
+			perfil: 'lider',
+			subsistemaId: 'chassi',
+		},
+		subsistemas,
+	)
 	assert.deepEqual(
 		resultado.map((item) => item.id),
 		['diego'],
@@ -124,6 +146,7 @@ test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terce
 			},
 		],
 		{ id: 'joao', perfil: 'orientador', subsistemaId: null },
+		subsistemas,
 	)
 	assert.equal(
 		resultado.find((item) => item.id === 'joao')?.identificador,
@@ -140,12 +163,60 @@ test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terce
 	assert.deepEqual(pesquisarIntegrantes(resultado, '123', '', ''), [])
 })
 
+test('Orientador vê apenas integrantes de subsistemas ativos, além de si e pessoas sem subsistema', () => {
+	const orientadorInativo: Integrante = {
+		id: 'orientador-inativo',
+		nome: 'Orientador em Suspensão',
+		identificador: '456790',
+		perfil: 'orientador',
+		subsistemaId: 'inativo',
+		ativo: true,
+		financeiro: false,
+	}
+	const integranteSuspensao: Integrante = {
+		id: 'membro-inativo',
+		nome: 'Membro em Suspensão',
+		identificador: '456791',
+		perfil: 'membro',
+		subsistemaId: 'inativo',
+		ativo: true,
+		financeiro: false,
+	}
+	const resultado = filtrarIntegrantesVisiveis(
+		[...integrantes, orientadorInativo, integranteSuspensao],
+		{
+			id: orientadorInativo.id,
+			perfil: 'orientador',
+			subsistemaId: orientadorInativo.subsistemaId,
+		},
+		subsistemas,
+	)
+
+	assert.deepEqual(
+		resultado.map((item) => item.id),
+		['ana', 'bruno', 'carla', 'diego', orientadorInativo.id],
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'ana')?.identificador,
+		null,
+	)
+	assert.equal(
+		resultado.find((item) => item.id === orientadorInativo.id)
+			?.identificador,
+		'456790',
+	)
+})
+
 test('Busca e filtros operam sobre dados recebidos', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.deepEqual(
 		pesquisarIntegrantes(resultado, 'cArLa', 'membro', 'gestao').map(
 			(item) => item.id,
