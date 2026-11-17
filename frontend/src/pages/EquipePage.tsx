@@ -29,7 +29,7 @@ export default function EquipePage() {
 	useEffect(() => {
 		setCadastroAtor(null)
 		setDetalheIntegrante(null)
-	}, [user?.id, user?.role, location.pathname])
+	}, [user?.id, user?.role, user?.subsistemaId, location.pathname])
 
 	return (
 		<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-8 sm:py-10">
@@ -125,7 +125,12 @@ export default function EquipePage() {
 			)}
 			{user && detalheIntegrante && !subsistemas && (
 				<AdministrarIntegranteDialog
-					key={`${user.id}:${detalheIntegrante}`}
+					key={JSON.stringify([
+						user.id,
+						user.role,
+						user.subsistemaId,
+						detalheIntegrante,
+					])}
 					ator={user}
 					integranteId={detalheIntegrante}
 					onClose={() => setDetalheIntegrante(null)}
