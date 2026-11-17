@@ -110,7 +110,7 @@ export function AdministrarSubsistemaDialog({
 			setErrors(campos)
 			setFailure('Confira os campos indicados.')
 			toast.error('Confira os campos indicados.', {
-				toasterId: 'subsistema',
+				toasterId: 'subsistema-dialog',
 			})
 			dialogRef.current
 				?.querySelector<HTMLInputElement>('#subsistema-nome')
@@ -125,7 +125,7 @@ export function AdministrarSubsistemaDialog({
 				subsistema
 					? 'Subsistema atualizado.'
 					: 'Subsistema criado inativo e sem Líder.',
-				{ toasterId: 'subsistema' },
+				{ toasterId: 'subsistema-persistente' },
 			)
 			onSaved()
 			onClose()
@@ -137,7 +137,7 @@ export function AdministrarSubsistemaDialog({
 					? error.message
 					: 'Não foi possível salvar o subsistema.'
 			setFailure(message)
-			toast.error(message, { toasterId: 'subsistema' })
+			toast.error(message, { toasterId: 'subsistema-dialog' })
 			if (fields.nome)
 				dialogRef.current
 					?.querySelector<HTMLInputElement>('#subsistema-nome')
@@ -149,7 +149,7 @@ export function AdministrarSubsistemaDialog({
 
 	return (
 		<>
-			<Notifications id="subsistema" />
+			<Notifications id="subsistema-dialog" />
 			<dialog
 				ref={dialogRef}
 				aria-labelledby="subsistema-titulo"

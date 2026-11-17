@@ -224,9 +224,6 @@ export function OperacaoSubsistemaDialog({
 			? (options.data as OpcoesDesativacaoSubsistema)
 			: null
 		: null
-	const integrante = disableOptions?.integrantes.find(
-		(item) => item.id === integranteId,
-	)
 	const membroEmTransferencia =
 		transferOptions && integranteId
 			? subsistema.integrantes?.find((item) => item.id === integranteId)

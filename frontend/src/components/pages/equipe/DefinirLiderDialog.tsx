@@ -57,7 +57,6 @@ export function DefinirLiderDialog({
 			.then((data) => {
 				if (active) {
 					setOptions({ status: 'ready', data })
-					setIntegranteId(data.integrantesDisponiveis[0]?.id ?? '')
 				}
 			})
 			.catch((error: unknown) => {
