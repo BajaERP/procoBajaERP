@@ -22,6 +22,22 @@ function storage(failWrites = false) {
 
 test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atribuído', () => {
 	const store = createDemoStore(storage())
+	const data = store.data()
+	const subsistemasAtivos = data.subsistemas.filter((item) => item.ativo)
+	assert.equal(
+		data.subsistemas.find((item) => item.id === 'gestao')?.ativo,
+		false,
+	)
+	assert.ok(
+		subsistemasAtivos.every((subsistema) =>
+			data.integrantes.some(
+				(integrante) =>
+					integrante.ativo &&
+					integrante.perfil === 'lider' &&
+					integrante.subsistemaId === subsistema.id,
+			),
+		),
+	)
 	assert.equal(store.defaultIdentity()?.id, 'bruno')
 	assert.deepEqual(
 		store.identities('financeiro').map((item) => item.id),
@@ -216,7 +232,7 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 			subsistemaId: null,
 		}).resumo,
 		{
-			subsistemasAtivos: 4,
+			subsistemasAtivos: 3,
 			integrantesAssociados: 7,
 		},
 	)
@@ -291,12 +307,12 @@ test('Orientador consulta composições apenas de subsistemas ativos', () => {
 			perfil: 'orientador',
 			subsistemaId: 'inativo',
 		}).resumo.integrantesAssociados,
-		6,
+		5,
 	)
 
 	assert.deepEqual(
 		orientador.map((item: { id: string }) => item.id),
-		['gestao', 'chassi', 'eletrica', 'projeto'],
+		['chassi', 'eletrica', 'projeto'],
 	)
 	assert.ok(
 		orientador.every(
@@ -855,17 +871,25 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	)
 	assert.equal(
 		store.detail(
-			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
 			'diego',
 		),
 		null,
 	)
 	assert.equal(
 		store.detail(
-			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
 			'bruno',
-		)?.identificador,
+		),
 		null,
+	)
+	assert.equal(
+		'passwordChangePending' in
+			(store.detail(
+				{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
+				'carla',
+			) ?? {}),
+		false,
 	)
 	store.administer('bruno', 'elisa', {
 		nome: '  Elisa Nova  ',
@@ -880,6 +904,51 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 		'Elisa Nova',
 	)
 	assert.equal(store.identity('elisa')?.role, 'orientador')
+})
+
+test('detalhes aplicam escopo de subsistemas e omitem pendência de senha', () => {
+	const store = createDemoStore(storage())
+	const detail = store.detail(
+		{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+		'carla',
+	)
+
+	assert.ok(detail)
+	assert.equal('passwordChangePending' in detail, false)
+	const adminDetail = store.detail(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		'carla',
+	)
+	assert.equal(adminDetail?.passwordChangePending, true)
+})
+
+test('detalhes usam perfil e subsistema persistidos da identidade ativa', () => {
+	const store = createDemoStore(storage())
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
+
+	store.updateIntegrante('carla', { subsistemaId: 'chassi' })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'diego',
+		)?.id,
+		'diego',
+	)
+
+	store.updateIntegrante('carla', { ativo: false })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
 })
 
 test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
@@ -980,6 +1049,11 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
 	)
+	assert.equal(
+		store.administrationOptions('ana', 'ana').podeRedefinirSenha,
+		false,
+	)
+	assert.throws(() => store.resetTemporaryPassword('ana', 'ana'), /permissão/)
 })
 
 test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {

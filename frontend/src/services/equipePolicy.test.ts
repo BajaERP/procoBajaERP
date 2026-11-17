@@ -6,6 +6,12 @@ import {
 } from './equipePolicy.ts'
 import type { Integrante, Visualizador } from './equipeTypes.ts'
 
+const subsistemas = [
+	{ id: 'gestao', nome: 'Gestão', ativo: false },
+	{ id: 'chassi', nome: 'Chassi', ativo: true },
+	{ id: 'inativo', nome: 'Suspensão', ativo: false },
+]
+
 const integrantes: Integrante[] = [
 	{
 		id: 'ana',
@@ -15,6 +21,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: null,
 		ativo: true,
 		financeiro: false,
+		passwordChangePending: true,
 	},
 	{
 		id: 'bruno',
@@ -24,6 +31,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: 'gestao',
 		ativo: true,
 		financeiro: true,
+		passwordChangePending: true,
 	},
 	{
 		id: 'carla',
@@ -33,6 +41,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: 'gestao',
 		ativo: true,
 		financeiro: false,
+		passwordChangePending: true,
 	},
 	{
 		id: 'diego',
@@ -55,21 +64,29 @@ const integrantes: Integrante[] = [
 ]
 
 test('Gestor consulta integrantes autorizados e identificadores', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.equal(resultado.length, 5)
 	assert.equal(resultado[0].identificador, '123')
 })
 
 test('Gestor com atribuição financeira conserva a consulta de Gestor', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.equal(resultado.length, 5)
 	assert.equal(
 		resultado.find((item) => item.id === 'ana')?.identificador,
@@ -87,22 +104,31 @@ test('Membro consulta apenas ativos do próprio subsistema e seu identificador',
 		perfil: 'membro',
 		subsistemaId: 'gestao',
 	}
-	const resultado = filtrarIntegrantesVisiveis(integrantes, visualizador)
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		visualizador,
+		subsistemas,
+	)
 	assert.deepEqual(
 		resultado.map((item) => item.id),
 		['bruno', 'carla'],
 	)
 	assert.equal(resultado[0].identificador, null)
 	assert.equal(resultado[1].identificador, '789')
+	assert.equal('passwordChangePending' in resultado[1], false)
 	assert.deepEqual(pesquisarIntegrantes(resultado, '456', '', ''), [])
 })
 
 test('Líder não consulta integrante desativado do próprio subsistema', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'diego',
-		perfil: 'lider',
-		subsistemaId: 'chassi',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'diego',
+			perfil: 'lider',
+			subsistemaId: 'chassi',
+		},
+		subsistemas,
+	)
 	assert.deepEqual(
 		resultado.map((item) => item.id),
 		['diego'],
@@ -124,6 +150,7 @@ test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terce
 			},
 		],
 		{ id: 'joao', perfil: 'orientador', subsistemaId: null },
+		subsistemas,
 	)
 	assert.equal(
 		resultado.find((item) => item.id === 'joao')?.identificador,
@@ -137,15 +164,67 @@ test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terce
 		resultado.some((item) => item.id === 'elisa'),
 		false,
 	)
+	assert.equal(
+		resultado.some((item) => item.id === 'carla'),
+		false,
+	)
 	assert.deepEqual(pesquisarIntegrantes(resultado, '123', '', ''), [])
 })
 
+test('Orientador vê apenas integrantes de subsistemas ativos, além de si e pessoas sem subsistema', () => {
+	const orientadorInativo: Integrante = {
+		id: 'orientador-inativo',
+		nome: 'Orientador em Suspensão',
+		identificador: '456790',
+		perfil: 'orientador',
+		subsistemaId: 'inativo',
+		ativo: true,
+		financeiro: false,
+	}
+	const integranteSuspensao: Integrante = {
+		id: 'membro-inativo',
+		nome: 'Membro em Suspensão',
+		identificador: '456791',
+		perfil: 'membro',
+		subsistemaId: 'inativo',
+		ativo: true,
+		financeiro: false,
+	}
+	const resultado = filtrarIntegrantesVisiveis(
+		[...integrantes, orientadorInativo, integranteSuspensao],
+		{
+			id: orientadorInativo.id,
+			perfil: 'orientador',
+			subsistemaId: orientadorInativo.subsistemaId,
+		},
+		subsistemas,
+	)
+
+	assert.deepEqual(
+		resultado.map((item) => item.id),
+		['ana', 'diego', orientadorInativo.id],
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'ana')?.identificador,
+		null,
+	)
+	assert.equal(
+		resultado.find((item) => item.id === orientadorInativo.id)
+			?.identificador,
+		'456790',
+	)
+})
+
 test('Busca e filtros operam sobre dados recebidos', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'bruno',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
 	assert.deepEqual(
 		pesquisarIntegrantes(resultado, 'cArLa', 'membro', 'gestao').map(
 			(item) => item.id,
@@ -158,4 +237,38 @@ test('Busca e filtros operam sobre dados recebidos', () => {
 		),
 		['elisa'],
 	)
+})
+
+test('Capitão e Gestor podem ver troca pendente para administrar contas', () => {
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		},
+		subsistemas,
+	)
+	assert.equal(
+		resultado.find((item) => item.id === 'carla')?.passwordChangePending,
+		true,
+	)
+})
+
+test('Gestor só vê pendência de senha em contas que pode administrar', () => {
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
+	const pendente = (id: string) =>
+		resultado.find((item) => item.id === id)?.passwordChangePending
+
+	assert.equal(pendente('ana'), undefined)
+	assert.equal(pendente('bruno'), undefined)
+	assert.equal(pendente('carla'), true)
 })
