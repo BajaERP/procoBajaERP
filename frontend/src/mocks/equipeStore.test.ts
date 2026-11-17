@@ -22,6 +22,18 @@ function storage() {
 
 test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atribuído', () => {
 	const store = createDemoStore(storage())
+	const data = store.data()
+	const subsistemasAtivos = data.subsistemas.filter((item) => item.ativo)
+	assert.ok(
+		subsistemasAtivos.every((subsistema) =>
+			data.integrantes.some(
+				(integrante) =>
+					integrante.ativo &&
+					integrante.perfil === 'lider' &&
+					integrante.subsistemaId === subsistema.id,
+			),
+		),
+	)
 	assert.equal(store.defaultIdentity()?.id, 'bruno')
 	assert.deepEqual(
 		store.identities('financeiro').map((item) => item.id),

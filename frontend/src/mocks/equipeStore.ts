@@ -32,7 +32,7 @@ export interface DemoData {
 
 const initialData: DemoData = {
 	subsistemas: [
-		{ id: 'gestao', nome: 'Gestão', ativo: true },
+		{ id: 'gestao', nome: 'Gestão', ativo: false },
 		{ id: 'chassi', nome: 'Chassi', ativo: true },
 		{ id: 'eletrica', nome: 'Elétrica', ativo: true },
 		{ id: 'projeto', nome: 'Projeto', ativo: true },
