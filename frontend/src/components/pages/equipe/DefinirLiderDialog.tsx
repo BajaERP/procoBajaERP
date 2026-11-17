@@ -209,9 +209,12 @@ export function DefinirLiderDialog({
 									}
 									className="mt-1.5 min-h-11 w-full rounded-md border border-hairline bg-canvas px-3 text-sm text-ink focus-visible:border-red"
 								>
-									<option disabled value="">
-										Selecione um Membro
-									</option>
+									{options.data.integrantesDisponiveis
+										.length > 0 && (
+										<option disabled value="">
+											Selecione um Membro
+										</option>
+									)}
 									{options.data.integrantesDisponiveis.map(
 										(item) => (
 											<option
