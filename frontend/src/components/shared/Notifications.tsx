@@ -1,13 +1,25 @@
-import { Toaster } from 'sonner'
+import { Toaster, type ToasterProps } from 'sonner'
 import { useTheme } from '../../contexts/ThemeContext'
 
-export function Notifications({ id }: { id?: string }) {
+type NotificationsProps = Pick<
+	ToasterProps,
+	'id' | 'position' | 'offset' | 'mobileOffset'
+>
+
+export function Notifications({
+	id,
+	position = 'bottom-right',
+	offset,
+	mobileOffset,
+}: NotificationsProps) {
 	const { theme } = useTheme()
 	return (
 		<Toaster
 			id={id}
 			theme={theme}
-			position="bottom-right"
+			position={position}
+			offset={offset}
+			mobileOffset={mobileOffset}
 			containerAriaLabel="Notificações"
 			toastOptions={{
 				style: {

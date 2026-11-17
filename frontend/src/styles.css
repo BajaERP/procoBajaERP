@@ -120,6 +120,16 @@ button {
 	min-inline-size: 44px;
 }
 
+.subsistema-card-button {
+	min-block-size: 84px;
+}
+
+@media (min-width: 48rem) {
+	.subsistema-card-button {
+		min-block-size: 190px;
+	}
+}
+
 input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
 select,
 textarea {
