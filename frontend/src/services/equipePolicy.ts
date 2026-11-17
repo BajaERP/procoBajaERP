@@ -1,4 +1,26 @@
-import type { Integrante, IntegranteVisivel, Visualizador } from './equipeTypes'
+import type {
+	Integrante,
+	IntegranteVisivel,
+	SubsistemaDemo,
+	Visualizador,
+} from './equipeTypes'
+
+export function subsistemasVisiveis(
+	subsistemas: readonly SubsistemaDemo[],
+	visualizador: Visualizador,
+): SubsistemaDemo[] {
+	const veComposicaoCompleta =
+		visualizador.perfil === 'capitao' ||
+		visualizador.perfil === 'gestor' ||
+		visualizador.perfil === 'orientador'
+
+	return subsistemas.filter(
+		(subsistema) =>
+			veComposicaoCompleta ||
+			(visualizador.subsistemaId !== null &&
+				subsistema.id === visualizador.subsistemaId),
+	)
+}
 
 export function filtrarIntegrantesVisiveis(
 	integrantes: readonly Integrante[],

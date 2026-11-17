@@ -1,4 +1,7 @@
-import { filtrarIntegrantesVisiveis } from '../services/equipePolicy'
+import {
+	filtrarIntegrantesVisiveis,
+	subsistemasVisiveis,
+} from '../services/equipePolicy'
 import type {
 	ConsultaIntegrantes,
 	EquipeService,
@@ -32,9 +35,11 @@ export const mockEquipeService: EquipeService = {
 				(item) =>
 					item.ativo && item.perfil === 'gestor' && item.financeiro,
 			).length,
-			subsistemas: data.subsistemas
-				.filter((item) => item.ativo)
-				.map(({ id, nome }) => ({ id, nome })),
+			subsistemas: subsistemasVisiveis(data.subsistemas, {
+				id: identidade.id,
+				perfil: identidade.role,
+				subsistemaId: identidade.subsistemaId,
+			}).map(({ id, nome }) => ({ id, nome })),
 		}
 	},
 	simularFalhaNaProximaConsulta() {
