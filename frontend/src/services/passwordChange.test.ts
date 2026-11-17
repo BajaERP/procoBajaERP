@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { validatePasswordChange } from './passwordChange.ts'
 
-test('valida o tamanho da senha em pontos de código Unicode', () => {
+test('valida o tamanho da senha de acordo com o backend', () => {
 	assert.equal(
 		validatePasswordChange('atual', 'Abc123!').newPassword,
 		'A senha deve ter entre 8 e 64 caracteres.',
@@ -15,6 +15,14 @@ test('valida o tamanho da senha em pontos de código Unicode', () => {
 		validatePasswordChange('atual', '😀'.repeat(8)).newPassword,
 		undefined,
 	)
+	assert.equal(
+		validatePasswordChange('atual', '😀'.repeat(4)).newPassword,
+		undefined,
+	)
+	assert.equal(
+		validatePasswordChange('atual', 'a'.repeat(63) + '😀').newPassword,
+		'A senha deve ter entre 8 e 64 caracteres.',
+	)
 })
 
 test('limita a nova senha a 72 bytes UTF-8', () => {
@@ -24,7 +32,7 @@ test('limita a nova senha a 72 bytes UTF-8', () => {
 	)
 	assert.equal(
 		validatePasswordChange('atual', '😀'.repeat(19)).newPassword,
-		'A senha deve ocupar no máximo 72 bytes em UTF-8.',
+		'A senha é longa demais: letras acentuadas ocupam mais espaço. Use menos caracteres.',
 	)
 })
 

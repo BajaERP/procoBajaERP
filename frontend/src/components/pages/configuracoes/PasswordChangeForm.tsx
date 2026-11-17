@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { useAuth } from '../../../contexts/AuthContext'
+import { equipeService } from '../../../services/equipe'
 import {
 	PasswordChangeError,
 	validatePasswordChange,
@@ -11,7 +12,7 @@ const controlClass =
 	'w-full min-h-11 rounded-md border border-hairline bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ash aria-invalid:border-state-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red dark:[color-scheme:dark]'
 
 export function PasswordChangeForm({ required }: { required: boolean }) {
-	const { changeOwnPassword } = useAuth()
+	const { changeOwnPassword, logout } = useAuth()
 	const [currentPassword, setCurrentPassword] = useState('')
 	const [newPassword, setNewPassword] = useState('')
 	const [errors, setErrors] = useState<{
@@ -19,6 +20,7 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 		newPassword?: string
 	}>({})
 	const [saving, setSaving] = useState(false)
+	const [simulateFailure, setSimulateFailure] = useState(false)
 	const submitting = useRef(false)
 	const headingRef = useRef<HTMLHeadingElement>(null)
 	const currentPasswordRef = useRef<HTMLInputElement>(null)
@@ -59,6 +61,10 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 		setSaving(true)
 		setErrors({})
 		try {
+			if (import.meta.env.DEV && simulateFailure) {
+				setSimulateFailure(false)
+				await equipeService.simularFalhaNaProximaTrocaSenha?.()
+			}
 			await changeOwnPassword(currentPassword, newPassword)
 			setCurrentPassword('')
 			setNewPassword('')
@@ -200,12 +206,26 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 						</p>
 					) : (
 						<p id="senha-nova-ajuda" className="text-xs text-mute">
-							Use de 8 a 64 caracteres, com no máximo 72 bytes em
-							UTF-8.
+							Use de 8 a 64 caracteres. Letras acentuadas e
+							símbolos podem reduzir o limite.
 						</p>
 					)}
 				</div>
 
+				{import.meta.env.DEV && (
+					<label className="flex min-h-11 items-center gap-2 text-sm text-mute">
+						<input
+							type="checkbox"
+							checked={simulateFailure}
+							onChange={(event) =>
+								setSimulateFailure(event.target.checked)
+							}
+							disabled={saving}
+							className="size-4 accent-red"
+						/>
+						Simular falha nesta troca (Dev)
+					</label>
+				)}
 				<button
 					type="submit"
 					disabled={saving}
@@ -213,6 +233,16 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 				>
 					{saving ? 'Trocando…' : 'Trocar senha'}
 				</button>
+				{required && (
+					<button
+						type="button"
+						onClick={logout}
+						disabled={saving}
+						className="ml-3 inline-flex min-h-11 items-center justify-center rounded-md border border-hairline px-5 text-sm font-semibold text-ink hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red disabled:cursor-wait disabled:opacity-60"
+					>
+						Sair
+					</button>
+				)}
 			</form>
 			<Notifications id="troca-senha" />
 		</section>

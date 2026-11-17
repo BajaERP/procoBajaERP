@@ -20,11 +20,13 @@ export function validatePasswordChange(
 	const errors: PasswordChangeErrors = {}
 	if (!currentPassword) errors.currentPassword = 'Informe a senha atual.'
 
-	const characterCount = Array.from(newPassword).length
+	// Java's String.length() and JavaScript's length both count UTF-16 units.
+	const characterCount = newPassword.length
 	if (characterCount < 8 || characterCount > 64) {
 		errors.newPassword = 'A senha deve ter entre 8 e 64 caracteres.'
 	} else if (new TextEncoder().encode(newPassword).length > 72) {
-		errors.newPassword = 'A senha deve ocupar no máximo 72 bytes em UTF-8.'
+		errors.newPassword =
+			'A senha é longa demais: letras acentuadas ocupam mais espaço. Use menos caracteres.'
 	} else if (currentPassword && newPassword === currentPassword) {
 		errors.newPassword = 'A nova senha deve ser diferente da senha atual.'
 	}
