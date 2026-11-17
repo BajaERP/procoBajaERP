@@ -526,12 +526,19 @@ export function AdministrarIntegranteDialog({
 										</p>
 									</>
 								) : (
-									<p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-sm">
-										{ROLE_LABELS[integrante.perfil]}
-										{integrante.financeiro
-											? ' · responsabilidade financeira'
-											: ''}
-									</p>
+									<div>
+										<p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-sm">
+											{ROLE_LABELS[integrante.perfil]}
+											{integrante.financeiro
+												? ' · responsabilidade financeira'
+												: ''}
+										</p>
+										{opcoes.bloqueioPerfil && (
+											<p className="mt-1 text-xs text-state-warning">
+												{opcoes.bloqueioPerfil}
+											</p>
+										)}
+									</div>
 								)}
 								{fieldError('perfil')}
 							</div>

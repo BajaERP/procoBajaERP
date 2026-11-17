@@ -29,6 +29,7 @@ export const equipeService: EquipeService = import.meta.env.DEV
 						podeAlterarStatus: false,
 						podeRedefinirSenha: false,
 						bloqueioStatus: null,
+						bloqueioPerfil: null,
 					}
 				)
 			},
@@ -65,6 +66,29 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			},
 			async listarSubsistemas(visualizador) {
 				return (await mockService()).listarSubsistemas(visualizador)
+			},
+			async consultarResponsabilidadeFinanceira(visualizador) {
+				return (
+					await mockService()
+				).consultarResponsabilidadeFinanceira(visualizador)
+			},
+			async atribuirResponsabilidadeFinanceira(atorId, gestorId) {
+				await (
+					await mockService()
+				).atribuirResponsabilidadeFinanceira(atorId, gestorId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
+			async retirarResponsabilidadeFinanceira(atorId) {
+				await (
+					await mockService()
+				).retirarResponsabilidadeFinanceira(atorId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
+			async transferirResponsabilidadeFinanceira(atorId, gestorId) {
+				await (
+					await mockService()
+				).transferirResponsabilidadeFinanceira(atorId, gestorId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
 			},
 			async opcoesSubsistema(atorId, subsistemaId) {
 				return (await mockService()).opcoesSubsistema(
@@ -173,6 +197,26 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async listarSubsistemas() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',
+				)
+			},
+			async consultarResponsabilidadeFinanceira() {
+				throw new Error(
+					'Módulo indisponível até a integração com o servidor.',
+				)
+			},
+			async atribuirResponsabilidadeFinanceira() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async retirarResponsabilidadeFinanceira() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async transferirResponsabilidadeFinanceira() {
+				throw new Error(
+					'Administração indisponível até a integração com o servidor.',
 				)
 			},
 			async opcoesSubsistema() {

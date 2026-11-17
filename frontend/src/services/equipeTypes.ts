@@ -49,6 +49,17 @@ export interface ConsultaIntegrantes {
 	subsistemas: { id: string; nome: string }[]
 }
 
+export interface GestorFinanceiroResumo {
+	id: string
+	nome: string
+	subsistema: string | null
+}
+
+export interface ConsultaResponsabilidadeFinanceira {
+	responsavel: GestorFinanceiroResumo | null
+	gestoresElegiveis: GestorFinanceiroResumo[]
+}
+
 export interface IntegranteDeSubsistema {
 	id: string
 	nome: string
@@ -114,6 +125,18 @@ export type ErrosSubsistema = Partial<Record<'nome' | 'integranteIds', string>>
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
 	listarSubsistemas(visualizador: Visualizador): Promise<ConsultaSubsistemas>
+	consultarResponsabilidadeFinanceira(
+		visualizador: Visualizador,
+	): Promise<ConsultaResponsabilidadeFinanceira>
+	atribuirResponsabilidadeFinanceira(
+		atorId: string,
+		gestorId: string,
+	): Promise<void>
+	retirarResponsabilidadeFinanceira(atorId: string): Promise<void>
+	transferirResponsabilidadeFinanceira(
+		atorId: string,
+		gestorId: string,
+	): Promise<void>
 	opcoesSubsistema(
 		atorId: string,
 		subsistemaId?: string,
@@ -195,6 +218,7 @@ export interface OpcoesAdministracaoIntegrante {
 	podeAlterarStatus: boolean
 	podeRedefinirSenha: boolean
 	bloqueioStatus: string | null
+	bloqueioPerfil: string | null
 }
 
 export type ErrosEdicaoIntegrante = Partial<
