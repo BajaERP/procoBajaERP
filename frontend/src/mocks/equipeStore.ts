@@ -333,13 +333,22 @@ export function createDemoStore(storage: StoragePort) {
 			integranteId: string,
 		): IntegranteVisivel | null {
 			const source = data()
+			const visualizadorAtual = source.integrantes.find(
+				(item) => item.id === visualizador.id && item.ativo,
+			)
+			if (!visualizadorAtual) return null
 			const target = source.integrantes.find(
 				(item) => item.id === integranteId,
 			)
 			if (!target) return null
 			const authorized = filtrarIntegrantesVisiveis(
 				source.integrantes,
-				visualizador,
+				{
+					id: visualizadorAtual.id,
+					perfil: visualizadorAtual.perfil,
+					subsistemaId: visualizadorAtual.subsistemaId,
+				},
+				source.subsistemas,
 			)
 			const visible = authorized.find((item) => item.id === integranteId)
 			if (!visible) return null
