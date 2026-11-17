@@ -73,9 +73,11 @@ test('Matriz mantém os limites de composição, desativados e identificadores d
 		)
 		assert.equal(
 			permissoes.find((item) => item.id === 'composicao')?.escopo,
-			administra || perfil === 'orientador'
+			administra
 				? 'Todos os subsistemas'
-				: 'Somente o próprio subsistema, inclusive inativo',
+				: perfil === 'orientador'
+					? 'Somente subsistemas ativos'
+					: 'Somente o próprio subsistema, inclusive inativo',
 		)
 		assert.equal(
 			permissoes.find((item) => item.id === 'atribuicao-financeira')

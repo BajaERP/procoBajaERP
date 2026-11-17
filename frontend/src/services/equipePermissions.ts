@@ -31,9 +31,10 @@ export function consultarPermissoesEquipe(
 			id: 'composicao',
 			acao: 'Consultar a composição dos subsistemas',
 			permitido: true,
-			escopo:
-				administra || perfil === 'orientador'
-					? 'Todos os subsistemas'
+			escopo: administra
+				? 'Todos os subsistemas'
+				: perfil === 'orientador'
+					? 'Somente subsistemas ativos'
 					: 'Somente o próprio subsistema, inclusive inativo',
 		},
 		{
