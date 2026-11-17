@@ -106,6 +106,11 @@ export default function EquipePage() {
 				</section>
 			) : user ? (
 				<IntegrantesContent
+					key={JSON.stringify([
+						user.id,
+						user.role,
+						user.subsistemaId,
+					])}
 					user={user}
 					demoRevision={demoRevision}
 					onOpen={setDetalheIntegrante}
