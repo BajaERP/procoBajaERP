@@ -28,7 +28,7 @@ export default function EquipePage() {
 	const pageKeys = getEquipePageContentKeys(
 		user?.id ?? '',
 		user?.role ?? '',
-		demoRevision,
+		user?.subsistemaId ?? null,
 	)
 	const location = useLocation()
 	const navigate = useNavigate()
@@ -63,7 +63,7 @@ export default function EquipePage() {
 		setDetalheIntegrante(null)
 		setResumoSubsistemas(null)
 		setCreateSubsystemRequest(false)
-	}, [user?.id, user?.role, location.pathname])
+	}, [user?.id, user?.role, user?.subsistemaId, location.pathname])
 
 	return (
 		<>
@@ -194,6 +194,7 @@ export default function EquipePage() {
 					<SubsistemasContent
 						key={pageKeys.subsistemas}
 						user={user}
+						revision={demoRevision}
 						createRequest={createSubsystemRequest}
 						onCreateRequestConsumed={() =>
 							setCreateSubsystemRequest(false)
@@ -204,6 +205,7 @@ export default function EquipePage() {
 					<IntegrantesContent
 						key={pageKeys.integrantes}
 						user={user}
+						demoRevision={demoRevision}
 						onOpen={setDetalheIntegrante}
 						onOpenFinancial={() =>
 							navigate('/app/equipe/financeiro')
@@ -214,6 +216,7 @@ export default function EquipePage() {
 					<ResponsabilidadeFinanceiraContent
 						key={pageKeys.financeiro}
 						user={user}
+						revision={demoRevision}
 						onClose={() => navigate('/app/equipe/integrantes')}
 					/>
 				)}
@@ -235,7 +238,12 @@ export default function EquipePage() {
 				)}
 				{user && detalheIntegrante && !subsistemas && (
 					<AdministrarIntegranteDialog
-						key={`${user.id}:${detalheIntegrante}`}
+						key={JSON.stringify([
+							user.id,
+							user.role,
+							user.subsistemaId,
+							detalheIntegrante,
+						])}
 						ator={user}
 						integranteId={detalheIntegrante}
 						onClose={() => setDetalheIntegrante(null)}
@@ -248,10 +256,12 @@ export default function EquipePage() {
 
 function IntegrantesContent({
 	user,
+	demoRevision,
 	onOpen,
 	onOpenFinancial,
 }: {
 	user: AuthUser
+	demoRevision: number
 	onOpen: (id: string) => void
 	onOpenFinancial: () => void
 }) {
@@ -282,7 +292,7 @@ function IntegrantesContent({
 		return () => {
 			cancelled = true
 		}
-	}, [user.id, user.role, attempt])
+	}, [user.id, user.role, user.subsistemaId, demoRevision, attempt])
 
 	function retry() {
 		setLoadState({ status: 'loading' })

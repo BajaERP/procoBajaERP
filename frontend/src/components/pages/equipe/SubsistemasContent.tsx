@@ -20,11 +20,13 @@ type LoadState =
 
 export function SubsistemasContent({
 	user,
+	revision,
 	createRequest,
 	onCreateRequestConsumed,
 	onSummary,
 }: {
 	user: AuthUser
+	revision: number
 	createRequest: boolean
 	onCreateRequestConsumed: () => void
 	onSummary: (summary: ResumoSubsistemas | null) => void
@@ -67,7 +69,7 @@ export function SubsistemasContent({
 		return () => {
 			active = false
 		}
-	}, [user.id, user.role, user.subsistemaId, attempt])
+	}, [user.id, user.role, user.subsistemaId, attempt, revision])
 
 	useEffect(() => {
 		if (!createRequest) return
@@ -110,6 +112,7 @@ export function SubsistemasContent({
 		<>
 			<Notifications id="lideranca" />
 			<Notifications id="subsistema-operacao" />
+			<Notifications id="subsistema-persistente" />
 			<div className="min-w-0">
 				{state.status === 'loading' ? (
 					<section

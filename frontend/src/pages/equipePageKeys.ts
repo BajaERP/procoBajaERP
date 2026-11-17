@@ -1,9 +1,9 @@
 export function getEquipePageContentKeys(
 	userId: string,
 	role: string,
-	revision: number,
+	subsistemaId: string | null,
 ) {
-	const identity = `${userId}:${role}:${revision}`
+	const identity = JSON.stringify([userId, role, subsistemaId])
 	return {
 		subsistemas: `subsistemas:${identity}`,
 		integrantes: `integrantes:${identity}`,

@@ -1,4 +1,7 @@
-import { filtrarIntegrantesVisiveis } from '../services/equipePolicy.ts'
+import {
+	filtrarIntegrantesVisiveis,
+	subsistemasVisiveis,
+} from '../services/equipePolicy.ts'
 import type {
 	ConsultaIntegrantes,
 	ConsultaSubsistemas,
@@ -37,11 +40,15 @@ export const mockEquipeService: EquipeService = {
 		const identidade = store.identity(visualizador.id)
 		if (!identidade)
 			throw new Error('A identidade demonstrativa não está disponível.')
-		const autorizados = filtrarIntegrantesVisiveis(data.integrantes, {
-			id: identidade.id,
-			perfil: identidade.role,
-			subsistemaId: identidade.subsistemaId,
-		})
+		const autorizados = filtrarIntegrantesVisiveis(
+			data.integrantes,
+			{
+				id: identidade.id,
+				perfil: identidade.role,
+				subsistemaId: identidade.subsistemaId,
+			},
+			data.subsistemas,
+		)
 		return {
 			integrantes: autorizados.map((item) => ({
 				...item,
@@ -55,9 +62,11 @@ export const mockEquipeService: EquipeService = {
 				(item) =>
 					item.ativo && item.perfil === 'gestor' && item.financeiro,
 			).length,
-			subsistemas: data.subsistemas
-				.filter((item) => item.ativo)
-				.map(({ id, nome }) => ({ id, nome })),
+			subsistemas: subsistemasVisiveis(data.subsistemas, {
+				id: identidade.id,
+				perfil: identidade.role,
+				subsistemaId: identidade.subsistemaId,
+			}).map(({ id, nome }) => ({ id, nome })),
 		}
 	},
 	async listarSubsistemas(visualizador): Promise<ConsultaSubsistemas> {

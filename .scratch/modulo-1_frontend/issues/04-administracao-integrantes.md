@@ -9,7 +9,7 @@ Status: ready-for-human
 Permitir consultar detalhes autorizados e administrar contas fictícias sem perder histórico.
 
 - [x] Exibir detalhes apenas de integrantes visíveis e campos autorizados, respeitando a privacidade de identificadores.
-- [x] Permitir editar nome e identificador, alterar perfil permitido, ativar e desativar contas e redefinir senha provisória, conforme as permissões do administrador.
+- [x] Permitir editar nome e identificador, alterar perfil permitido, ativar e desativar contas e redefinir senha provisória de outras contas, conforme as permissões do administrador; a própria senha é trocada no fluxo de senha.
 - [x] Impedir alteração do próprio nome, identificador ou perfil e a própria desativação; preservar ao menos um Capitão ativo e explicar bloqueios de negócio.
 - [x] Tratar liderança por fluxo próprio, sem alteração comum de perfil para ou de Líder; manter o histórico e não oferecer exclusão.
 - [x] Validar identificadores e duplicidade, orientar reativação de conta duplicada apenas quando autorizada e exibir senha redefinida uma única vez sem persistir texto; marcar troca obrigatória.

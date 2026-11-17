@@ -1,29 +1,79 @@
-import type { Integrante, IntegranteVisivel, Visualizador } from './equipeTypes'
+import type {
+	Integrante,
+	IntegranteVisivel,
+	SubsistemaDemo,
+	Visualizador,
+} from './equipeTypes'
+import { podeAdministrarPerfil } from './cadastroIntegrante.ts'
 
+export function subsistemasVisiveis(
+	subsistemas: readonly SubsistemaDemo[],
+	visualizador: Visualizador,
+): SubsistemaDemo[] {
+	return subsistemas.filter(
+		(subsistema) =>
+			visualizador.perfil === 'capitao' ||
+			visualizador.perfil === 'gestor' ||
+			(visualizador.perfil === 'orientador'
+				? subsistema.ativo
+				: visualizador.subsistemaId !== null &&
+					subsistema.id === visualizador.subsistemaId),
+	)
+}
+
+/** Recebe todos os subsistemas para aplicar o escopo do Orientador com segurança. */
 export function filtrarIntegrantesVisiveis(
 	integrantes: readonly Integrante[],
 	visualizador: Visualizador,
+	subsistemas: readonly SubsistemaDemo[],
 ): IntegranteVisivel[] {
 	const administra =
 		visualizador.perfil === 'capitao' || visualizador.perfil === 'gestor'
+	const subsistemasAtivos = new Set(
+		subsistemas
+			.filter((subsistema) => subsistema.ativo)
+			.map((subsistema) => subsistema.id),
+	)
 	return integrantes
 		.filter((integrante) => {
 			if (administra) return true
 			if (!integrante.ativo) return false
-			if (visualizador.perfil === 'orientador') return true
+			if (visualizador.perfil === 'orientador')
+				return (
+					integrante.id === visualizador.id ||
+					integrante.subsistemaId === null ||
+					subsistemasAtivos.has(integrante.subsistemaId)
+				)
 			return (
 				visualizador.subsistemaId !== null &&
 				integrante.subsistemaId === visualizador.subsistemaId
 			)
 		})
-		.map((integrante) => ({
-			...integrante,
-			identificador:
-				administra || integrante.id === visualizador.id
-					? integrante.identificador
-					: null,
-			subsistema: null,
-		}))
+		.map((integrante) => {
+			const podeConsultarPendenciaDeSenha =
+				integrante.id !== visualizador.id &&
+				podeAdministrarPerfil(visualizador.perfil, integrante.perfil)
+			return {
+				id: integrante.id,
+				nome: integrante.nome,
+				perfil: integrante.perfil,
+				subsistemaId: integrante.subsistemaId,
+				ativo: integrante.ativo,
+				financeiro: integrante.financeiro,
+				...(podeConsultarPendenciaDeSenha &&
+				integrante.passwordChangePending !== undefined
+					? {
+							passwordChangePending:
+								integrante.passwordChangePending,
+						}
+					: {}),
+				identificador:
+					administra || integrante.id === visualizador.id
+						? integrante.identificador
+						: null,
+				subsistema: null,
+			}
+		})
 }
 
 function normalize(value: string): string {

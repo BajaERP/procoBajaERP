@@ -39,6 +39,22 @@ test('consulta financeira respeita a visibilidade da composição e não expõe 
 
 test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atribuído', () => {
 	const store = createDemoStore(storage())
+	const data = store.data()
+	const subsistemasAtivos = data.subsistemas.filter((item) => item.ativo)
+	assert.equal(
+		data.subsistemas.find((item) => item.id === 'gestao')?.ativo,
+		false,
+	)
+	assert.ok(
+		subsistemasAtivos.every((subsistema) =>
+			data.integrantes.some(
+				(integrante) =>
+					integrante.ativo &&
+					integrante.perfil === 'lider' &&
+					integrante.subsistemaId === subsistema.id,
+			),
+		),
+	)
 	assert.equal(store.defaultIdentity()?.id, 'bruno')
 	assert.deepEqual(
 		store.identities('financeiro').map((item) => item.id),
@@ -373,7 +389,7 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 			subsistemaId: null,
 		}).resumo,
 		{
-			subsistemasAtivos: 4,
+			subsistemasAtivos: 3,
 			integrantesAssociados: 7,
 		},
 	)
@@ -430,6 +446,78 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 			'elisa',
 		)?.ativo,
 		false,
+	)
+})
+
+test('Orientador consulta composições apenas de subsistemas ativos', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('joao', { subsistemaId: 'inativo' })
+
+	const orientador = store.listarSubsistemas({
+		id: 'joao',
+		perfil: 'orientador',
+		subsistemaId: 'inativo',
+	}).subsistemas
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'joao',
+			perfil: 'orientador',
+			subsistemaId: 'inativo',
+		}).resumo.integrantesAssociados,
+		5,
+	)
+
+	assert.deepEqual(
+		orientador.map((item: { id: string }) => item.id),
+		['chassi', 'eletrica', 'projeto'],
+	)
+	assert.ok(
+		orientador.every(
+			(item: { integrantes?: unknown[] }) => item.integrantes,
+		),
+	)
+
+	const capitao = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	const gestor = store.listarSubsistemas({
+		id: 'bruno',
+		perfil: 'gestor',
+		subsistemaId: 'gestao',
+	}).subsistemas
+	const composicaoInativaDoCapitao = capitao.find(
+		(item: { id: string }) => item.id === 'inativo',
+	)?.integrantes
+	const composicaoInativaDoGestor = gestor.find(
+		(item: { id: string }) => item.id === 'inativo',
+	)?.integrantes
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo.integrantesAssociados,
+		8,
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		}).resumo.integrantesAssociados,
+		8,
+	)
+	assert.ok(
+		composicaoInativaDoCapitao?.some(
+			(item: { id: string }) => item.id === 'joao',
+		),
+	)
+	assert.ok(
+		composicaoInativaDoGestor?.some(
+			(item: { id: string }) => item.id === 'joao',
+		),
 	)
 })
 
@@ -551,9 +639,11 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 	const store = createDemoStore(localStorage)
 	store.updateIntegrante('helena', { subsistemaId: 'eletrica' })
 	store.updateIntegrante('gabriel', { ativo: false })
+	store.updateIntegrante('joao', { subsistemaId: 'eletrica' })
 	store.desativarSubsistema('ana', 'eletrica', {
 		helena: 'chassi',
 		gabriel: 'projeto',
+		joao: 'chassi',
 	})
 
 	assert.equal(
@@ -571,6 +661,8 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 		store.read().integrantes.find((item) => item.id === 'gabriel')?.perfil,
 		'membro',
 	)
+	assert.equal(store.identity('joao')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('joao')?.role, 'orientador')
 	const audit = store.read().auditoria.at(-1)!
 	const { registradoEm: _, ...auditEntry } = audit
 	assert.deepEqual(auditEntry, {
@@ -591,6 +683,13 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 				destinoId: 'chassi',
 				perfilAnterior: 'membro',
 				perfilAtual: 'membro',
+			},
+			{
+				integranteId: 'joao',
+				origemId: 'eletrica',
+				destinoId: 'chassi',
+				perfilAnterior: 'orientador',
+				perfilAtual: 'orientador',
 			},
 		],
 	})
@@ -929,17 +1028,25 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	)
 	assert.equal(
 		store.detail(
-			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
 			'diego',
 		),
 		null,
 	)
 	assert.equal(
 		store.detail(
-			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
 			'bruno',
-		)?.identificador,
+		),
 		null,
+	)
+	assert.equal(
+		'passwordChangePending' in
+			(store.detail(
+				{ id: 'carla', perfil: 'membro', subsistemaId: 'inativo' },
+				'carla',
+			) ?? {}),
+		false,
 	)
 	store.administer('bruno', 'elisa', {
 		nome: '  Elisa Nova  ',
@@ -954,6 +1061,51 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 		'Elisa Nova',
 	)
 	assert.equal(store.identity('elisa')?.role, 'orientador')
+})
+
+test('detalhes aplicam escopo de subsistemas e omitem pendência de senha', () => {
+	const store = createDemoStore(storage())
+	const detail = store.detail(
+		{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+		'carla',
+	)
+
+	assert.ok(detail)
+	assert.equal('passwordChangePending' in detail, false)
+	const adminDetail = store.detail(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		'carla',
+	)
+	assert.equal(adminDetail?.passwordChangePending, true)
+})
+
+test('detalhes usam perfil e subsistema persistidos da identidade ativa', () => {
+	const store = createDemoStore(storage())
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
+
+	store.updateIntegrante('carla', { subsistemaId: 'chassi' })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'diego',
+		)?.id,
+		'diego',
+	)
+
+	store.updateIntegrante('carla', { ativo: false })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
 })
 
 test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
@@ -1054,6 +1206,11 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
 	)
+	assert.equal(
+		store.administrationOptions('ana', 'ana').podeRedefinirSenha,
+		false,
+	)
+	assert.throws(() => store.resetTemporaryPassword('ana', 'ana'), /permissão/)
 })
 
 test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {

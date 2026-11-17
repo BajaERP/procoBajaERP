@@ -27,9 +27,11 @@ const buttonClass =
 
 export function ResponsabilidadeFinanceiraContent({
 	user,
+	revision,
 	onClose,
 }: {
 	user: AuthUser
+	revision: number
 	onClose: () => void
 }) {
 	const panelRef = useRef<HTMLDialogElement>(null)
@@ -81,7 +83,7 @@ export function ResponsabilidadeFinanceiraContent({
 		return () => {
 			active = false
 		}
-	}, [attempt, user.id, user.role, user.subsistemaId])
+	}, [attempt, revision, user.id, user.role, user.subsistemaId])
 
 	function reload() {
 		setState({ status: 'loading' })
