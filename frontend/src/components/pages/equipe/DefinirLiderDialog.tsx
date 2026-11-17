@@ -5,6 +5,7 @@ import {
 	notificarFalhaLideranca,
 	notificarSucessoLideranca,
 } from '../../../services/liderancaFeedback'
+import { mensagemSemSelecao } from '../../../services/definirLiderEstado'
 import { Notifications } from '../../shared/Notifications'
 import type {
 	OpcoesDefinicaoLider,
@@ -280,8 +281,10 @@ export function DefinirLiderDialog({
 									role="status"
 									className="rounded-md border border-hairline bg-surface-soft p-4 text-sm text-mute"
 								>
-									Não há Membros ativos disponíveis para
-									definir como Líder.
+									{mensagemSemSelecao(
+										options.data.integrantesDisponiveis
+											.length,
+									)}
 								</p>
 							)}
 						</div>
