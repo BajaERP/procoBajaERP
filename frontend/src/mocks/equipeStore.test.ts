@@ -276,6 +276,78 @@ test('consulta subsistemas mostra resumo ativo a todos e composição autorizada
 	)
 })
 
+test('Orientador consulta composições apenas de subsistemas ativos', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('joao', { subsistemaId: 'inativo' })
+
+	const orientador = store.listarSubsistemas({
+		id: 'joao',
+		perfil: 'orientador',
+		subsistemaId: 'inativo',
+	}).subsistemas
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'joao',
+			perfil: 'orientador',
+			subsistemaId: 'inativo',
+		}).resumo.integrantesAssociados,
+		6,
+	)
+
+	assert.deepEqual(
+		orientador.map((item: { id: string }) => item.id),
+		['gestao', 'chassi', 'eletrica', 'projeto'],
+	)
+	assert.ok(
+		orientador.every(
+			(item: { integrantes?: unknown[] }) => item.integrantes,
+		),
+	)
+
+	const capitao = store.listarSubsistemas({
+		id: 'ana',
+		perfil: 'capitao',
+		subsistemaId: null,
+	}).subsistemas
+	const gestor = store.listarSubsistemas({
+		id: 'bruno',
+		perfil: 'gestor',
+		subsistemaId: 'gestao',
+	}).subsistemas
+	const composicaoInativaDoCapitao = capitao.find(
+		(item: { id: string }) => item.id === 'inativo',
+	)?.integrantes
+	const composicaoInativaDoGestor = gestor.find(
+		(item: { id: string }) => item.id === 'inativo',
+	)?.integrantes
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		}).resumo.integrantesAssociados,
+		8,
+	)
+	assert.equal(
+		store.listarSubsistemas({
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		}).resumo.integrantesAssociados,
+		8,
+	)
+	assert.ok(
+		composicaoInativaDoCapitao?.some(
+			(item: { id: string }) => item.id === 'joao',
+		),
+	)
+	assert.ok(
+		composicaoInativaDoGestor?.some(
+			(item: { id: string }) => item.id === 'joao',
+		),
+	)
+})
+
 test('definição inicial ativa o subsistema e persiste o novo Líder nas identidades', () => {
 	const localStorage = storage()
 	const store = createDemoStore(localStorage)
@@ -394,9 +466,11 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 	const store = createDemoStore(localStorage)
 	store.updateIntegrante('helena', { subsistemaId: 'eletrica' })
 	store.updateIntegrante('gabriel', { ativo: false })
+	store.updateIntegrante('joao', { subsistemaId: 'eletrica' })
 	store.desativarSubsistema('ana', 'eletrica', {
 		helena: 'chassi',
 		gabriel: 'projeto',
+		joao: 'chassi',
 	})
 
 	assert.equal(
@@ -414,6 +488,8 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 		store.read().integrantes.find((item) => item.id === 'gabriel')?.perfil,
 		'membro',
 	)
+	assert.equal(store.identity('joao')?.subsistemaId, 'chassi')
+	assert.equal(store.identity('joao')?.role, 'orientador')
 	const audit = store.read().auditoria.at(-1)!
 	const { registradoEm: _, ...auditEntry } = audit
 	assert.deepEqual(auditEntry, {
@@ -434,6 +510,13 @@ test('desativação transfere cada conta ativa ou desativada e converte Líder e
 				destinoId: 'chassi',
 				perfilAnterior: 'membro',
 				perfilAtual: 'membro',
+			},
+			{
+				integranteId: 'joao',
+				origemId: 'eletrica',
+				destinoId: 'chassi',
+				perfilAnterior: 'orientador',
+				perfilAtual: 'orientador',
 			},
 		],
 	})

@@ -131,8 +131,9 @@ export default function EquipePage() {
 				</section>
 			) : subsistemas && user ? (
 				<SubsistemasContent
-					key={`${user.id}:${user.role}:${demoRevision}`}
+					key={`${user.id}:${user.role}:${user.subsistemaId ?? ''}`}
 					user={user}
+					revision={demoRevision}
 					createRequest={createSubsystemRequest}
 					onCreateRequestConsumed={() =>
 						setCreateSubsystemRequest(false)

@@ -369,6 +369,19 @@ export function createDemoStore(storage: StoragePort) {
 				visualizador.perfil === 'capitao' ||
 				visualizador.perfil === 'gestor' ||
 				visualizador.perfil === 'orientador'
+			const seeInactiveSubsystems =
+				visualizador.perfil === 'capitao' ||
+				visualizador.perfil === 'gestor'
+			const subsistemasVisiveis = source.subsistemas.filter(
+				(subsistema) =>
+					subsistema.ativo ||
+					seeInactiveSubsystems ||
+					(visualizador.perfil !== 'orientador' &&
+						visualizador.subsistemaId === subsistema.id),
+			)
+			const subsistemasVisiveisIds = new Set(
+				subsistemasVisiveis.map((item) => item.id),
+			)
 			return {
 				resumo: {
 					subsistemasAtivos: source.subsistemas.filter(
@@ -377,18 +390,16 @@ export function createDemoStore(storage: StoragePort) {
 					integrantesAssociados: seeAllComposition
 						? source.integrantes.filter(
 								(item) =>
-									item.subsistemaId !== null && item.ativo,
+									item.subsistemaId !== null &&
+									item.ativo &&
+									subsistemasVisiveisIds.has(
+										item.subsistemaId,
+									),
 							).length
 						: null,
 				},
-				subsistemas: source.subsistemas
-					.filter(
-						(subsistema) =>
-							subsistema.ativo ||
-							seeAllComposition ||
-							visualizador.subsistemaId === subsistema.id,
-					)
-					.map((subsistema): SubsistemaConsultavel => {
+				subsistemas: subsistemasVisiveis.map(
+					(subsistema): SubsistemaConsultavel => {
 						const pessoas = source.integrantes.filter(
 							(item) =>
 								item.subsistemaId === subsistema.id &&
@@ -422,7 +433,8 @@ export function createDemoStore(storage: StoragePort) {
 									}
 								: {}),
 						}
-					}),
+					},
+				),
 			}
 		},
 		opcoesSubsistema(
