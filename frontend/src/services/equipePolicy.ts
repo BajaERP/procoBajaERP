@@ -17,7 +17,15 @@ export function filtrarIntegrantesVisiveis(
 			)
 		})
 		.map((integrante) => ({
-			...integrante,
+			id: integrante.id,
+			nome: integrante.nome,
+			perfil: integrante.perfil,
+			subsistemaId: integrante.subsistemaId,
+			ativo: integrante.ativo,
+			financeiro: integrante.financeiro,
+			...(administra && integrante.passwordChangePending !== undefined
+				? { passwordChangePending: integrante.passwordChangePending }
+				: {}),
 			identificador:
 				administra || integrante.id === visualizador.id
 					? integrante.identificador

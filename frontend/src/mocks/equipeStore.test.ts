@@ -268,6 +268,14 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 		)?.identificador,
 		null,
 	)
+	assert.equal(
+		'passwordChangePending' in
+			(store.detail(
+				{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+				'carla',
+			) ?? {}),
+		false,
+	)
 	store.administer('bruno', 'elisa', {
 		nome: '  Elisa Nova  ',
 		identificador: '009876',
@@ -381,6 +389,11 @@ test('redefinição mostra senha uma vez, exige troca e não persiste o texto', 
 		() => store.resetTemporaryPassword('carla', 'elisa'),
 		/permissão/,
 	)
+	assert.equal(
+		store.administrationOptions('ana', 'ana').podeRedefinirSenha,
+		false,
+	)
+	assert.throws(() => store.resetTemporaryPassword('ana', 'ana'), /permissão/)
 })
 
 test('falha ao persistir redefinição não retorna senha e preserva o estado anterior', () => {
