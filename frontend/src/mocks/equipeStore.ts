@@ -410,8 +410,15 @@ export function createDemoStore(storage: StoragePort) {
 			const manager = persistedFinancialManager(source)
 			return manager ? { ...manager } : null
 		},
-		financialResponsibility() {
+		financialResponsibility(visualizadorId: string) {
 			const source = data()
+			const visualizador = source.integrantes.find(
+				(item) => item.id === visualizadorId && item.ativo,
+			)
+			if (!visualizador)
+				throw new ResponsabilidadeFinanceiraError(
+					'Você não tem permissão para consultar a responsabilidade financeira.',
+				)
 			const summarize = (item: Integrante) => ({
 				id: item.id,
 				nome: item.nome,
@@ -421,16 +428,33 @@ export function createDemoStore(storage: StoragePort) {
 					)?.nome ?? null,
 			})
 			const manager = persistedFinancialManager(source)
+			const podeVerTodos = ['capitao', 'gestor', 'orientador'].includes(
+				visualizador.perfil,
+			)
+			const podeVerResponsavel =
+				manager &&
+				filtrarIntegrantesVisiveis(source.integrantes, {
+					id: visualizador.id,
+					perfil: visualizador.perfil,
+					subsistemaId: visualizador.subsistemaId,
+				}).some((item) => item.id === manager.id)
+			if (!podeVerTodos && !podeVerResponsavel)
+				throw new ResponsabilidadeFinanceiraError(
+					'Você não tem permissão para consultar a responsabilidade financeira.',
+				)
 			return {
 				responsavel: manager ? summarize(manager) : null,
-				gestoresElegiveis: source.integrantes
-					.filter(
-						(item) =>
-							item.ativo &&
-							item.perfil === 'gestor' &&
-							item.id !== manager?.id,
-					)
-					.map(summarize),
+				gestoresElegiveis:
+					visualizador.perfil !== 'capitao'
+						? []
+						: source.integrantes
+								.filter(
+									(item) =>
+										item.ativo &&
+										item.perfil === 'gestor' &&
+										item.id !== manager?.id,
+								)
+								.map(summarize),
 			}
 		},
 		assignFinancialManager(atorId: string, gestorId: string) {

@@ -107,7 +107,8 @@ export function Shell() {
 					{
 						integrantes: 'Integrantes',
 						subsistemas: 'Subsistemas',
-						cargos: 'Cargos e permissões',
+						financeiro: 'Gestor Financeiro',
+						permissoes: 'Perfis e permissões',
 					} as Record<string, string>
 				)[subsegment]
 			: undefined

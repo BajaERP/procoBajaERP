@@ -20,6 +20,21 @@ function storage(failWrites = false) {
 	}
 }
 
+test('consulta financeira respeita a visibilidade da composição e não expõe opções de gestão', () => {
+	const store = createDemoStore(storage())
+	assert.throws(() => store.financialResponsibility('elisa'), /permissão/)
+	assert.throws(
+		() => store.financialResponsibility('inexistente'),
+		/permissão/,
+	)
+	assert.equal(store.financialResponsibility('ana').responsavel?.id, 'bruno')
+	assert.equal(store.financialResponsibility('joao').responsavel?.id, 'bruno')
+	store.updateIntegrante('elisa', { subsistemaId: 'gestao' })
+	const visible = store.financialResponsibility('elisa')
+	assert.equal(visible.responsavel?.id, 'bruno')
+	assert.deepEqual(visible.gestoresElegiveis, [])
+})
+
 test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atribuído', () => {
 	const store = createDemoStore(storage())
 	assert.equal(store.defaultIdentity()?.id, 'bruno')

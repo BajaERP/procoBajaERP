@@ -49,7 +49,7 @@ export function IntegrantesList({
 }: {
 	data: ConsultaIntegrantes
 	onOpen: (integranteId: string) => void
-	onOpenFinancial: () => void
+	onOpenFinancial?: () => void
 }) {
 	const [busca, setBusca] = useState('')
 	const [perfil, setPerfil] = useState('')
@@ -93,7 +93,7 @@ export function IntegrantesList({
 						key={metric.label}
 						className={`${index > 0 ? 'border-t border-hairline sm:border-l sm:border-t-0' : ''}`}
 					>
-						{metric.action === 'financial' ? (
+						{metric.action === 'financial' && onOpenFinancial ? (
 							<button
 								type="button"
 								onClick={onOpenFinancial}

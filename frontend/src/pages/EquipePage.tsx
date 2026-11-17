@@ -333,7 +333,12 @@ function IntegrantesContent({
 			<IntegrantesList
 				data={loadState.data}
 				onOpen={onOpen}
-				onOpenFinancial={onOpenFinancial}
+				onOpenFinancial={
+					['capitao', 'gestor', 'orientador'].includes(user.role) ||
+					loadState.data.integrantes.some((item) => item.financeiro)
+						? onOpenFinancial
+						: undefined
+				}
 			/>
 			<div className="mt-4 flex justify-end">
 				<button

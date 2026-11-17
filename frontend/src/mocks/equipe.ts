@@ -72,9 +72,9 @@ export const mockEquipeService: EquipeService = {
 			subsistemaId: identidade.subsistemaId,
 		})
 	},
-	async consultarResponsabilidadeFinanceira() {
+	async consultarResponsabilidadeFinanceira(visualizador) {
 		await new Promise((resolve) => window.setTimeout(resolve, 180))
-		return store.financialResponsibility()
+		return store.financialResponsibility(visualizador.id)
 	},
 	async atribuirResponsabilidadeFinanceira(atorId, gestorId) {
 		store.assignFinancialManager(atorId, gestorId)
