@@ -42,7 +42,7 @@ export default function EquipePage() {
 		setDetalheIntegrante(null)
 		setResumoSubsistemas(null)
 		setCreateSubsystemRequest(false)
-	}, [user?.id, user?.role, location.pathname])
+	}, [user?.id, user?.role, user?.subsistemaId, location.pathname])
 
 	return (
 		<div
@@ -161,7 +161,12 @@ export default function EquipePage() {
 			)}
 			{user && detalheIntegrante && !subsistemas && (
 				<AdministrarIntegranteDialog
-					key={`${user.id}:${detalheIntegrante}`}
+					key={JSON.stringify([
+						user.id,
+						user.role,
+						user.subsistemaId,
+						detalheIntegrante,
+					])}
 					ator={user}
 					integranteId={detalheIntegrante}
 					onClose={() => setDetalheIntegrante(null)}
