@@ -8,9 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -40,8 +42,13 @@ public class SegurancaConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(erros -> erros.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        // Com a Senha provisória, só o Usuário atual e a troca da própria senha; o logout é tratado antes.
+                        .requestMatchers(HttpMethod.GET, "/api/auth/eu").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/auth/senha").authenticated()
+                        .anyRequest().access((autenticacao, contexto) -> new AuthorizationDecision(senhaDefinitiva(autenticacao.get()))))
+                .exceptionHandling(erros -> erros
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler(new TrocaDeSenhaPendenteHandler()))
                 .logout(saida -> saida
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
@@ -50,6 +57,12 @@ public class SegurancaConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .addFilterAfter(new AtualizacaoDaSessaoFilter(contas), SecurityContextHolderFilter.class);
         return http.build();
+    }
+
+    /** Com a Senha provisória, os módulos ficam fechados até o próprio Usuário trocá-la em /api/auth/senha. */
+    private static boolean senhaDefinitiva(Authentication autenticacao) {
+        return autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioAutenticado
+                && !UsuarioAutenticado.comTrocaDeSenhaPendente(autenticacao);
     }
 
     /**

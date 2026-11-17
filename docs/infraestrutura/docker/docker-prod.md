@@ -47,7 +47,7 @@ Edite o `.env` e substitua os valores de exemplo, principalmente:
 POSTGRES_DB=procobaja
 POSTGRES_USER=procobaja
 POSTGRES_PASSWORD=uma-senha-forte
-PROCOBAJA_CAPITAO_INICIAL_RA=ra-do-primeiro-capitao
+PROCOBAJA_CAPITAO_INICIAL_RA=1234567
 PROCOBAJA_CAPITAO_INICIAL_NOME=Nome do primeiro Capitão
 PROCOBAJA_CAPITAO_INICIAL_SENHA=outra-senha-forte
 BACKEND_PORT=8080
@@ -61,9 +61,10 @@ pela configuração de produção.
 As variáveis `PROCOBAJA_CAPITAO_INICIAL_*` criam a primeira conta
 administrativa. O `.env.example` as deixa vazias de propósito: enquanto
 estiverem vazias, o backend não cria nenhum Capitão e só avisa no log. Ele cria
-o Capitão uma única vez, ao iniciar com o banco sem nenhum Capitão ativo. Depois
-do primeiro login, troque a senha em Configurações e apague
-`PROCOBAJA_CAPITAO_INICIAL_SENHA` do `.env`.
+o Capitão uma única vez, ao iniciar com o banco sem nenhum Capitão ativo. O RA
+deve ter só dígitos (o RA ou SIAPE do primeiro Capitão). A senha configurada é
+provisória: no primeiro login o ERP exige trocá-la antes de liberar os módulos.
+Depois da troca, apague `PROCOBAJA_CAPITAO_INICIAL_SENHA` do `.env`.
 
 ## Construir e iniciar
 

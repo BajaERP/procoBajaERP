@@ -63,7 +63,7 @@ public class AutenticacaoController {
     @PostMapping("/login")
     public UsuarioAtualResposta login(@Valid @RequestBody LoginRequisicao dados, HttpServletRequest requisicao,
             HttpServletResponse resposta) {
-        String ra = Ra.normalizar(dados.ra());
+        String ra = Ra.validar(dados.ra());
         limite.exigirTentativaLiberada(ra);
         Authentication autenticacao;
         try {
@@ -93,7 +93,16 @@ public class AutenticacaoController {
 
     @PutMapping("/senha")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void trocarSenha(@AuthenticationPrincipal UsuarioAutenticado eu, @Valid @RequestBody TrocaDeSenhaRequisicao dados) {
+    public void trocarSenha(@AuthenticationPrincipal UsuarioAutenticado eu, @Valid @RequestBody TrocaDeSenhaRequisicao dados,
+            HttpServletRequest requisicao, HttpServletResponse resposta) {
         contas.alterarPropriaSenha(eu.getId(), dados.senhaAtual(), dados.novaSenha());
+        // A troca encerra as outras sessões do Usuário; esta continua, já com a nova versão da senha.
+        UsuarioAutenticado atualizado = contas.buscarPorId(eu.getId()).map(UsuarioAutenticado::new).orElseThrow();
+        atualizado.eraseCredentials();
+        SecurityContext contexto = SecurityContextHolder.createEmptyContext();
+        contexto.setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(atualizado, null, atualizado.getAuthorities()));
+        SecurityContextHolder.setContext(contexto);
+        repositorioDeContexto.saveContext(contexto, requisicao, resposta);
     }
 }

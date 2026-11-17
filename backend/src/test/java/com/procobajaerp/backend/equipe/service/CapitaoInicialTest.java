@@ -32,32 +32,32 @@ class CapitaoInicialTest extends TesteDeIntegracao {
 
     @Test
     void criaOCapitaoQuandoNaoHaNenhumAtivo() throws Exception {
-        capitaoInicial(" Capitao1 ", "Primeiro Capitão", "senha-inicial").criarSeNecessario();
+        capitaoInicial(" 1234567 ", "Primeiro Capitão", "senha-inicial").criarSeNecessario();
 
-        long capitao = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = 'capitao1'", Long.class);
+        long capitao = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = '1234567'", Long.class);
         assertThat(perfilNoBanco(capitao)).isEqualTo("CAPITAO_ADMIN");
         assertThat(subsistemaNoBanco(capitao)).isNull();
         assertThat(ativoNoBanco(capitao)).isTrue();
         assertThat(acoesAuditadas("USUARIO", capitao)).containsExactly("CADASTRADO");
         mvc.perform(json(post("/api/auth/login"),
-                        Map.of("ra", "capitao1", "senha", "senha-inicial")))
+                        Map.of("ra", "1234567", "senha", "senha-inicial")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void naoCriaSeJaExisteCapitaoAtivo() {
         usuario("capitao", Perfil.CAPITAO_ADMIN, null);
-        capitaoInicial("outro", "Outro", "senha-inicial").criarSeNecessario();
+        capitaoInicial("7654321", "Outro", "senha-inicial").criarSeNecessario();
 
-        assertThat(usuarios.existsByRa("outro")).isFalse();
+        assertThat(usuarios.existsByRa("7654321")).isFalse();
     }
 
     @Test
     void naoCriaSemConfiguracaoNemComSenhaForaDoTamanho() {
         capitaoInicial(null, null, null).criarSeNecessario();
-        capitaoInicial("capitao1", "Capitão", "curta").criarSeNecessario();
-        capitaoInicial("capitao1", "Capitão", "a".repeat(65)).criarSeNecessario();
-        capitaoInicial("capitao1", "Capitão", "ç".repeat(40)).criarSeNecessario();
+        capitaoInicial("1234567", "Capitão", "curta").criarSeNecessario();
+        capitaoInicial("1234567", "Capitão", "a".repeat(65)).criarSeNecessario();
+        capitaoInicial("1234567", "Capitão", "ç".repeat(40)).criarSeNecessario();
 
         assertThat(usuarios.count()).isZero();
     }

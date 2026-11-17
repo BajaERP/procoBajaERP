@@ -47,7 +47,7 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
                 .andReturn().getResponse().getContentAsString();
         long motor = ((Number) JsonPath.read(resposta, "$.id")).longValue();
         String cadastro = mvc.perform(json(post("/api/usuarios"), Map.of(
-                        "nome", "Membro", "ra", "membro", "perfil", "MEMBRO", "subsistemaId", motor)).session(login("gestor")))
+                        "nome", "Membro", "ra", ra("membro"), "perfil", "MEMBRO", "subsistemaId", motor)).session(login("gestor")))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         long membro = ((Number) JsonPath.read(cadastro, "$.usuario.id")).longValue();
@@ -200,6 +200,6 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
     }
 
     private long id(String ra) {
-        return jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = ?", Long.class, ra);
+        return jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = ?", Long.class, ra(ra));
     }
 }

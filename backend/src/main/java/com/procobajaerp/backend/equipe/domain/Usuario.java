@@ -46,6 +46,14 @@ public class Usuario {
     @Column(nullable = false)
     private boolean ativo;
 
+    /** A senha atual é provisória: até trocá-la, o Usuário só acessa a troca da própria senha. */
+    @Column(name = "troca_de_senha_pendente", nullable = false)
+    private boolean trocaDeSenhaPendente;
+
+    /** Muda a cada redefinição ou troca, encerrando as sessões abertas com a senha anterior. */
+    @Column(name = "versao_da_senha", nullable = false)
+    private int versaoDaSenha;
+
     /**
      * Lido do banco junto com o Usuário, para exibição: é a {@link AtribuicaoFinanceira} que o torna Gestor Financeiro.
      * Não muda se a atribuição mudar depois, na mesma transação; as regras consultam a atribuição diretamente.
@@ -69,6 +77,7 @@ public class Usuario {
         this.perfil = perfil;
         this.subsistema = subsistema;
         this.ativo = ativo;
+        this.trocaDeSenhaPendente = true;
         this.criadoEm = OffsetDateTime.now();
     }
 
@@ -114,8 +123,29 @@ public class Usuario {
         ativo = true;
     }
 
-    public void alterarSenhaHash(String senhaHash) {
+    /** Senha provisória dada pelo Capitão ou Gestor: exige nova troca e encerra as sessões abertas. */
+    public void redefinirSenha(String senhaHash) {
         this.senhaHash = senhaHash;
+        this.trocaDeSenhaPendente = true;
+        this.versaoDaSenha++;
+    }
+
+    /**
+     * Senha escolhida pelo próprio Usuário, que deixa de ter troca pendente. Também encerra as outras sessões,
+     * inclusive alguma aberta com a Senha provisória por quem a redefiniu.
+     */
+    public void trocarSenha(String senhaHash) {
+        this.senhaHash = senhaHash;
+        this.trocaDeSenhaPendente = false;
+        this.versaoDaSenha++;
+    }
+
+    public boolean isTrocaDeSenhaPendente() {
+        return trocaDeSenhaPendente;
+    }
+
+    public int getVersaoDaSenha() {
+        return versaoDaSenha;
     }
 
     public Long getId() {
