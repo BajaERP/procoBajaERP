@@ -7,7 +7,7 @@ import {
 import type { Integrante, Visualizador } from './equipeTypes.ts'
 
 const subsistemas = [
-	{ id: 'gestao', nome: 'Gestão', ativo: true },
+	{ id: 'gestao', nome: 'Gestão', ativo: false },
 	{ id: 'chassi', nome: 'Chassi', ativo: true },
 	{ id: 'inativo', nome: 'Suspensão', ativo: false },
 ]
@@ -21,6 +21,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: null,
 		ativo: true,
 		financeiro: false,
+		passwordChangePending: true,
 	},
 	{
 		id: 'bruno',
@@ -30,6 +31,7 @@ const integrantes: Integrante[] = [
 		subsistemaId: 'gestao',
 		ativo: true,
 		financeiro: true,
+		passwordChangePending: true,
 	},
 	{
 		id: 'carla',
@@ -162,6 +164,10 @@ test('Orientador vê seu SIAPE, mas buscas não revelam identificadores de terce
 		resultado.some((item) => item.id === 'elisa'),
 		false,
 	)
+	assert.equal(
+		resultado.some((item) => item.id === 'carla'),
+		false,
+	)
 	assert.deepEqual(pesquisarIntegrantes(resultado, '123', '', ''), [])
 })
 
@@ -196,7 +202,7 @@ test('Orientador vê apenas integrantes de subsistemas ativos, além de si e pes
 
 	assert.deepEqual(
 		resultado.map((item) => item.id),
-		['ana', 'bruno', 'carla', 'diego', orientadorInativo.id],
+		['ana', 'diego', orientadorInativo.id],
 	)
 	assert.equal(
 		resultado.find((item) => item.id === 'ana')?.identificador,
@@ -234,13 +240,35 @@ test('Busca e filtros operam sobre dados recebidos', () => {
 })
 
 test('Capitão e Gestor podem ver troca pendente para administrar contas', () => {
-	const resultado = filtrarIntegrantesVisiveis(integrantes, {
-		id: 'ana',
-		perfil: 'capitao',
-		subsistemaId: null,
-	})
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'ana',
+			perfil: 'capitao',
+			subsistemaId: null,
+		},
+		subsistemas,
+	)
 	assert.equal(
 		resultado.find((item) => item.id === 'carla')?.passwordChangePending,
 		true,
 	)
+})
+
+test('Gestor só vê pendência de senha em contas que pode administrar', () => {
+	const resultado = filtrarIntegrantesVisiveis(
+		integrantes,
+		{
+			id: 'bruno',
+			perfil: 'gestor',
+			subsistemaId: 'gestao',
+		},
+		subsistemas,
+	)
+	const pendente = (id: string) =>
+		resultado.find((item) => item.id === id)?.passwordChangePending
+
+	assert.equal(pendente('ana'), undefined)
+	assert.equal(pendente('bruno'), undefined)
+	assert.equal(pendente('carla'), true)
 })

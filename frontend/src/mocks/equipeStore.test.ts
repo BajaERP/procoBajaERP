@@ -24,6 +24,10 @@ test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atrib
 	const store = createDemoStore(storage())
 	const data = store.data()
 	const subsistemasAtivos = data.subsistemas.filter((item) => item.ativo)
+	assert.equal(
+		data.subsistemas.find((item) => item.id === 'gestao')?.ativo,
+		false,
+	)
 	assert.ok(
 		subsistemasAtivos.every((subsistema) =>
 			data.integrantes.some(
@@ -301,6 +305,51 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 		'Elisa Nova',
 	)
 	assert.equal(store.identity('elisa')?.role, 'orientador')
+})
+
+test('detalhes aplicam escopo de subsistemas e omitem pendência de senha', () => {
+	const store = createDemoStore(storage())
+	const detail = store.detail(
+		{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+		'carla',
+	)
+
+	assert.ok(detail)
+	assert.equal('passwordChangePending' in detail, false)
+	const adminDetail = store.detail(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		'carla',
+	)
+	assert.equal(adminDetail?.passwordChangePending, true)
+})
+
+test('detalhes usam perfil e subsistema persistidos da identidade ativa', () => {
+	const store = createDemoStore(storage())
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
+
+	store.updateIntegrante('carla', { subsistemaId: 'chassi' })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'membro', subsistemaId: 'gestao' },
+			'diego',
+		)?.id,
+		'diego',
+	)
+
+	store.updateIntegrante('carla', { ativo: false })
+	assert.equal(
+		store.detail(
+			{ id: 'carla', perfil: 'capitao', subsistemaId: null },
+			'ana',
+		),
+		null,
+	)
 })
 
 test('falha ao persistir administração retorna erro e preserva os dados anteriores', () => {
