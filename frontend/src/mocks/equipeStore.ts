@@ -428,11 +428,16 @@ export function createDemoStore(storage: StoragePort) {
 					)?.nome ?? null,
 			})
 			const manager = persistedFinancialManager(source)
-			const podeVerTodos = ['capitao', 'gestor', 'orientador'].includes(
+			const podeVerTodos = ['capitao', 'gestor'].includes(
 				visualizador.perfil,
 			)
 			const podeVerResponsavel =
 				manager &&
+				(visualizador.perfil !== 'orientador' ||
+					source.subsistemas.some(
+						(item) =>
+							item.id === manager.subsistemaId && item.ativo,
+					)) &&
 				filtrarIntegrantesVisiveis(source.integrantes, {
 					id: visualizador.id,
 					perfil: visualizador.perfil,

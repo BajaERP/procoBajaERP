@@ -334,8 +334,16 @@ function IntegrantesContent({
 				data={loadState.data}
 				onOpen={onOpen}
 				onOpenFinancial={
-					['capitao', 'gestor', 'orientador'].includes(user.role) ||
-					loadState.data.integrantes.some((item) => item.financeiro)
+					['capitao', 'gestor'].includes(user.role) ||
+					loadState.data.integrantes.some(
+						(item) =>
+							item.financeiro &&
+							(user.role !== 'orientador' ||
+								loadState.data.subsistemas.some(
+									(subsistema) =>
+										subsistema.id === item.subsistemaId,
+								)),
+					)
 						? onOpenFinancial
 						: undefined
 				}

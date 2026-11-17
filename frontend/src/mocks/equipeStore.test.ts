@@ -28,11 +28,13 @@ test('consulta financeira respeita a visibilidade da composição e não expõe 
 		/permissão/,
 	)
 	assert.equal(store.financialResponsibility('ana').responsavel?.id, 'bruno')
+	store.updateIntegrante('bruno', { subsistemaId: 'chassi' })
 	assert.equal(store.financialResponsibility('joao').responsavel?.id, 'bruno')
-	store.updateIntegrante('elisa', { subsistemaId: 'gestao' })
 	const visible = store.financialResponsibility('elisa')
 	assert.equal(visible.responsavel?.id, 'bruno')
 	assert.deepEqual(visible.gestoresElegiveis, [])
+	store.updateIntegrante('bruno', { subsistemaId: 'inativo' })
+	assert.throws(() => store.financialResponsibility('joao'), /permissão/)
 })
 
 test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atribuído', () => {
