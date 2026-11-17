@@ -80,8 +80,8 @@ public class SubsistemaController {
     @PostMapping("/{id}/desativacao")
     @PreAuthorize("hasAuthority('SUBSISTEMAS_GERENCIAR')")
     public SubsistemaResposta desativar(@AuthenticationPrincipal UsuarioAutenticado eu, @PathVariable Long id,
-            @RequestBody DesativacaoDeSubsistemaRequisicao dados) {
-        return subsistemas.desativar(eu.getId(), id, dados.destinoSubsistemaId());
+            @Valid @RequestBody(required = false) DesativacaoDeSubsistemaRequisicao dados) {
+        return subsistemas.desativar(eu.getId(), id, dados == null ? List.of() : dados.destinosInformados());
     }
 
     /** Transferência de integrante para este Subsistema. */

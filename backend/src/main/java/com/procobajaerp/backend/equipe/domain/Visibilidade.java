@@ -29,8 +29,11 @@ public final class Visibilidade {
         return quem.getPerfil().veComposicaoGeral() || quem.pertenceA(subsistema);
     }
 
-    /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, só de Capitão e Gestor. */
+    /**
+     * Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, de Capitão, Gestor e de quem ainda pertence
+     * a ele, que continua vendo o próprio Subsistema e sua Composição.
+     */
     public static boolean podeVer(Usuario quem, Subsistema subsistema) {
-        return subsistema.isAtivo() || quem.getPerfil().administraEquipe();
+        return subsistema.isAtivo() || quem.getPerfil().administraEquipe() || quem.pertenceA(subsistema);
     }
 }
