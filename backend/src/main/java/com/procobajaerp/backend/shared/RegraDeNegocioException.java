@@ -18,7 +18,7 @@ public class RegraDeNegocioException extends ErrorResponseException {
         super(HttpStatus.UNPROCESSABLE_CONTENT, problema(HttpStatus.UNPROCESSABLE_CONTENT, mensagem, propriedades), null);
     }
 
-    static ProblemDetail problema(HttpStatus status, String mensagem, Map<String, ?> propriedades) {
+    public static ProblemDetail problema(HttpStatus status, String mensagem, Map<String, ?> propriedades) {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(status, mensagem);
         propriedades.forEach(problema::setProperty);
         return problema;

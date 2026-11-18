@@ -1,5 +1,6 @@
 package com.procobajaerp.backend.seguranca;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.procobajaerp.backend.equipe.service.ContaService;
 
@@ -33,8 +35,8 @@ import com.procobajaerp.backend.equipe.service.ContaService;
 public class SegurancaConfig {
 
     @Bean
-    SecurityFilterChain filtrosDeSeguranca(HttpSecurity http, ContaService contas, CsrfTokenRepository repositorioDeCsrf)
-            throws Exception {
+    SecurityFilterChain filtrosDeSeguranca(HttpSecurity http, ContaService contas, CsrfTokenRepository repositorioDeCsrf,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver tratadorDeErros) throws Exception {
         http
                 .csrf(csrf -> csrf.spa().csrfTokenRepository(repositorioDeCsrf))
                 .authorizeHttpRequests(rotas -> rotas
@@ -48,7 +50,7 @@ public class SegurancaConfig {
                         .anyRequest().access((autenticacao, contexto) -> new AuthorizationDecision(senhaDefinitiva(autenticacao.get()))))
                 .exceptionHandling(erros -> erros
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                        .accessDeniedHandler(new TrocaDeSenhaPendenteHandler()))
+                        .accessDeniedHandler(new TrocaDeSenhaPendenteHandler(tratadorDeErros)))
                 .logout(saida -> saida
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
