@@ -109,25 +109,9 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void financeiroCadastradoPeloGestorAguardaOVinculoDesativado() throws Exception {
-        cadastrar("gestor", Map.of("nome", "Fabi", "ra", "fin1", "perfil", "FINANCEIRO", "subsistemaId", freios))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.usuario.ativo").value(false));
-        cadastrar("gestor", Map.of("nome", "Fabi", "ra", "fin2", "perfil", "FINANCEIRO", "subsistemaId", freios, "gestorId", gestor))
-                .andExpect(status().isUnprocessableContent());
-    }
-
-    @Test
-    void financeiroCadastradoPeloCapitaoJaNasceComVinculo() throws Exception {
+    void ninguemECadastradoComOPerfilFinanceiro() throws Exception {
         cadastrar("capitao", Map.of("nome", "Fabi", "ra", "fin1", "perfil", "FINANCEIRO", "subsistemaId", freios))
-                .andExpect(status().isUnprocessableContent());
-        String resposta = cadastrar("capitao", Map.of("nome", "Fabi", "ra", "fin1", "perfil", "FINANCEIRO", "subsistemaId", freios, "gestorId", gestor))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.usuario.ativo").value(true))
-                .andReturn().getResponse().getContentAsString();
-
-        long financeiro = ((Number) JsonPath.read(resposta, "$.usuario.id")).longValue();
-        assertThat(gestorDoVinculo(financeiro)).isEqualTo(gestor);
+                .andExpect(status().isBadRequest());
     }
 
     // Troca de Perfil
@@ -185,39 +169,20 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void gestorComVinculosNaoTrocaDePerfilAntesDaTransferencia() throws Exception {
-        long financeiro = usuario("fin1", Perfil.FINANCEIRO, null);
-        vinculo(financeiro, gestor, capitao);
+    void gestorFinanceiroNaoTrocaDePerfilAntesDeOCapitaoRetirarAResponsabilidade() throws Exception {
+        gestorFinanceiro(gestor, capitao);
         trocarPerfil("capitao", gestor, Map.of("perfil", "ORIENTADOR"))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.financeiros[0].id").value(financeiro));
+                .andExpect(jsonPath("$.detail").value(
+                        "O Capitão precisa retirar ou transferir a responsabilidade financeira de gestor antes de este "
+                                + "Gestor trocar de Perfil."));
+        assertThat(perfilNoBanco(gestor)).isEqualTo("GESTOR");
     }
 
     @Test
-    void financeiroQueTrocaDePerfilPerdeOVinculo() throws Exception {
-        long financeiro = usuario("fin1", Perfil.FINANCEIRO, null);
-        vinculo(financeiro, gestor, capitao);
-        trocarPerfil("capitao", financeiro, Map.of("perfil", "ORIENTADOR")).andExpect(status().isOk());
-
-        assertThat(gestorDoVinculo(financeiro)).isNull();
-        assertThat(acoesAuditadas("VINCULO_FINANCEIRO_GESTOR", financeiro)).containsExactly("ENCERRADO");
-    }
-
-    @Test
-    void quemOGestorTornaFinanceiroFicaDesativadoAteOVinculo() throws Exception {
+    void ninguemPassaAoPerfilFinanceiro() throws Exception {
         long orientador = usuario("orientador", Perfil.ORIENTADOR, freios);
-        trocarPerfil("gestor", orientador, Map.of("perfil", "FINANCEIRO"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ativo").value(false));
-    }
-
-    @Test
-    void capitaoTornaFinanceiroInformandoOGestor() throws Exception {
-        long orientador = usuario("orientador", Perfil.ORIENTADOR, freios);
-        trocarPerfil("capitao", orientador, Map.of("perfil", "FINANCEIRO", "gestorId", gestor))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ativo").value(true));
-        assertThat(gestorDoVinculo(orientador)).isEqualTo(gestor);
+        trocarPerfil("capitao", orientador, Map.of("perfil", "FINANCEIRO")).andExpect(status().isBadRequest());
     }
 
     // Desativação e reativação
@@ -252,10 +217,28 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void gestorComVinculosNaoEDesativado() throws Exception {
-        vinculo(usuario("fin1", Perfil.FINANCEIRO, null), gestor, capitao);
+    void soOCapitaoAdministraOGestorFinanceiro() throws Exception {
+        long gestorFinanceiro = usuario("gestor2", Perfil.GESTOR, null);
+        gestorFinanceiro(gestorFinanceiro, capitao);
+        MockHttpSession sessao = login("gestor");
+
+        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "outro")).session(sessao))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/usuarios/{id}/desativacao", gestorFinanceiro).with(csrf()).session(sessao))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/usuarios/{id}/senha-provisoria", gestorFinanceiro).with(csrf()).session(sessao))
+                .andExpect(status().isForbidden());
+        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "outro"))
+                        .session(login("capitao")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void gestorFinanceiroNaoEDesativadoAntesDeOCapitaoRetirarAResponsabilidade() throws Exception {
+        gestorFinanceiro(gestor, capitao);
         mvc.perform(post("/api/usuarios/{id}/desativacao", gestor).with(csrf()).session(login("capitao")))
                 .andExpect(status().isUnprocessableContent());
+        assertThat(ativoNoBanco(gestor)).isTrue();
     }
 
     @Test
@@ -268,14 +251,21 @@ class UsuarioControllerTest extends TesteDeIntegracao {
                 .andExpect(status().isUnprocessableContent());
     }
 
-    @Test
-    void financeiroSemVinculoNaoEReativado() throws Exception {
-        long financeiro = usuario("fin1", Perfil.FINANCEIRO, null, false);
-        mvc.perform(post("/api/usuarios/{id}/reativacao", financeiro).with(csrf()).session(login("capitao")))
-                .andExpect(status().isUnprocessableContent());
-    }
-
     // Visibilidade
+
+    @Test
+    void quemVeOGestorVeQueEleEOGestorFinanceiro() throws Exception {
+        gestorFinanceiro(gestor, capitao);
+        long outroGestor = usuario("gestor2", Perfil.GESTOR, null);
+        usuario("orientador", Perfil.ORIENTADOR, null);
+
+        mvc.perform(get("/api/usuarios/{id}", gestor).session(login("orientador")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.perfil").value("GESTOR"))
+                .andExpect(jsonPath("$.gestorFinanceiro").value(true));
+        mvc.perform(get("/api/usuarios/{id}", outroGestor).session(login("orientador")))
+                .andExpect(jsonPath("$.gestorFinanceiro").value(false));
+    }
 
     @Test
     void membroVeSoOProprioSubsistemaESemORaDosOutros() throws Exception {
@@ -367,10 +357,5 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     private ResultActions trocarPerfil(String ra, long id, Map<String, ?> corpo)
             throws Exception {
         return mvc.perform(json(put("/api/usuarios/{id}/perfil", id), corpo).session(login(ra)));
-    }
-
-    private Long gestorDoVinculo(long financeiro) {
-        return jdbc.query("SELECT gestor_usuario_id FROM vinculos_financeiro_gestor WHERE financeiro_usuario_id = ?",
-                rs -> rs.next() ? rs.getLong(1) : null, financeiro);
     }
 }

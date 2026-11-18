@@ -3,17 +3,19 @@ package com.procobajaerp.backend.equipe.domain;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** Os seis Perfis do ERP, com os nomes gravados na tabela {@code perfis}. Cada Usuário tem um só. */
+/**
+ * Os cinco Perfis do ERP, com os nomes gravados na tabela {@code perfis}. Cada Usuário tem um só. A responsabilidade
+ * financeira não é um Perfil: é uma {@link AtribuicaoFinanceira} de um Gestor.
+ */
 public enum Perfil {
 
     CAPITAO_ADMIN("Capitão"),
     GESTOR("Gestor"),
-    FINANCEIRO("Financeiro"),
     LIDER("Líder"),
     MEMBRO("Membro"),
     ORIENTADOR("Orientador");
 
-    private static final Set<Perfil> ADMINISTRADOS_PELO_GESTOR = EnumSet.of(FINANCEIRO, LIDER, MEMBRO, ORIENTADOR);
+    private static final Set<Perfil> ADMINISTRADOS_PELO_GESTOR = EnumSet.of(LIDER, MEMBRO, ORIENTADOR);
 
     private final String rotulo;
 
@@ -25,7 +27,7 @@ public enum Perfil {
         return rotulo;
     }
 
-    /** O Capitão administra Usuários de qualquer Perfil; o Gestor, só Financeiro, Líder, Membro e Orientador. */
+    /** O Capitão administra Usuários de qualquer Perfil; o Gestor, só Líder, Membro e Orientador. */
     public boolean administra(Perfil outro) {
         return switch (this) {
             case CAPITAO_ADMIN -> true;

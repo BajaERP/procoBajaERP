@@ -1,5 +1,6 @@
 package com.procobajaerp.backend.equipe.service;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -7,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.procobajaerp.backend.equipe.domain.AtribuicaoFinanceira;
 import com.procobajaerp.backend.equipe.domain.Perfil;
 import com.procobajaerp.backend.equipe.domain.Ra;
 import com.procobajaerp.backend.equipe.domain.Senha;
@@ -65,7 +67,17 @@ public class ContaService {
                 usuario.getSubsistema() == null ? null : usuario.getSubsistema().getNome(),
                 usuario.getSenhaHash(),
                 usuario.isAtivo(),
-                perfis.codigosDePermissao(usuario.getPerfil()));
+                usuario.isGestorFinanceiro(),
+                permissoes(usuario));
+    }
+
+    /** As do Perfil e, para o Gestor Financeiro, as da atribuição financeira. */
+    private Set<String> permissoes(Usuario usuario) {
+        Set<String> permissoes = new HashSet<>(perfis.codigosDePermissao(usuario.getPerfil()));
+        if (usuario.isGestorFinanceiro()) {
+            permissoes.addAll(AtribuicaoFinanceira.PERMISSOES);
+        }
+        return permissoes;
     }
 
     public record DadosDeAcesso(
@@ -77,6 +89,7 @@ public class ContaService {
             String subsistemaNome,
             String senhaHash,
             boolean ativo,
+            boolean gestorFinanceiro,
             Set<String> permissoes) {
     }
 }

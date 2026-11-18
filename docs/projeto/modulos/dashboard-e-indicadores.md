@@ -24,7 +24,7 @@ Consulte a tabela 10 do PDF para a matriz integral.
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-08%20-%20Dashboard%20e%20Indicadores.drawio.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v4.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-08%20-%20Dashboard%20e%20Indicadores.drawio.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
 
 A [visão geral das classes](../../diagramas/Diagramas%20de%20Classe/00%20Vis%C3%A3o%20Geral%20%E2%80%94%20classes%20centrais.drawio.png) representa os conceitos centrais. O modelo descrito no PDF não prevê tabelas ou classes de domínio exclusivas para o dashboard; ele consulta informações dos demais módulos sob suas regras de acesso.
 

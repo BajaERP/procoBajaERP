@@ -1,8 +1,9 @@
-// ERP PROCOBAJA - modelo logico relacional - V4: categorias, eventos, previsoes, horas e indices (2026-10-25)
+// ERP PROCOBAJA - modelo logico relacional - V5: Gestor Financeiro como atribuicao de um Gestor (2026-11-17)
+// V4 (2026-10-25): categorias, eventos, previsoes, horas e indices.
 // Projeto unico com TableGroups e DiagramViews. Alterar aqui atualiza todas as vistas.
 // Oito modulos funcionais; dashboard consulta dados existentes, sem tabelas proprias.
 // IMPORTANTE: modelo logico proposto. FKs, CHECKs e indices que nao exportem integralmente exigem migracoes PostgreSQL.
-// APLICAR SQL COMPLEMENTAR v4 APOS GERAR AS TABELAS (unicidade parcial de pagamentos e sprints).
+// APLICAR SQL COMPLEMENTAR APOS GERAR AS TABELAS (unicidade parcial de pagamentos e sprints).
 // Valores monetarios sao confidenciais e autorizacoes sao obrigatorias no backend.
 Project proco_baja_erp {
   database_type: 'PostgreSQL'
@@ -45,7 +46,7 @@ Enum status_compra {
 
 Enum papel_aprovador {
   CAPITAO
-  FINANCEIRO
+  GESTOR_FINANCEIRO
 }
 
 Enum decisao_aprovacao {
@@ -125,7 +126,7 @@ Enum status_versao_governanca {
   PUBLICADA
 }
 
-// A integridade das aprovacoes, tres cotacoes, vinculos por perfil, pagamento e
+// A integridade das aprovacoes, tres cotacoes, atribuicao financeira, pagamento e
 // autorizacoes contextuais ainda requer migracoes adicionais e backend transacional.
 // IMPORTANTISSIMO: unicidade parcial por compra ATIVA somente no SQL complementar.
 // Dados financeiros nao devem ser retornados por endpoints operacionais nao autorizados.
@@ -133,7 +134,7 @@ Table perfis {
   id bigint [pk, increment]
   nome varchar(32) [not null, unique]
   descricao text
-  Note: 'Seis papeis oficiais. O catalogo e as permissoes nao anulam regras obrigatorias de negocio e contexto.'
+  Note: 'Cinco papeis oficiais. A responsabilidade financeira e uma atribuicao do Gestor, nao um Perfil. O catalogo e as permissoes nao anulam regras obrigatorias de negocio e contexto.'
 }
 
 Table permissoes {
@@ -151,7 +152,7 @@ Table perfil_permissoes {
   indexes {
     (perfil_id, permissao_id) [pk]
   }
-  Note: 'Relacao N:N. Alteracoes nas permissoes nao devem liberar acesso financeiro ao Gestor.'
+  Note: 'Relacao N:N. O acesso financeiro vem da atribuicao financeira, nunca do Perfil Gestor.'
 }
 
 Table usuarios {
@@ -185,15 +186,15 @@ Table subsistemas {
   Note: 'Criacao em duas etapas ou transacao resolve referencia circular Lider <-> Subsistema. Proibir ativar sem Lider.'
 }
 
-Table vinculos_financeiro_gestor {
-  financeiro_usuario_id bigint [pk]
-  gestor_usuario_id bigint [not null]
-  definido_por_usuario_id bigint [not null]
-  definido_em timestamptz [not null, default: `now()`]
-  indexes {
-    gestor_usuario_id
+Table atribuicao_financeira {
+  id smallint [pk, default: 1]
+  gestor_usuario_id bigint [not null, unique]
+  atribuida_por_usuario_id bigint [not null]
+  atribuida_em timestamptz [not null, default: `now()`]
+  checks {
+    `id = 1` [name: 'chk_atribuicao_financeira_unica']
   }
-  Note: 'Um Gestor por Financeiro; somente Capitão pode manter o vinculo. Nao concede acesso financeiro ao Gestor.'
+  Note: 'Gestor Financeiro: no maximo um Gestor ativo com a responsabilidade financeira; tabela vazia e posicao vaga. Somente o Capitao atribui, transfere ou retira. O Gestor Financeiro nao e desativado nem troca de Perfil antes de a responsabilidade ser retirada ou transferida.'
 }
 
 Table sprints {
@@ -421,7 +422,7 @@ Table aprovacoes_compra {
   checks {
     `decisao <> 'REPROVADA' OR (justificativa IS NOT NULL AND length(trim(justificativa)) > 0)` [name: 'chk_aprovacao_reprovada_justificada']
   }
-  Note: 'Uma decisao por papel e por revisao. Apenas duas aprovacoes positivas (Capitao e Financeiro) liberam a compra.'
+  Note: 'Uma decisao por papel e por revisao. Apenas duas aprovacoes positivas (Capitao e Gestor Financeiro) liberam a compra.'
 }
 
 Table historico_solicitacoes_compra {
@@ -902,9 +903,8 @@ Ref: perfil_permissoes.permissao_id > permissoes.id [delete: restrict]
 Ref: usuarios.perfil_id > perfis.id [delete: restrict]
 Ref: usuarios.subsistema_id > subsistemas.id [delete: restrict]
 Ref: subsistemas.(lider_usuario_id, id) > usuarios.(id, subsistema_id) [delete: restrict]
-Ref: vinculos_financeiro_gestor.financeiro_usuario_id > usuarios.id [delete: restrict]
-Ref: vinculos_financeiro_gestor.gestor_usuario_id > usuarios.id [delete: restrict]
-Ref: vinculos_financeiro_gestor.definido_por_usuario_id > usuarios.id [delete: restrict]
+Ref: atribuicao_financeira.gestor_usuario_id - usuarios.id [delete: restrict]
+Ref: atribuicao_financeira.atribuida_por_usuario_id > usuarios.id [delete: restrict]
 Ref: sprints.criada_por_usuario_id > usuarios.id [delete: restrict]
 Ref: atividades.criada_por_usuario_id > usuarios.id [delete: restrict]
 Ref: atividades_responsaveis.atividade_id > atividades.id [delete: restrict]
@@ -999,7 +999,7 @@ TableGroup "01 - Equipe e Subsistemas" [color: #4E79A7] {
   perfil_permissoes
   usuarios
   subsistemas
-  vinculos_financeiro_gestor
+  atribuicao_financeira
 }
 
 TableGroup "02 - Atividades e Sprints" [color: #59A14F] {
@@ -1079,7 +1079,7 @@ DiagramView "00 - Visao geral (entidades centrais)" {
     perfis
     usuarios
     subsistemas
-    vinculos_financeiro_gestor
+    atribuicao_financeira
     sprints
     atividades
     solicitacoes_compra
@@ -1104,7 +1104,7 @@ DiagramView "01 - Equipe e Subsistemas" {
     perfil_permissoes
     usuarios
     subsistemas
-    vinculos_financeiro_gestor
+    atribuicao_financeira
   }
 }
 
