@@ -24,3 +24,18 @@ O PR #33 implementou os fluxos originais de Subsistemas, incorporados à `develo
 - Testes de API e persistência cobrem sucesso, autorização, falhas e atomicidade.
 
 ## Comments
+
+### Contrato para o frontend (2026-11-17)
+
+`POST /api/subsistemas/{id}/desativacao` (Capitão e Gestor), corpo:
+
+```json
+{ "destinos": [ { "usuarioId": 12, "subsistemaId": 3 }, { "usuarioId": 15, "subsistemaId": 4 } ] }
+```
+
+- Um item por Usuário associado ao Subsistema, inclusive os desativados e o Líder (que vai como Membro). A lista de Usuários vem de `GET /api/subsistemas/{id}/integrantes` com uma sessão de Capitão ou Gestor, que vê os desativados.
+- Cada destino precisa ser outro Subsistema ativo; os destinos podem ser diferentes entre si.
+- Respostas: `200` com o `SubsistemaResposta` já desativado; `422` com `detail` quando o Subsistema já está desativado, não há outro Subsistema ativo, um destino está inativo ou é a própria origem, ou um Usuário aparece duas vezes; `422` com `semDestino: [{id, nome}]` quando falta destino para alguém; `404` para destino inexistente ou Usuário que não pertence ao Subsistema; `400` para item sem `usuarioId` ou `subsistemaId`; `403` para os demais Perfis. Em qualquer erro nada é alterado.
+- Corpo vazio ou sem `destinos` só serve para Subsistema sem Usuários. Pelo esquema, um Subsistema ativo sempre tem ao menos o Líder como Integrante, então na prática a lista sempre é exigida.
+- Transferência comum (`POST /api/subsistemas/{id}/integrantes`) aceita Subsistema inativo como destino.
+- Líder e Membro que pertencem a um Subsistema inativo continuam entrando no ERP e passam a vê-lo em `GET /api/subsistemas`, `GET /api/subsistemas/{id}` e na Composição, sem os Usuários desativados nem RA alheio. O Orientador continua entrando no ERP, mas só vê Subsistemas ativos, mesmo quando pertence a um inativo (404 no detalhe e na Composição). Os demais Perfis que não administram a equipe continuam sem ver Subsistemas inativos.

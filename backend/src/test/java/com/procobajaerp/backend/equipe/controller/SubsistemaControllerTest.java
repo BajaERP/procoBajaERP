@@ -2,6 +2,7 @@ package com.procobajaerp.backend.equipe.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -96,32 +97,124 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void desativacaoLevaTodosParaODestinoEOLiderComoMembro() throws Exception {
+    void desativacaoDistribuiCadaUmEntreSubsistemasAtivosEOLiderVaiComoMembro() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
         long desativado = usuario("desativado", Perfil.MEMBRO, chassi, false);
-        long motor = subsistema("Motor");
+        long suspensao = subsistemaComLider("Suspensão", "lidersuspensao");
 
-        desativar(chassi, Map.of()).andExpect(status().isUnprocessableContent());
-        desativar(chassi, Map.of("destinoSubsistemaId", motor)).andExpect(status().isUnprocessableContent());
-        desativar(chassi, Map.of("destinoSubsistemaId", chassi)).andExpect(status().isUnprocessableContent());
-        desativar(chassi, Map.of("destinoSubsistemaId", freios))
+        desativar(chassi, destinos(liderChassi, freios, membro, suspensao, desativado, freios))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ativo").value(false))
                 .andExpect(jsonPath("$.lider").doesNotExist());
 
-        assertThat(subsistemaNoBanco(membro)).isEqualTo(freios);
-        assertThat(subsistemaNoBanco(desativado)).isEqualTo(freios);
         assertThat(subsistemaNoBanco(liderChassi)).isEqualTo(freios);
         assertThat(perfilNoBanco(liderChassi)).isEqualTo("MEMBRO");
-        desativar(chassi, Map.of()).andExpect(status().isUnprocessableContent());
+        assertThat(subsistemaNoBanco(membro)).isEqualTo(suspensao);
+        assertThat(subsistemaNoBanco(desativado)).isEqualTo(freios);
+        assertThat(acoesAuditadas("USUARIO", desativado)).containsExactly("TRANSFERIDO");
+        assertThat(acoesAuditadas("USUARIO", membro)).containsExactly("TRANSFERIDO");
+        assertThat(acoesAuditadas("USUARIO", liderChassi)).containsExactly("PERFIL_ALTERADO", "TRANSFERIDO");
+        assertThat(acoesAuditadas("SUBSISTEMA", chassi)).contains("DESATIVADO");
+        String detalhes = jdbc.queryForObject(
+                "SELECT detalhes_json::text FROM logs_auditoria WHERE entidade = 'SUBSISTEMA' AND acao = 'DESATIVADO'", String.class);
+        assertThat(detalhes).contains("\"usuariosTransferidos\": 3")
+                .contains("{\"usuarioId\": " + membro + ", \"subsistemaId\": " + suspensao + "}");
+        desativar(chassi, "{}").andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value("O Subsistema já está desativado."));
+    }
+
+    @Test
+    void desativacaoExigeUmDestinoAtivoParaCadaUsuarioENadaMudaSeAlgumFalhar() throws Exception {
+        long membro = usuario("membro", Perfil.MEMBRO, chassi);
+        long desativado = usuario("desativado", Perfil.MEMBRO, chassi, false);
+        long motor = subsistema("Motor");
+        long deFora = id("liderfreios");
+
+        desativar(chassi, "{}").andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.semDestino[*].nome").value(containsInAnyOrder("desativado", "liderchassi", "membro")));
+        desativar(chassi, destinos(liderChassi, freios, membro, freios)).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.semDestino[*].id").value(containsInAnyOrder((int) desativado)));
+        desativar(chassi, destinos(liderChassi, freios, membro, motor, desativado, freios))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value("O destino de membro precisa ser um Subsistema ativo."));
+        desativar(chassi, destinos(liderChassi, freios, membro, chassi, desativado, freios))
+                .andExpect(status().isUnprocessableContent());
+        desativar(chassi, destinos(liderChassi, freios, membro, freios, desativado, freios, membro, freios))
+                .andExpect(status().isUnprocessableContent());
+        desativar(chassi, destinos(liderChassi, freios, membro, freios, desativado, freios, deFora, freios))
+                .andExpect(status().isNotFound());
+        desativar(chassi, destinos(liderChassi, freios, membro, 999_999, desativado, freios))
+                .andExpect(status().isNotFound());
+        desativar(chassi, "{\"destinos\":[{\"usuarioId\":" + membro + "}]}").andExpect(status().isBadRequest());
+
+        assertThat(jdbc.queryForObject("SELECT ativo FROM subsistemas WHERE id = ?", Boolean.class, chassi)).isTrue();
+        assertThat(perfilNoBanco(liderChassi)).isEqualTo("LIDER");
+        assertThat(subsistemaNoBanco(membro)).isEqualTo(chassi);
+        assertThat(subsistemaNoBanco(desativado)).isEqualTo(chassi);
+        assertThat(acoesAuditadas("SUBSISTEMA", chassi)).doesNotContain("DESATIVADO");
+    }
+
+    @Test
+    void semOutroSubsistemaAtivoSoOVazioPodeSerDesativado() throws Exception {
+        long liderFreios = id("liderfreios");
+        long motor = subsistema("Motor");
+        desativar(freios, destinos(liderFreios, chassi)).andExpect(status().isOk());
+
+        desativar(chassi, destinos(liderChassi, motor)).andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(startsWith("Não há outro Subsistema ativo")));
+        assertThat(perfilNoBanco(liderChassi)).isEqualTo("LIDER");
+
+        mvc.perform(post("/api/subsistemas/{id}/desativacao", motor).with(csrf()).session(login("capitao")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value("O Subsistema já está desativado."));
     }
 
     @Test
     void subsistemaDesativadoVoltaComNovaDefinicaoDeLider() throws Exception {
-        desativar(chassi, Map.of("destinoSubsistemaId", freios)).andExpect(status().isOk());
+        desativar(chassi, destinos(liderChassi, freios)).andExpect(status().isOk());
         long membro = usuario("membro", Perfil.MEMBRO, freios);
 
         definirLider("capitao", chassi, membro).andExpect(status().isOk()).andExpect(jsonPath("$.ativo").value(true));
+    }
+
+    @Test
+    void transferenciaComumParaSubsistemaInativo() throws Exception {
+        long membro = usuario("membro", Perfil.MEMBRO, chassi);
+        long motor = subsistema("Motor");
+
+        receber("gestor", motor, membro).andExpect(status().isOk());
+
+        assertThat(subsistemaNoBanco(membro)).isEqualTo(motor);
+    }
+
+    @Test
+    void quemPertenceASubsistemaInativoEntraEVeOProprioSubsistemaSemOsDesativados() throws Exception {
+        long motor = subsistema("Motor");
+        usuario("membro", Perfil.MEMBRO, motor);
+        usuario("desativado", Perfil.MEMBRO, motor, false);
+        usuario("orientador", Perfil.ORIENTADOR, motor);
+
+        MockHttpSession sessao = login("membro");
+        mvc.perform(get("/api/auth/eu").session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subsistema.nome").value("Motor"));
+        mvc.perform(get("/api/subsistemas/{id}", motor).session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ativo").value(false));
+        mvc.perform(get("/api/subsistemas/{id}/integrantes", motor).session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("membro", "orientador")))
+                .andExpect(jsonPath("$[?(@.ra != null)].nome").value(containsInAnyOrder("membro")));
+        mvc.perform(get("/api/subsistemas").session(sessao))
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios", "Motor")));
+        MockHttpSession orientador = login("orientador");
+        mvc.perform(get("/api/subsistemas/{id}", motor).session(orientador)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/subsistemas/{id}/integrantes", motor).session(orientador))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/subsistemas").session(orientador))
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios")));
+
+        mvc.perform(get("/api/subsistemas/{id}", motor).session(login("liderchassi"))).andExpect(status().isNotFound());
     }
 
     @Test
@@ -151,7 +244,7 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void subsistemaDesativadoSoAparecePraQuemAdministra() throws Exception {
+    void subsistemaDesativadoSoAparecePraQuemAdministraOuPertence() throws Exception {
         long motor = subsistema("Motor");
         usuario("orientador", Perfil.ORIENTADOR, null);
 
@@ -178,6 +271,10 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
         mvc.perform(post("/api/subsistemas/{id}/desativacao", chassi).with(csrf())
                         .contentType("application/json").content("{}").session(login("liderchassi")))
                 .andExpect(status().isForbidden());
+        mvc.perform(post("/api/subsistemas/{id}/desativacao", chassi).with(csrf())
+                        .contentType("application/json").content(destinos(liderChassi, freios)).session(login("liderchassi")))
+                .andExpect(status().isForbidden());
+        assertThat(perfilNoBanco(liderChassi)).isEqualTo("LIDER");
     }
 
     private ResultActions definirLider(String ra, long subsistema, long usuario) throws Exception {
@@ -195,8 +292,18 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
                 .session(login("gestor")));
     }
 
-    private ResultActions desativar(long subsistema, Map<String, ?> corpo) throws Exception {
+    private ResultActions desativar(long subsistema, String corpo) throws Exception {
         return mvc.perform(json(post("/api/subsistemas/{id}/desativacao", subsistema), corpo).session(login("capitao")));
+    }
+
+    /** Pares usuarioId, subsistemaId. */
+    private static String destinos(long... pares) {
+        StringBuilder json = new StringBuilder("{\"destinos\":[");
+        for (int i = 0; i < pares.length; i += 2) {
+            json.append(i == 0 ? "" : ",").append("{\"usuarioId\":").append(pares[i])
+                    .append(",\"subsistemaId\":").append(pares[i + 1]).append('}');
+        }
+        return json.append("]}").toString();
     }
 
     private long id(String ra) {

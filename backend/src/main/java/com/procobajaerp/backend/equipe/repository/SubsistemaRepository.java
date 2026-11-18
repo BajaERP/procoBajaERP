@@ -12,6 +12,8 @@ public interface SubsistemaRepository extends JpaRepository<Subsistema, Long> {
 
     Optional<Subsistema> findByNomeIgnoreCase(String nome);
 
+    boolean existsByAtivoTrueAndIdNot(Long id);
+
     @Query("select s from Subsistema s left join fetch s.lider")
     List<Subsistema> listarComLider();
 }
