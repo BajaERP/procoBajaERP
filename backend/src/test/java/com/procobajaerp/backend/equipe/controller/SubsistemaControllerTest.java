@@ -207,8 +207,12 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
                 .andExpect(jsonPath("$[?(@.ra != null)].nome").value(containsInAnyOrder("membro")));
         mvc.perform(get("/api/subsistemas").session(sessao))
                 .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios", "Motor")));
-        mvc.perform(get("/api/subsistemas/{id}/integrantes", motor).session(login("orientador")))
-                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("membro", "orientador")));
+        MockHttpSession orientador = login("orientador");
+        mvc.perform(get("/api/subsistemas/{id}", motor).session(orientador)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/subsistemas/{id}/integrantes", motor).session(orientador))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/subsistemas").session(orientador))
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios")));
 
         mvc.perform(get("/api/subsistemas/{id}", motor).session(login("liderchassi"))).andExpect(status().isNotFound());
     }
