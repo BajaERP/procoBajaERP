@@ -202,7 +202,7 @@ public class UsuarioService {
         exigirOutroUsuario(ator, alvo, "Para mudar a própria senha, use a troca de senha da sua conta.");
         ator.exigirQueAdministre(alvo.getPerfil());
         String senha = gerador.gerar();
-        alvo.alterarSenhaHash(codificador.encode(senha));
+        alvo.redefinirSenha(codificador.encode(senha));
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "SENHA_REDEFINIDA", Map.of());
         return new SenhaProvisoriaResposta(senha);
     }

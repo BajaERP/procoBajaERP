@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,6 +27,8 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
     private final String subsistemaNome;
     private final boolean ativo;
     private final boolean gestorFinanceiro;
+    private final boolean trocaDeSenhaPendente;
+    private final int versaoDaSenha;
     private final Set<String> permissoes;
     private String senhaHash;
 
@@ -38,6 +41,8 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
         this.subsistemaNome = dados.subsistemaNome();
         this.ativo = dados.ativo();
         this.gestorFinanceiro = dados.gestorFinanceiro();
+        this.trocaDeSenhaPendente = dados.trocaDeSenhaPendente();
+        this.versaoDaSenha = dados.versaoDaSenha();
         this.permissoes = Set.copyOf(dados.permissoes());
         this.senhaHash = dados.senhaHash();
     }
@@ -68,6 +73,21 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
 
     public boolean isGestorFinanceiro() {
         return gestorFinanceiro;
+    }
+
+    /** Com a Senha provisória, só a troca da própria senha, o Usuário atual e o logout ficam liberados. */
+    public boolean isTrocaDeSenhaPendente() {
+        return trocaDeSenhaPendente;
+    }
+
+    /** Se quem está autenticado ainda precisa trocar a Senha provisória. */
+    public static boolean comTrocaDeSenhaPendente(Authentication autenticacao) {
+        return autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioAutenticado usuario
+                && usuario.isTrocaDeSenhaPendente();
+    }
+
+    public int getVersaoDaSenha() {
+        return versaoDaSenha;
     }
 
     public Set<String> getPermissoes() {
