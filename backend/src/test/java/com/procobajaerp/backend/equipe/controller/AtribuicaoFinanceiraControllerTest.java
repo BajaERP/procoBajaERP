@@ -123,14 +123,31 @@ class AtribuicaoFinanceiraControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void todosConsultamQuemEOGestorFinanceiro() throws Exception {
+    void quemVeOGestorConsultaQueEleEOGestorFinanceiro() throws Exception {
         long chassi = subsistemaComLider("Chassi", "lider");
         usuario("membro", Perfil.MEMBRO, chassi);
-        gestorFinanceiro(gestor, capitao);
+        long gestorDoChassi = usuario("gestor3", Perfil.GESTOR, chassi);
+        gestorFinanceiro(gestorDoChassi, capitao);
 
         mvc.perform(get("/api/atribuicao-financeira").session(login("membro")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.gestor.nome").value("gestor"));
+                .andExpect(jsonPath("$.gestor.nome").value("gestor3"));
+    }
+
+    @Test
+    void membroDeOutroSubsistemaNaoConsultaOGestorFinanceiro() throws Exception {
+        long chassi = subsistemaComLider("Chassi", "lider");
+        usuario("membro", Perfil.MEMBRO, chassi);
+
+        mvc.perform(get("/api/atribuicao-financeira").session(login("membro")))
+                .andExpect(status().isForbidden());
+
+        gestorFinanceiro(gestor, capitao);
+        mvc.perform(get("/api/atribuicao-financeira").session(login("membro")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/atribuicao-financeira").session(login("gestor2")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gestor.id").value(gestor));
     }
 
     @Test

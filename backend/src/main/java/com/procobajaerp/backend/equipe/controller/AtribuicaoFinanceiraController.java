@@ -18,7 +18,7 @@ import com.procobajaerp.backend.equipe.dto.AtribuicaoFinanceiraResposta;
 import com.procobajaerp.backend.equipe.service.AtribuicaoFinanceiraService;
 import com.procobajaerp.backend.seguranca.UsuarioAutenticado;
 
-/** Gestor Financeiro. Todos consultam quem é; só o Capitão atribui, transfere ou retira. */
+/** Gestor Financeiro. Consulta conforme a visibilidade do Gestor; só o Capitão atribui, transfere ou retira. */
 @RestController
 @RequestMapping("/api/atribuicao-financeira")
 public class AtribuicaoFinanceiraController {
@@ -31,8 +31,8 @@ public class AtribuicaoFinanceiraController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('EQUIPE_CONSULTAR')")
-    public AtribuicaoFinanceiraResposta consultar() {
-        return atribuicaoFinanceira.consultar();
+    public AtribuicaoFinanceiraResposta consultar(@AuthenticationPrincipal UsuarioAutenticado eu) {
+        return atribuicaoFinanceira.consultar(eu.getId());
     }
 
     /** Atribui a responsabilidade vaga ou a transfere de outro Gestor. */

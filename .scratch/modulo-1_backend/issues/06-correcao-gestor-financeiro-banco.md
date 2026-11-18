@@ -52,6 +52,7 @@ Implementado na branch `feat/06-gestor-financeiro`. Pontos que mudam para a [iss
 
 - **Saem:** `/api/vinculos` (todas as rotas), o Perfil `FINANCEIRO` e o campo `gestorId` em `POST /api/usuarios` e `PUT /api/usuarios/{id}/perfil`. Enviar `"perfil": "FINANCEIRO"` agora dá 400.
 - **`GET /api/atribuicao-financeira`**, para quem tem `EQUIPE_CONSULTAR`: `{ "gestor": { "id", "nome" } | null, "atribuidaEm": "…" | null }`. Os dois campos nulos indicam a posição vaga.
+  - Capitão e Gestor sempre consultam. Os demais Perfis só recebem 200 quando há Gestor Financeiro e ele lhes é visível; caso contrário, 403 (inclusive com a posição vaga).
 - **`PUT /api/atribuicao-financeira`** com `{ "gestorId": 7 }`, só para o Capitão (`ATRIBUICAO_FINANCEIRA_GERENCIAR`). Atribui a posição vaga ou a transfere de outro Gestor, numa só operação, e devolve o mesmo corpo do GET.
   - 422 se o alvo não for um Gestor ativo ou já for o Gestor Financeiro.
   - 403 para quem não é Capitão.

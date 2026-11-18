@@ -9,6 +9,7 @@ import com.procobajaerp.backend.auditoria.service.AuditoriaService;
 import com.procobajaerp.backend.equipe.domain.AtribuicaoFinanceira;
 import com.procobajaerp.backend.equipe.domain.Perfil;
 import com.procobajaerp.backend.equipe.domain.Usuario;
+import com.procobajaerp.backend.equipe.domain.Visibilidade;
 import com.procobajaerp.backend.equipe.dto.AtribuicaoFinanceiraResposta;
 import com.procobajaerp.backend.equipe.repository.AtribuicaoFinanceiraRepository;
 import com.procobajaerp.backend.equipe.repository.UsuarioRepository;
@@ -18,7 +19,7 @@ import com.procobajaerp.backend.shared.RegraDeNegocioException;
 
 /**
  * Atribuição financeira: só o Capitão a dá, transfere ou retira, sempre a um Gestor ativo e a no máximo um por vez.
- * Quem pode ver a equipe vê quem é o Gestor Financeiro.
+ * Capitão e Gestor sempre consultam a posição; os demais Perfis, só quando podem ver o Gestor Financeiro.
  */
 @Service
 @Transactional
@@ -35,9 +36,21 @@ public class AtribuicaoFinanceiraService {
         this.auditoria = auditoria;
     }
 
+    /**
+     * Quem não administra a equipe só consulta quando há Gestor Financeiro e ele lhe é visível; caso contrário a
+     * resposta é 403, para não revelar quem ocupa a posição nem se ela está vaga.
+     */
     @Transactional(readOnly = true)
-    public AtribuicaoFinanceiraResposta consultar() {
-        return atribuicoes.buscarAtual().map(AtribuicaoFinanceiraResposta::de).orElse(AtribuicaoFinanceiraResposta.VAGA);
+    public AtribuicaoFinanceiraResposta consultar(Long atorId) {
+        Usuario ator = usuarios.findById(atorId).orElseThrow(AtribuicaoFinanceiraService::usuarioNaoEncontrado);
+        AtribuicaoFinanceira atribuicao = atribuicoes.buscarAtual().orElse(null);
+        if (ator.getPerfil().administraEquipe()) {
+            return atribuicao == null ? AtribuicaoFinanceiraResposta.VAGA : AtribuicaoFinanceiraResposta.de(atribuicao);
+        }
+        if (atribuicao == null || !Visibilidade.podeVer(ator, atribuicao.getGestor())) {
+            throw new AcessoNegadoException("Você não tem permissão para consultar a responsabilidade financeira.");
+        }
+        return AtribuicaoFinanceiraResposta.de(atribuicao);
     }
 
     /**
