@@ -28,8 +28,16 @@ public class AuditoriaService {
 
     @Transactional
     public void registrar(Long atorId, String entidade, Long registroId, String acao, Map<String, ?> detalhes) {
+        registrar(atorId, entidade, registroId, acao, null, null, detalhes);
+    }
+
+    /** Persiste o escopo observado ao executar a operação, para que não dependa dos vínculos futuros. */
+    @Transactional
+    public void registrar(Long atorId, String entidade, Long registroId, String acao,
+            Long subsistemaOrigemId, Long subsistemaDestinoId, Map<String, ?> detalhes) {
         String detalhesJson = detalhes.isEmpty() ? null : json.writeValueAsString(detalhes);
-        registros.save(new RegistroDeAuditoria(atorId, entidade, registroId, acao, detalhesJson));
+        registros.save(new RegistroDeAuditoria(atorId, entidade, registroId, acao, detalhesJson,
+                subsistemaOrigemId, subsistemaDestinoId));
     }
 
     /** Monta os detalhes a partir de pares chave e valor, aceitando valores nulos e mantendo a ordem. */

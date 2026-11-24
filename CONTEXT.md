@@ -261,6 +261,9 @@ Confirmação de um Usuário de que conhece e aceita uma Versão de governança 
 Anotação de quem fez uma operação auditável, quando e sobre qual registro, sem guardar senhas; é o único histórico das Transferências de integrante e das Trocas de Perfil.
 _Avoid_: Log, histórico (genérico)
 
+**Escopo de auditoria**:
+Subsistemas de origem e destino registrados no momento de uma operação. Capitão e Gestor consultam o histórico do módulo; Líder consulta somente eventos que incluem seu Subsistema atual. Registros antigos sem escopo ficam restritos ao Capitão e ao Gestor.
+
 ## Ambiguidades em aberto
 
 **Não concluída × Não iniciada**:

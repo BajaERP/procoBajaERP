@@ -887,6 +887,8 @@ Table aceites_governanca {
 Table logs_auditoria {
   id bigint [pk, increment]
   ator_usuario_id bigint
+  subsistema_origem_id bigint [note: 'Escopo capturado no instante da operação; nulo em registros antigos ou eventos gerais']
+  subsistema_destino_id bigint [note: 'Escopo capturado no instante da operação; nulo em registros antigos ou eventos gerais']
   entidade varchar(100) [not null]
   registro_id bigint [not null]
   acao varchar(100) [not null]
@@ -894,9 +896,11 @@ Table logs_auditoria {
   registrado_em timestamptz [not null, default: `now()`]
   indexes {
     (entidade, registro_id)
+    (subsistema_origem_id, registrado_em, id)
+    (subsistema_destino_id, registrado_em, id)
     registrado_em
   }
-  Note: 'Rastreabilidade transversal; par (entidade, registro_id) e polimorfico e nao possui FK real. Proteger consultas aos logs.'
+  Note: 'Rastreabilidade transversal; par (entidade, registro_id) e polimorfico e nao possui FK real. Capitão e Gestor consultam tudo; Líder consulta somente a origem ou destino do proprio subsistema. Registros antigos sem escopo ficam restritos a administracao. Nunca retornar detalhes_json bruto.'
 }
 
 // Relacionamentos reais por chaves estrangeiras (sem FKs polimorficas ficticias)
@@ -994,6 +998,8 @@ Ref: historico_edicoes_governanca.editado_por_usuario_id > usuarios.id [delete: 
 Ref: aceites_governanca.versao_governanca_id > versoes_governanca.id [delete: restrict]
 Ref: aceites_governanca.usuario_id > usuarios.id [delete: restrict]
 Ref: logs_auditoria.ator_usuario_id > usuarios.id [delete: restrict]
+Ref: logs_auditoria.subsistema_origem_id > subsistemas.id [delete: restrict]
+Ref: logs_auditoria.subsistema_destino_id > subsistemas.id [delete: restrict]
 
 TableGroup "01 - Equipe e Subsistemas" [color: #4E79A7] {
   perfis

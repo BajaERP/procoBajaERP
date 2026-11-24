@@ -87,7 +87,7 @@ O Capitão não aparece em nenhuma Composição.
 
 ## Auditoria (RNF08)
 
-Cada operação abaixo grava um Registro de auditoria em `logs_auditoria`, com o ator, a entidade, o registro, a ação e os detalhes em JSON. Senhas nunca são gravadas.
+Cada operação abaixo grava um Registro de auditoria em `logs_auditoria`, na mesma transação da alteração, com ator, entidade, registro, ação e detalhes internos em JSON. Senhas nunca são gravadas. A migration V10 adiciona os escopos históricos de Subsistema de origem e destino.
 
 - Usuário: cadastro, edição de Nome e RA (com os valores antigo e novo), Troca de Perfil, desativação, reativação, redefinição de senha e Transferência de integrante.
 - Subsistema: criação, edição, Definição de Líder, ativação e desativação.
@@ -95,6 +95,8 @@ Cada operação abaixo grava um Registro de auditoria em `logs_auditoria`, com o
 - Sucessão do Capitão: registra a troca de Perfil do sucessor, a troca de Perfil e a associação a Subsistema do Capitão anterior.
 
 Login, logout e a troca da própria senha não são registrados.
+
+Capitão e Gestor podem consultar todo o histórico do módulo. Líder consulta somente eventos com seu Subsistema atual no escopo de origem ou de destino; Membro e Orientador não consultam auditoria. Eventos antigos sem escopo continuam visíveis apenas à administração. `GET /api/equipe/auditoria` pagina e filtra por entidade e ação no servidor. A resposta contém ator, data, ação, descrição e nomes dos Subsistemas envolvidos, nunca o JSON bruto, RA, SIAPE, hash ou senha.
 
 ## Fora do escopo
 

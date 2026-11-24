@@ -3,6 +3,8 @@ package com.procobajaerp.backend.shared;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -39,5 +41,10 @@ public class TratadorDeErros extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     ProblemDetail acessoNegado() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Seu Perfil não permite esta operação.");
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail argumentoInvalido() {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Confira os parâmetros informados.");
     }
 }

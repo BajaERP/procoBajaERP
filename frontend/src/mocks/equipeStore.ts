@@ -1,10 +1,13 @@
 import type {
 	CadastroIntegrante,
 	AlteracaoIntegrante,
+	ConsultaAuditoria,
 	ConsultaSubsistemas,
 	DadosSubsistema,
 	DemoIdentity,
 	DemoPerspective,
+	EventoAuditoria,
+	FiltrosAuditoria,
 	Integrante,
 	IntegranteVisivel,
 	OpcoesDefinicaoLider,
@@ -71,6 +74,16 @@ export type RegistroAuditoriaDemo = {
 			sucessorId: string
 			destinoId: string
 	  }
+	| {
+			tipo: 'evento'
+			eventoId: string
+			entidade: 'USUARIO' | 'SUBSISTEMA'
+			registroId: string
+			acao: string
+			descricao: string
+			origemId: string | null
+			destinoId: string | null
+	  }
 )
 
 class ResponsabilidadeFinanceiraError extends Error {}
@@ -79,7 +92,44 @@ const DEMO_DATA_SCHEMA_VERSION = 3
 
 const initialData: DemoData = {
 	schemaVersion: DEMO_DATA_SCHEMA_VERSION,
-	auditoria: [],
+	auditoria: [
+		{
+			tipo: 'evento',
+			eventoId: 'demo-auditoria-01',
+			registradoEm: '2026-11-24T13:40:00.000Z',
+			atorId: 'ana',
+			entidade: 'SUBSISTEMA',
+			registroId: 'chassi',
+			acao: 'LIDER_DEFINIDO',
+			descricao: 'Liderança do subsistema Chassi atualizada',
+			origemId: 'chassi',
+			destinoId: 'chassi',
+		},
+		{
+			tipo: 'evento',
+			eventoId: 'demo-auditoria-02',
+			registradoEm: '2026-11-24T13:15:00.000Z',
+			atorId: 'ana',
+			entidade: 'USUARIO',
+			registroId: 'elisa',
+			acao: 'CADASTRADO',
+			descricao: 'Elisa Costa cadastrada como Membro no Chassi',
+			origemId: null,
+			destinoId: 'chassi',
+		},
+		{
+			tipo: 'evento',
+			eventoId: 'demo-auditoria-03',
+			registradoEm: '2026-11-24T12:50:00.000Z',
+			atorId: 'ana',
+			entidade: 'USUARIO',
+			registroId: 'bruno',
+			acao: 'TRANSFERIDO',
+			descricao: 'Bruno Lima associado ao subsistema Financeiro',
+			origemId: null,
+			destinoId: 'financeiro',
+		},
+	],
 	subsistemas: [
 		{
 			id: 'financeiro',
@@ -256,6 +306,16 @@ function validAuditEntry(value: unknown): value is RegistroAuditoriaDemo {
 			typeof entry.capitaoAnteriorId === 'string' &&
 			typeof entry.sucessorId === 'string' &&
 			typeof entry.destinoId === 'string'
+		)
+	if (entry.tipo === 'evento')
+		return (
+			typeof entry.eventoId === 'string' &&
+			(entry.entidade === 'USUARIO' || entry.entidade === 'SUBSISTEMA') &&
+			typeof entry.registroId === 'string' &&
+			typeof entry.acao === 'string' &&
+			typeof entry.descricao === 'string' &&
+			(entry.origemId === null || typeof entry.origemId === 'string') &&
+			(entry.destinoId === null || typeof entry.destinoId === 'string')
 		)
 	return false
 }
@@ -463,6 +523,28 @@ export function createDemoStore(storage: StoragePort) {
 		return ator
 	}
 
+	function registrarEvento(
+		next: DemoData,
+		evento: Omit<
+			Extract<RegistroAuditoriaDemo, { tipo: 'evento' }>,
+			'tipo' | 'eventoId' | 'registradoEm'
+		>,
+	) {
+		next.auditoria.push({
+			tipo: 'evento',
+			eventoId: `demo-auditoria-${Date.now()}-${next.auditoria.length}`,
+			registradoEm: new Date().toISOString(),
+			...evento,
+		})
+	}
+
+	function resumoSubsistema(source: DemoData, id: string | null) {
+		const subsystem = id
+			? source.subsistemas.find((item) => item.id === id)
+			: null
+		return subsystem ? { id: subsystem.id, nome: subsystem.nome } : null
+	}
+
 	function persistedFinancialManager(source: DemoData): Integrante | null {
 		const financeiro = source.subsistemas.find(
 			(item) => item.nome.toLocaleLowerCase('pt-BR') === 'financeiro',
@@ -635,6 +717,164 @@ export function createDemoStore(storage: StoragePort) {
 				),
 			}
 		},
+		consultarAuditoria(
+			visualizador: Visualizador,
+			filtros: FiltrosAuditoria,
+		): ConsultaAuditoria {
+			if (failNext) {
+				failNext = false
+				throw new Error(
+					'Não foi possível carregar o histórico demonstrativo.',
+				)
+			}
+			const source = data()
+			const viewer = source.integrantes.find(
+				(item) => item.id === visualizador.id && item.ativo,
+			)
+			if (!viewer)
+				throw new Error(
+					'A identidade demonstrativa não está disponível.',
+				)
+			if (!['capitao', 'gestor', 'lider'].includes(viewer.perfil))
+				throw new Error(
+					'Seu perfil não pode consultar o histórico de auditoria.',
+				)
+			const eventos: EventoAuditoria[] = []
+			const actorName = (actorId: string) =>
+				source.integrantes.find((item) => item.id === actorId)?.nome ??
+				'Sistema'
+			const push = (
+				id: string,
+				registradoEm: string,
+				atorId: string,
+				entidade: EventoAuditoria['entidade'],
+				acao: string,
+				descricao: string,
+				origemId: string | null,
+				destinoId: string | null,
+			) =>
+				eventos.push({
+					id,
+					registradoEm,
+					atorNome: actorName(atorId),
+					entidade,
+					acao,
+					descricao,
+					subsistemaOrigem: resumoSubsistema(source, origemId),
+					subsistemaDestino: resumoSubsistema(source, destinoId),
+				})
+
+			source.auditoria.forEach((registro, index) => {
+				const baseId =
+					'tipo' in registro && registro.tipo === 'evento'
+						? registro.eventoId
+						: `demo-auditoria-legada-${index}`
+				if (registro.tipo === 'evento') {
+					push(
+						registro.eventoId,
+						registro.registradoEm,
+						registro.atorId,
+						registro.entidade,
+						registro.acao,
+						registro.descricao,
+						registro.origemId,
+						registro.destinoId,
+					)
+				} else if (registro.tipo === 'transferencia_integrante') {
+					const person = source.integrantes.find(
+						(item) => item.id === registro.integranteId,
+					)
+					const origin = resumoSubsistema(
+						source,
+						registro.origemId,
+					)?.nome
+					const destination = resumoSubsistema(
+						source,
+						registro.destinoId,
+					)?.nome
+					push(
+						baseId,
+						registro.registradoEm,
+						registro.atorId,
+						'USUARIO',
+						'TRANSFERIDO',
+						`${person?.nome ?? 'Integrante'} transferido${origin ? ` de ${origin}` : ''}${destination ? ` para ${destination}` : ''}`,
+						registro.origemId,
+						registro.destinoId,
+					)
+				} else if (registro.tipo === 'desativacao_subsistema') {
+					const subsystem = resumoSubsistema(
+						source,
+						registro.subsistemaId,
+					)
+					push(
+						baseId,
+						registro.registradoEm,
+						registro.atorId,
+						'SUBSISTEMA',
+						'DESATIVADO',
+						`Subsistema ${subsystem?.nome ?? ''} desativado`,
+						registro.subsistemaId,
+						null,
+					)
+					registro.transferencias.forEach(
+						(transferencia, nestedIndex) => {
+							const person = source.integrantes.find(
+								(item) =>
+									item.id === transferencia.integranteId,
+							)
+							push(
+								`${baseId}-${nestedIndex}`,
+								registro.registradoEm,
+								registro.atorId,
+								'USUARIO',
+								'TRANSFERIDO',
+								`${person?.nome ?? 'Integrante'} transferido durante a desativação de ${subsystem?.nome ?? 'subsistema'}`,
+								transferencia.origemId,
+								transferencia.destinoId,
+							)
+						},
+					)
+				} else {
+					push(
+						baseId,
+						registro.registradoEm,
+						registro.atorId,
+						'USUARIO',
+						'SUCESSAO_CAPITAO',
+						'Sucessão da capitania concluída',
+						null,
+						registro.destinoId,
+					)
+				}
+			})
+
+			const isAdmin = ['capitao', 'gestor'].includes(viewer.perfil)
+			const allowed = eventos.filter(
+				(evento) =>
+					(isAdmin ||
+						evento.subsistemaOrigem?.id === viewer.subsistemaId ||
+						evento.subsistemaDestino?.id === viewer.subsistemaId) &&
+					(!filtros.entidade ||
+						evento.entidade === filtros.entidade) &&
+					(!filtros.acao || evento.acao === filtros.acao),
+			)
+			allowed.sort(
+				(a, b) =>
+					b.registradoEm.localeCompare(a.registradoEm) ||
+					b.id.localeCompare(a.id),
+			)
+			const size = Math.min(100, Math.max(1, Math.floor(filtros.size)))
+			const page = Math.max(0, Math.floor(filtros.page))
+			const start = page * size
+			return {
+				content: allowed.slice(start, start + size),
+				page,
+				size,
+				totalElements: allowed.length,
+				totalPages: Math.ceil(allowed.length / size),
+			}
+		},
 		opcoesSubsistema(
 			atorId: string,
 			subsistemaId?: string,
@@ -741,10 +981,41 @@ export function createDemoStore(storage: StoragePort) {
 					item.perfil === 'lider' &&
 					item.subsistemaId === subsistemaId,
 			)
+			const origemIntegranteId = integrante.subsistemaId
+			const subsystemWasActive = subsistema.ativo
 			integrante.perfil = 'lider'
 			integrante.subsistemaId = subsistemaId
 			if (liderAnterior) liderAnterior.perfil = 'membro'
 			subsistema.ativo = true
+			if (origemIntegranteId && origemIntegranteId !== subsistemaId)
+				registrarEvento(next, {
+					atorId,
+					entidade: 'USUARIO',
+					registroId: integrante.id,
+					acao: 'TRANSFERIDO',
+					descricao: `${integrante.nome} transferido para assumir a liderança de ${subsistema.nome}`,
+					origemId: origemIntegranteId,
+					destinoId: subsistemaId,
+				})
+			registrarEvento(next, {
+				atorId,
+				entidade: 'SUBSISTEMA',
+				registroId: subsistemaId,
+				acao: 'LIDER_DEFINIDO',
+				descricao: `Liderança do subsistema ${subsistema.nome} atualizada`,
+				origemId: subsistemaId,
+				destinoId: subsistemaId,
+			})
+			if (!subsystemWasActive)
+				registrarEvento(next, {
+					atorId,
+					entidade: 'SUBSISTEMA',
+					registroId: subsistemaId,
+					acao: 'ATIVADO',
+					descricao: `Subsistema ${subsistema.nome} ativado`,
+					origemId: subsistemaId,
+					destinoId: subsistemaId,
+				})
 			if (!persist(next))
 				throw new SubsistemaError(
 					'Não foi possível salvar a liderança neste navegador. Verifique o armazenamento e tente novamente.',
@@ -1091,6 +1362,17 @@ export function createDemoStore(storage: StoragePort) {
 				if (selecionados.has(item.id) && item.subsistemaId === null)
 					item.subsistemaId = subsystem.id
 			}
+			registrarEvento(next, {
+				atorId,
+				entidade: 'SUBSISTEMA',
+				registroId: subsystem.id,
+				acao: target ? 'EDITADO' : 'CRIADO',
+				descricao: target
+					? `Dados do subsistema ${subsystem.nome} atualizados`
+					: `Subsistema ${subsystem.nome} criado`,
+				origemId: target ? subsystem.id : null,
+				destinoId: subsystem.id,
+			})
 			if (!persist(next))
 				throw new SubsistemaError(
 					'Não foi possível salvar o subsistema neste navegador. Verifique o armazenamento e tente novamente.',
@@ -1190,6 +1472,18 @@ export function createDemoStore(storage: StoragePort) {
 			// The generated value is returned once; only account metadata is persisted.
 			const senhaProvisoria = gerarSenhaProvisoria()
 			next.integrantes.push(integrante)
+			const subsystemName = next.subsistemas.find(
+				(item) => item.id === integrante.subsistemaId,
+			)?.nome
+			registrarEvento(next, {
+				atorId,
+				entidade: 'USUARIO',
+				registroId: integrante.id,
+				acao: 'CADASTRADO',
+				descricao: `${integrante.nome} cadastrado como ${integrante.perfil === 'gestor' ? 'Gestor' : integrante.perfil === 'orientador' ? 'Orientador' : 'Membro'}${subsystemName ? ` no ${subsystemName}` : ''}`,
+				origemId: null,
+				destinoId: integrante.subsistemaId,
+			})
 			try {
 				storage.setItem(DEMO_DATA_KEY, JSON.stringify(safeData(next)))
 			} catch {
@@ -1305,6 +1599,13 @@ export function createDemoStore(storage: StoragePort) {
 				throw new AdministracaoIntegranteError(
 					'Você não tem permissão para administrar esta conta.',
 				)
+			const anterior = {
+				nome: target.nome,
+				identificador: target.identificador,
+				perfil: target.perfil,
+				subsistemaId: target.subsistemaId,
+				ativo: target.ativo,
+			}
 			if (
 				atorId === integranteId &&
 				(changes.nome !== undefined ||
@@ -1465,6 +1766,39 @@ export function createDemoStore(storage: StoragePort) {
 			if (changes.perfil !== undefined) target.perfil = changes.perfil
 			target.subsistemaId = proximoSubsistemaId
 			if (changes.ativo !== undefined) target.ativo = changes.ativo
+			if (
+				anterior.nome !== target.nome ||
+				anterior.identificador !== target.identificador
+			)
+				registrarEvento(next, {
+					atorId,
+					entidade: 'USUARIO',
+					registroId: target.id,
+					acao: 'EDITADO',
+					descricao: `Dados de ${target.nome} atualizados`,
+					origemId: target.subsistemaId,
+					destinoId: target.subsistemaId,
+				})
+			if (anterior.perfil !== target.perfil)
+				registrarEvento(next, {
+					atorId,
+					entidade: 'USUARIO',
+					registroId: target.id,
+					acao: 'PERFIL_ALTERADO',
+					descricao: `Perfil de ${target.nome} alterado para ${target.perfil === 'gestor' ? 'Gestor' : target.perfil === 'orientador' ? 'Orientador' : 'Membro'}`,
+					origemId: anterior.subsistemaId,
+					destinoId: target.subsistemaId,
+				})
+			if (anterior.ativo !== target.ativo)
+				registrarEvento(next, {
+					atorId,
+					entidade: 'USUARIO',
+					registroId: target.id,
+					acao: target.ativo ? 'REATIVADO' : 'DESATIVADO',
+					descricao: `${target.nome} ${target.ativo ? 'reativado' : 'desativado'}`,
+					origemId: target.subsistemaId,
+					destinoId: target.subsistemaId,
+				})
 			if (!persist(next))
 				throw new AdministracaoIntegranteError(
 					'Não foi possível salvar as alterações neste navegador. Verifique o armazenamento e tente novamente.',
@@ -1489,6 +1823,15 @@ export function createDemoStore(storage: StoragePort) {
 				)
 			const senhaProvisoria = gerarSenhaProvisoria()
 			target.passwordChangePending = true
+			registrarEvento(next, {
+				atorId,
+				entidade: 'USUARIO',
+				registroId: target.id,
+				acao: 'SENHA_REDEFINIDA',
+				descricao: `Senha provisória de ${target.nome} redefinida`,
+				origemId: target.subsistemaId,
+				destinoId: target.subsistemaId,
+			})
 			if (!persist(next))
 				throw new AdministracaoIntegranteError(
 					'Não foi possível salvar a redefinição neste navegador. Verifique o armazenamento e tente novamente.',

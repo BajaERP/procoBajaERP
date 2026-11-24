@@ -4,6 +4,7 @@ import {
 } from '../services/equipePolicy.ts'
 import type {
 	ConsultaIntegrantes,
+	ConsultaAuditoria,
 	ConsultaSubsistemas,
 	EquipeService,
 } from '../services/equipeTypes'
@@ -87,6 +88,13 @@ export const mockEquipeService: EquipeService = {
 			perfil: identidade.role,
 			subsistemaId: identidade.subsistemaId,
 		})
+	},
+	async consultarAuditoria(
+		visualizador,
+		filtros,
+	): Promise<ConsultaAuditoria> {
+		await new Promise((resolve) => window.setTimeout(resolve, 180))
+		return store.consultarAuditoria(visualizador, filtros)
 	},
 	async consultarResponsabilidadeFinanceira(visualizador) {
 		await new Promise((resolve) => window.setTimeout(resolve, 180))

@@ -9,5 +9,6 @@ export function getEquipePageContentKeys(
 		integrantes: `integrantes:${identity}`,
 		financeiro: `financeiro:${identity}`,
 		permissoes: `permissoes:${identity}`,
+		auditoria: `auditoria:${identity}`,
 	}
 }

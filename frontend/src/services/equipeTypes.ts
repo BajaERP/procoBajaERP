@@ -116,6 +116,32 @@ export interface OpcoesSucessaoCapitao {
 	subsistemasDestino: SubsistemaDemo[]
 }
 
+export interface FiltrosAuditoria {
+	page: number
+	size: number
+	entidade: 'USUARIO' | 'SUBSISTEMA' | ''
+	acao: string
+}
+
+export interface EventoAuditoria {
+	id: string
+	registradoEm: string
+	atorNome: string
+	entidade: 'USUARIO' | 'SUBSISTEMA'
+	acao: string
+	descricao: string
+	subsistemaOrigem: { id: string; nome: string } | null
+	subsistemaDestino: { id: string; nome: string } | null
+}
+
+export interface ConsultaAuditoria {
+	content: EventoAuditoria[]
+	page: number
+	size: number
+	totalElements: number
+	totalPages: number
+}
+
 export interface OpcoesDefinicaoLider {
 	integrantesDisponiveis: (IntegranteDeSubsistema & {
 		subsistemaNome: string | null
@@ -136,6 +162,10 @@ export type ErrosSubsistema = Partial<Record<'nome' | 'integranteIds', string>>
 export interface EquipeService {
 	listarIntegrantes(visualizador: Visualizador): Promise<ConsultaIntegrantes>
 	listarSubsistemas(visualizador: Visualizador): Promise<ConsultaSubsistemas>
+	consultarAuditoria(
+		visualizador: Visualizador,
+		filtros: FiltrosAuditoria,
+	): Promise<ConsultaAuditoria>
 	consultarResponsabilidadeFinanceira(
 		visualizador: Visualizador,
 	): Promise<ConsultaResponsabilidadeFinanceira>

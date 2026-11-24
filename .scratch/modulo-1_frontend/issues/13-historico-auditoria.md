@@ -1,6 +1,6 @@
 # Frontend: histórico de auditoria do módulo 1
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Depends on:** [10 — consulta de auditoria, backend](../../modulo-1_backend/issues/10-consulta-auditoria.md)
 

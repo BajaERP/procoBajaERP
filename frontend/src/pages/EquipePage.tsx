@@ -16,6 +16,7 @@ import { AdministrarIntegranteDialog } from '../components/pages/equipe/Administ
 import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
 import { ResponsabilidadeFinanceiraContent } from '../components/pages/equipe/ResponsabilidadeFinanceiraContent'
 import { SucessaoCapitaoDialog } from '../components/pages/equipe/SucessaoCapitaoDialog'
+import { HistoricoAuditoriaContent } from '../components/pages/equipe/HistoricoAuditoriaContent'
 import { getEquipePageContentKeys } from './equipePageKeys'
 import { Notifications } from '../components/shared/Notifications'
 
@@ -35,7 +36,11 @@ export default function EquipePage() {
 	const navigate = useNavigate()
 	const permissoesLinkRef = useRef<HTMLAnchorElement>(null)
 	const permissoes = location.pathname.endsWith('/permissoes')
+	const historicoAuditoria = location.pathname.endsWith('/auditoria')
 	const podeConsultar = Boolean(user && podeConsultarPermissoes(user.role))
+	const podeConsultarAuditoria = Boolean(
+		user && ['capitao', 'gestor', 'lider'].includes(user.role),
+	)
 	const origem =
 		location.state?.returnTo === '/app/equipe/subsistemas'
 			? '/app/equipe/subsistemas'
@@ -106,6 +111,7 @@ export default function EquipePage() {
 					{import.meta.env.DEV &&
 						user?.role === 'capitao' &&
 						!permissoes &&
+						!historicoAuditoria &&
 						!responsabilidadeFinanceira && (
 							<button
 								type="button"
@@ -115,17 +121,19 @@ export default function EquipePage() {
 								Passar a capitania
 							</button>
 						)}
-					{import.meta.env.DEV && podeConsultar && (
-						<Link
-							ref={permissoesLinkRef}
-							to="/app/equipe/permissoes"
-							state={{ returnTo: location.pathname }}
-							className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-surface-card px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-raised"
-						>
-							<ShieldCheck size={17} aria-hidden="true" />
-							Perfis e permissões
-						</Link>
-					)}
+					{import.meta.env.DEV &&
+						podeConsultar &&
+						!historicoAuditoria && (
+							<Link
+								ref={permissoesLinkRef}
+								to="/app/equipe/permissoes"
+								state={{ returnTo: location.pathname }}
+								className="inline-flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-surface-card px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-raised"
+							>
+								<ShieldCheck size={17} aria-hidden="true" />
+								Perfis e permissões
+							</Link>
+						)}
 					{subsistemas && podeAdministrarSubsistemas ? (
 						<div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:static md:border-0 md:bg-transparent md:p-0">
 							<button
@@ -138,6 +146,7 @@ export default function EquipePage() {
 							</button>
 						</div>
 					) : podeCadastrar &&
+					  !historicoAuditoria &&
 					  !subsistemas &&
 					  !responsabilidadeFinanceira ? (
 						<button
@@ -159,13 +168,22 @@ export default function EquipePage() {
 						{
 							label: 'Integrantes',
 							to: '/app/equipe/integrantes',
-							active: !subsistemas,
+							active: !subsistemas && !historicoAuditoria,
 						},
 						{
 							label: 'Subsistemas',
 							to: '/app/equipe/subsistemas',
 							active: subsistemas,
 						},
+						...(podeConsultarAuditoria
+							? [
+									{
+										label: 'Histórico',
+										to: '/app/equipe/auditoria',
+										active: historicoAuditoria,
+									},
+								]
+							: []),
 					].map((tab) => (
 						<Link
 							key={tab.to}
@@ -210,6 +228,31 @@ export default function EquipePage() {
 							Voltar para integrantes
 						</Link>
 					</section>
+				) : historicoAuditoria && !podeConsultarAuditoria ? (
+					<section
+						role="status"
+						className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
+					>
+						<h2 className="text-lg font-semibold text-ink">
+							Consulta restrita
+						</h2>
+						<p className="mt-2">
+							O histórico de auditoria está disponível para
+							Capitão, Gestor e Líder.
+						</p>
+						<Link
+							to="/app/equipe/integrantes"
+							className="mt-4 inline-flex min-h-11 items-center rounded-md text-link underline underline-offset-4"
+						>
+							Voltar para integrantes
+						</Link>
+					</section>
+				) : historicoAuditoria && user ? (
+					<HistoricoAuditoriaContent
+						key={pageKeys.auditoria}
+						user={user}
+						revision={demoRevision}
+					/>
 				) : subsistemas && user ? (
 					<SubsistemasContent
 						key={pageKeys.subsistemas}
