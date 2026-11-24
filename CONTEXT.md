@@ -24,7 +24,7 @@ Pessoa que faz parte da equipe. Pertence a um Subsistema, com duas exceções: o
 _Avoid_: Membro (para qualquer pessoa da equipe: Membro é um Perfil)
 
 **Perfil**:
-Papel de acesso de um Usuário, que define o que ele pode ver e fazer; são cinco (Capitão, Gestor, Líder, Membro e Orientador), cada um com permissões fixas, e cada Usuário tem um só por vez. A Atribuição financeira acrescenta as funções financeiras a um Gestor.
+Papel de acesso de um Usuário, que define o que ele pode ver e fazer; são cinco (Capitão, Gestor, Líder, Membro e Orientador), cada um com permissões fixas, e cada Usuário tem um só por vez. Um Gestor ativo associado ao Subsistema Financeiro recebe automaticamente as funções financeiras.
 _Avoid_: Cargo, função, role
 
 **Troca de Perfil**:
@@ -32,14 +32,14 @@ Mudança do Perfil de um Usuário; é o que o Documento de Projeto chama de alte
 _Avoid_: Alterar cargo, alterar permissões
 
 **Capitão/Administrador**:
-Perfil com administração geral da equipe e do ERP; único que atribui ou retira a responsabilidade financeira, publica Governança e aprova compras junto ao Gestor Financeiro. A equipe tem sempre pelo menos um Capitão ativo e pode ter vários. Não pertence a nenhum Subsistema, porque atua em todos: quem passa a Capitão deixa o seu. Na forma curta, "Capitão".
+Perfil com administração geral da equipe e do ERP, publica Governança e aprova compras junto ao Gestor Financeiro. A equipe tem sempre pelo menos um Capitão ativo e pode ter vários. Não pertence a nenhum Subsistema, porque atua em todos: quem passa a Capitão deixa o seu. Na forma curta, "Capitão".
 _Avoid_: Admin
 
 **Gestor**:
-Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Entre os Usuários, administra só os de Perfil Líder, Membro e Orientador. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro; nessa função, tem acesso à Informação financeira restrita.
+Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Entre os Usuários, administra só os de Perfil Líder, Membro e Orientador. Um Gestor associado ao Subsistema Financeiro passa a ser identificado como Gestor Financeiro e tem acesso à Informação financeira restrita.
 
 **Gestor Financeiro**:
-Gestor que recebe a responsabilidade pelo caixa, pelas compras e pela previsão financeira, e aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor; conserva as funções de Gestor e recebe as funções financeiras por uma atribuição adicional. No máximo um Gestor tem essa responsabilidade por vez; a posição pode ficar vaga. Somente o Capitão pode alterar seu Nome, RA, Perfil ou situação; o próprio Gestor Financeiro pode trocar sua senha. Quem pode ver o Gestor vê também que ele é o Gestor Financeiro. A atribuição vale na hora, inclusive nas sessões abertas.
+Gestor ativo associado ao Subsistema Financeiro, responsável pelo caixa, pelas compras e pela previsão financeira, e que aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor e ele conserva as funções de Gestor. A responsabilidade decorre da associação ao Subsistema: associar um Gestor ativo a ele a concede; transferi-lo para fora ou desativá-lo a retira. No máximo um Gestor ativo pode estar associado ao Subsistema Financeiro por vez; a responsabilidade pode ficar vaga. O Subsistema Financeiro é permanente, nasce desativado e é ativado pela Definição de Líder normal. Quem pode ver o Gestor vê também que ele é o Gestor Financeiro. As permissões são recalculadas no servidor a cada requisição.
 
 **Líder**:
 Perfil de quem lidera um Subsistema; ter o Perfil Líder e liderar um Subsistema são a mesma coisa. Gerencia as Atividades do Subsistema e registra presença e participação dos seus Integrantes.
@@ -70,7 +70,7 @@ _Avoid_: Exclusão, remoção
 _Avoid_: Subsistema
 
 **Atribuição financeira**:
-Responsabilidade financeira dada pelo Capitão a um Gestor já cadastrado e ativo. Só o Capitão pode atribuí-la, retirá-la ou transferi-la diretamente a outro Gestor ativo. Antes de desativar o Gestor Financeiro ou mudar seu Perfil, o Capitão deve retirar ou transferir a responsabilidade.
+Responsabilidade financeira derivada da associação de um Gestor ativo ao Subsistema permanente Financeiro. Não há vínculo entre pessoas nem operação manual separada: a transferência de um Gestor para esse Subsistema concede a responsabilidade; sua transferência para fora, mudança de Perfil ou desativação a retira. Só pode haver um Gestor ativo associado ao Financeiro por vez; uma restrição do banco protege essa regra contra concorrência.
 _Avoid_: Vínculo Financeiro–Gestor entre pessoas distintas
 
 **Transferência de integrante**:

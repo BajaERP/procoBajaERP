@@ -169,14 +169,13 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void gestorFinanceiroNaoTrocaDePerfilAntesDeOCapitaoRetirarAResponsabilidade() throws Exception {
+    void trocarPerfilDoGestorFinanceiroDeixaAFuncaoFinanceiraVaga() throws Exception {
         gestorFinanceiro(gestor, capitao);
         trocarPerfil("capitao", gestor, Map.of("perfil", "ORIENTADOR"))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.detail").value(
-                        "O Capitão precisa retirar ou transferir a responsabilidade financeira de gestor antes de este "
-                                + "Gestor trocar de Perfil."));
-        assertThat(perfilNoBanco(gestor)).isEqualTo("GESTOR");
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.perfil").value("ORIENTADOR"))
+                .andExpect(jsonPath("$.gestorFinanceiro").value(false));
+        assertThat(perfilNoBanco(gestor)).isEqualTo("ORIENTADOR");
     }
 
     @Test
@@ -234,11 +233,13 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void gestorFinanceiroNaoEDesativadoAntesDeOCapitaoRetirarAResponsabilidade() throws Exception {
+    void desativarOGestorFinanceiroDeixaAFuncaoFinanceiraVaga() throws Exception {
         gestorFinanceiro(gestor, capitao);
         mvc.perform(post("/api/usuarios/{id}/desativacao", gestor).with(csrf()).session(login("capitao")))
-                .andExpect(status().isUnprocessableContent());
-        assertThat(ativoNoBanco(gestor)).isTrue();
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ativo").value(false))
+                .andExpect(jsonPath("$.gestorFinanceiro").value(false));
+        assertThat(ativoNoBanco(gestor)).isFalse();
     }
 
     @Test
@@ -256,6 +257,9 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     @Test
     void quemVeOGestorVeQueEleEOGestorFinanceiro() throws Exception {
         gestorFinanceiro(gestor, capitao);
+        long financeiro = jdbc.queryForObject("SELECT id FROM subsistemas WHERE nome = 'Financeiro'", Long.class);
+        long liderFinanceiro = usuario("liderfinanceiro", Perfil.LIDER, financeiro);
+        jdbc.update("UPDATE subsistemas SET lider_usuario_id = ?, ativo = true WHERE id = ?", liderFinanceiro, financeiro);
         long outroGestor = usuario("gestor2", Perfil.GESTOR, null);
         usuario("orientador", Perfil.ORIENTADOR, null);
 

@@ -62,8 +62,13 @@ export function consultarPermissoesEquipe(
 		},
 		{
 			id: 'subsistemas',
-			acao: 'Criar, editar e desativar subsistemas',
+			acao: 'Criar, editar subsistemas, definir líderes e transferir integrantes',
 			permitido: administra,
+		},
+		{
+			id: 'desativar-subsistemas',
+			acao: 'Desativar subsistemas',
+			permitido: capitao,
 		},
 		{
 			id: 'lideranca',
@@ -71,14 +76,6 @@ export function consultarPermissoesEquipe(
 			permitido: administra,
 			escopo: administra
 				? 'Em operações comuns, o Líder precisa ser substituído antes de sair do subsistema, ser desativado ou mudar de perfil. Na desativação do subsistema, passa a Membro.'
-				: undefined,
-		},
-		{
-			id: 'atribuicao-financeira',
-			acao: 'Atribuir, retirar ou transferir a responsabilidade financeira',
-			permitido: capitao,
-			escopo: capitao
-				? 'A um Gestor ativo; no máximo um responsável por vez'
 				: undefined,
 		},
 		{

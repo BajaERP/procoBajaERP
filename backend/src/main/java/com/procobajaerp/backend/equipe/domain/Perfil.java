@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  * Os cinco Perfis do ERP, com os nomes gravados na tabela {@code perfis}. Cada Usuário tem um só. A responsabilidade
- * financeira não é um Perfil: é uma {@link AtribuicaoFinanceira} de um Gestor.
+ * financeira não é um Perfil: decorre do vínculo de um Gestor ativo ao Subsistema Financeiro.
  */
 public enum Perfil {
 

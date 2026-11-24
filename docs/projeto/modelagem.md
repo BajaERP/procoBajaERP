@@ -5,13 +5,14 @@ A seção 5 do [documento de projeto](documento-de-projeto.pdf#page=57), página
 ## Fontes e limites
 
 - O [DBML V5](../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) representa o modelo lógico proposto; o [SQL do esquema](../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_criar_esquema_v5.sql) e o [SQL complementar](../diagramas/Diagramas%20de%20Banco%20de%20Dados/02_indices_adicionais.sql) acompanham essa modelagem.
+- A decisão posterior sobre o Gestor Financeiro está no [ADR 0002](../adr/0002-gestor-financeiro-derivado-do-subsistema.md): nesse ponto, o modelo v5 não representa o esquema efetivo. A migration Flyway V8 remove a tabela de atribuição e protege a associação ao Subsistema Financeiro.
 - As migrações do backend ficam em [`backend/src/main/resources/db/migration/`](../../backend/src/main/resources/db/migration/). Compare-as com o modelo antes de implementar ou afirmar compatibilidade; não aplique os SQLs de referência diretamente sobre um banco existente sem avaliar o histórico Flyway.
 - O dicionário do PDF, páginas 68–87, distingue campos obrigatórios no DBML de regras condicionais de negócio. Nulidade na tabela não implica necessariamente que um valor possa faltar em toda operação.
 - Os [diagramas de classes](../diagramas/Diagramas%20de%20Classe/) são análise proposta, não um retrato obrigatório das classes já criadas. O dashboard consulta dados dos demais módulos e não tem tabelas ou classes de domínio próprias na modelagem apresentada.
 
 ## Relações e invariantes destacados no PDF
 
-- **Equipe:** RA único, perfil por usuário e no máximo uma atribuição financeira, dada a um Gestor; a associação do Líder ao próprio subsistema usa relacionamento composto. No modelo, subsistema ativo exige Líder, embora o campo admita nulo em outros estados.
+- **Equipe:** RA único e perfil por usuário; o Gestor Financeiro é derivado da associação do único Gestor ativo ao Subsistema Financeiro, sem tabela de atribuição separada. A associação do Líder ao próprio subsistema usa relacionamento composto. No modelo, subsistema ativo exige Líder, embora o campo admita nulo em outros estados.
 - **Atividades:** alocações de atividades em sprints preservam entrada, saída e origem; a transferência referencia uma alocação da mesma atividade. O SQL complementar prevê no máximo uma alocação aberta por atividade.
 - **Financeiro:** solicitações preservam revisões, itens, orçamentos e decisões; o orçamento escolhido deve pertencer à solicitação e revisão autorizadas. O SQL complementar prevê no máximo uma movimentação ativa de pagamento por compra.
 - **Pessoas:** presença, diários, validações, participação e registros disciplinares possuem vínculos e históricos próprios; confidencialidade e autorização exigem validação contextual.
@@ -25,7 +26,7 @@ As FKs e os checks não garantem, por si só, os perfis corretos, as permissões
 
 Os nomes abaixo ajudam a localizar as tabelas do DBML e do PDF. A tabela de `usuarios` e outras entidades compartilhadas aparecem em diversos fluxos; campos, tipos, chaves e regras completas permanecem no dicionário original, seções 5.1.2.1–5.1.2.8.
 
-- **01 - Equipe e Subsistemas:** `perfis`, `permissoes`, `perfil_permissoes`, `usuarios`, `subsistemas`, `atribuicao_financeira`.
+- **01 - Equipe e Subsistemas:** `perfis`, `permissoes`, `perfil_permissoes`, `usuarios`, `subsistemas`. A migração efetiva atualiza o modelo v5 proposto removendo `atribuicao_financeira` e reservando o Subsistema `Financeiro`.
 
 - **02 - Atividades e Sprints:** `sprints`, `atividades`, `atividades_responsaveis`, `atividades_subsistemas`, `atividades_sprints`, `historico_status_atividades`.
 

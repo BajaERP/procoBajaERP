@@ -6,7 +6,7 @@ Síntese da tabela 2 do [Documento de Projeto de Software](../documento-de-proje
 |---|---|---|
 | RF01 | Autenticar usuários por RA e senha própria do ERP, sem credenciais da UTFPR. | Essencial |
 | RF02 | Cadastrar, consultar, editar e gerenciar usuários. | Essencial |
-| RF03 | Definir um perfil ativo por usuário; atribuir a responsabilidade financeira a no máximo um Gestor, com atribuição, transferência e retirada restritas ao Capitão/Administrador. | Essencial |
+| RF03 | Definir um perfil ativo por usuário; identificar automaticamente como Gestor Financeiro o Gestor ativo associado ao Subsistema Financeiro, com no máximo um responsável por vez. | Essencial |
 | RF04 | Cadastrar, consultar, editar e gerenciar subsistemas. | Essencial |
 | RF05 | Associar cada integrante a um único subsistema por vez, definir o Líder e permitir transferências autorizadas. | Essencial |
 | RF06 | Criar e gerenciar sprints da equipe com duração prevista de 15 dias. | Essencial |
@@ -44,7 +44,7 @@ A prioridade é a da tabela 2, não o estado de entrega. Para planejar ou valida
 ## Regras transversais de referência
 
 - **Acesso:** o controle de acesso e de confidencialidade deve ser aplicado no backend, inclusive em consultas, indicadores e associações entre módulos. Consulte RF01, RF03 e RF32 e o PDF, páginas 19–20 e 33–35.
-- **Gestor Financeiro:** o PDF, páginas 19–20, previa um Perfil Financeiro vinculado a um Gestor. A regra foi revista: a responsabilidade financeira é uma atribuição de um único Gestor ativo, mantida só pelo Capitão/Administrador. Só o Gestor Financeiro, entre os Gestores, acessa dados financeiros restritos.
+- **Gestor Financeiro:** o PDF, páginas 19–20, previa um Perfil Financeiro vinculado a um Gestor. A regra foi revista: o Gestor ativo associado ao Subsistema Financeiro exerce automaticamente a responsabilidade; não há Perfil ou atribuição manual separados. Só esse Gestor, entre os Gestores, acessa dados financeiros restritos. Consulte o [ADR 0002](../../adr/0002-gestor-financeiro-derivado-do-subsistema.md).
 - **Compras:** as regras de três orçamentos, aprovação conjunta, histórico e visibilidade de preços precisam ser aplicadas conforme perfil e contexto. Consulte RF13–RF18 e o PDF, seção 4.1.3.
 - **Governança:** o histórico de versões e aceites deve ser preservado; a aprovação final e publicação são exclusivas do Capitão/Administrador. Consulte RF28–RF29 e o PDF, páginas 32–33.
 - **Dashboard:** atalhos e indicadores não concedem acesso adicional aos dados dos módulos de origem. Consulte RF30–RF32 e o PDF, páginas 33–35.

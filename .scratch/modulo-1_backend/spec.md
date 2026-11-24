@@ -1,13 +1,13 @@
 # Módulo 1: Equipe e Subsistemas
 
-> **Revisão necessária:** as implementações originais das issues 01–04 foram incorporadas à `develop`; decisões posteriores alteraram as regras de Gestor Financeiro, RA, senha provisória e subsistemas. O conteúdo abaixo preserva a especificação anterior e não deve ser usado como referência definitiva nesses pontos. Consulte [CONTEXT.md](../../CONTEXT.md) e as issues de acompanhamento [06](issues/06-correcao-gestor-financeiro-banco.md), [07](issues/07-identificacao-e-senha-provisoria.md) e [08](issues/08-ajustar-desativacao-e-visibilidade-subsistemas.md).
+> **Revisão necessária:** as implementações originais das issues 01–04 foram incorporadas à `develop`; decisões posteriores alteraram as regras de Gestor Financeiro, RA, senha provisória e subsistemas. Consulte [CONTEXT.md](../../CONTEXT.md), o [ADR 0002](../../docs/adr/0002-gestor-financeiro-derivado-do-subsistema.md) e as issues de acompanhamento [06](issues/06-correcao-gestor-financeiro-banco.md), [07](issues/07-identificacao-e-senha-provisoria.md) e [08](issues/08-ajustar-desativacao-e-visibilidade-subsistemas.md).
 
-Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável pelo projeto em 2026-11-04. Complementa o [resumo do módulo](../../docs/projeto/modulos/equipe-e-subsistemas.md), o glossário em [CONTEXT.md](../../CONTEXT.md) e o [ADR 0001](../../docs/adr/0001-sessao-no-servidor.md). Os termos seguem o glossário. As tabelas são as do esquema v4, já aplicado pela migration `V4__adopt_schema_v4.sql`.
+Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável pelo projeto em 2026-11-04 e atualizada por decisões posteriores. Complementa o [resumo do módulo](../../docs/projeto/modulos/equipe-e-subsistemas.md), o glossário em [CONTEXT.md](../../CONTEXT.md), os [ADRs 0001 e 0002](../../docs/adr/) e as issues de acompanhamento. O esquema foi adotado na migration V4 e evoluiu pelas migrations subsequentes; a V8 corrige o modelo efetivo do Gestor Financeiro.
 
 ## Perfis e permissões
 
-- Os seis Perfis e suas permissões são fixos. O catálogo (`permissoes`) e a matriz (`perfil_permissoes`) são semeados por migration, e não há tela para editá-los. "Alterar cargo e permissões" é a Troca de Perfil.
-- O Capitão administra Usuários de qualquer Perfil. O Gestor administra apenas Financeiro, Líder, Membro e Orientador: não cadastra nem altera Gestores ou Capitães, nem troca alguém para esses Perfis.
+- Os cinco Perfis e suas permissões são fixos. O catálogo (`permissoes`) e a matriz (`perfil_permissoes`) são semeados por migration, e não há tela para editá-los. "Alterar cargo e permissões" é a Troca de Perfil.
+- O Capitão administra Usuários de qualquer Perfil. O Gestor administra apenas Líder, Membro e Orientador: não cadastra nem altera Gestores ou Capitães, nem troca alguém para esses Perfis.
 - Sempre existe pelo menos um Capitão ativo. O último não pode ser rebaixado nem desativado.
 - O primeiro Capitão é criado na inicialização do backend, a partir de variáveis de ambiente, quando não existe nenhum Capitão ativo.
 - Ninguém troca o próprio Perfil, desativa a si mesmo, corrige o próprio Nome ou RA nem redefine a própria senha (para isso há a troca de senha).
@@ -18,8 +18,7 @@ Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável 
 - **Cadastro:** Nome, RA, Perfil e Subsistema.
   - O Perfil Líder não pode ser escolhido: só se chega a ele pela Definição de Líder.
   - O Subsistema é proibido para o Capitão, opcional para o Orientador e obrigatório para os demais. Pode ser um Subsistema ainda sem Líder.
-  - Financeiro cadastrado pelo Capitão: o Capitão informa o Gestor, o Vínculo é criado e a conta nasce ativa.
-  - Financeiro cadastrado pelo Gestor: a conta nasce desativada, aguardando o Vínculo.
+  - Um Gestor cadastrado ou transferido para o Subsistema Financeiro ativo recebe automaticamente a responsabilidade financeira.
   - RA já usado por um Usuário ativo é recusado. Se o RA pertence a um Usuário desativado, o cadastro também é recusado, mas a resposta indica esse Usuário para que ele seja reativado.
   - A resposta traz a Senha provisória uma única vez.
 - **Senha:**
@@ -30,15 +29,13 @@ Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável 
 - **Edição:** Nome e RA são corrigidos pelo Capitão ou pelo Gestor, dentro dos Perfis que administram. O RA continua único.
 - **Troca de Perfil:**
   - Não pode ser feita para Líder nem a partir de Líder.
-  - Financeiro que troca de Perfil perde o Vínculo.
-  - Gestor com Vínculos não troca de Perfil até o Capitão transferir esses Vínculos. A recusa lista os Financeiros.
+  - Gestor que troca para outro Perfil deixa de exercer a responsabilidade financeira, caso esteja associado ao Subsistema Financeiro.
   - Quem passa a Capitão sai do Subsistema.
   - Quem não tem Subsistema e passa a um Perfil que exige um informa o Subsistema na mesma operação.
-  - Para Financeiro: o Capitão informa o Gestor. Se quem troca é o Gestor, a conta fica desativada até o Vínculo.
 - **Desativação e Reativação:** nada é excluído.
   - Usuário desativado não faz login e perde a sessão na requisição seguinte.
-  - Não podem ser desativados: um Líder, antes de ser substituído; um Gestor com Vínculos; o último Capitão ativo.
-  - Desativar um Financeiro mantém o Vínculo. Um Financeiro sem Vínculo não pode ser reativado.
+  - Não podem ser desativados: um Líder, antes de ser substituído; o último Capitão ativo.
+  - Desativar um Gestor associado ao Financeiro retira automaticamente sua responsabilidade financeira; a reativação a valida novamente.
   - Reativar exige a mesma permissão que desativar.
 
 ## Subsistemas e Líderes
@@ -57,23 +54,23 @@ Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável 
   - Segue a mesma hierarquia de Perfis da administração de Usuários.
 - **Nome:** é único sem diferenciar maiúsculas de minúsculas. Capitão e Gestor criam e editam Nome e descrição.
 
-## Vínculo Financeiro–Gestor
+## Gestor Financeiro
 
-- Só o Capitão define, altera, transfere e remove Vínculos. O Gestor do Vínculo precisa estar ativo.
-- Definir o Vínculo de um Financeiro que não tinha Vínculo ativa a conta. Alterar o Vínculo troca o Gestor e não muda a situação da conta.
-- Remover o Vínculo de um Financeiro ativo o desativa.
-- O Capitão pode transferir de uma vez todos os Vínculos de um Gestor para outro.
-- O Vínculo não dá ao Gestor acesso a Informação financeira restrita.
+- O Subsistema Financeiro canônico é permanente e nasce desativado; pode ser ativado pela Definição de Líder normal.
+- O Gestor ativo associado a ele é automaticamente o Gestor Financeiro. O Perfil permanece Gestor e a conta conserva todas as permissões de Gestor.
+- Não existe vínculo entre pessoas nem endpoint para atribuir, remover ou transferir a responsabilidade. O endpoint `GET /api/atribuicao-financeira` é somente leitura e retorna `{ "gestor": { "id", "nome" } | null }`.
+- No máximo um Gestor ativo pode estar associado ao Financeiro. Serviços serializam operações que alteram essa associação e o banco impõe índice único parcial; transferências em lote validam todos os destinos antes de efetuar mudanças.
+- A responsabilidade fica vaga quando não há Gestor ativo associado. Desativar, trocar o Perfil ou transferir o Gestor para fora do Financeiro a retira; reativar ou transferir alguém para lá executa novamente a validação.
+- O Subsistema Financeiro não pode ser renomeado nem desativado. O nome e a associação do Gestor são a origem de verdade usada para identificar a responsabilidade.
 
 ## Visibilidade (RF32, RNF04)
 
 | Informação | Quem vê |
 | --- | --- |
 | Nome dos Subsistemas ativos e de seus Líderes | Todos |
-| Composição de um Subsistema | Capitão, Gestor, Financeiro e Orientador: todos. Líder e Membro: só o próprio Subsistema |
+| Composição de um Subsistema | Capitão, Gestor e Orientador: todos. Líder e Membro: só o próprio Subsistema |
 | Usuários e Subsistemas desativados | Capitão e Gestor |
 | RA | O próprio Usuário, o Capitão e o Gestor |
-| Vínculos | Capitão: todos. Gestor: os seus. Financeiro: o próprio |
 
 O Capitão não aparece em nenhuma Composição.
 
@@ -94,7 +91,7 @@ Cada operação abaixo grava um Registro de auditoria em `logs_auditoria`, com o
 
 - Usuário: cadastro, edição de Nome e RA (com os valores antigo e novo), Troca de Perfil, desativação, reativação, redefinição de senha e Transferência de integrante.
 - Subsistema: criação, edição, Definição de Líder, ativação e desativação.
-- Vínculo: definição, alteração, transferência e remoção.
+- Associação de integrante ao Financeiro: registrada como Transferência de integrante; a responsabilidade não tem entidade de auditoria separada.
 
 Login, logout e a troca da própria senha não são registrados.
 

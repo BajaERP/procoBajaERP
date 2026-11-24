@@ -36,11 +36,6 @@ test('Gestor Financeiro conserva a matriz de Gestor e acrescenta acesso financei
 		financeiro.find((item) => item.id === 'funcoes-financeiras')?.permitido,
 		true,
 	)
-	assert.equal(
-		financeiro.find((item) => item.id === 'atribuicao-financeira')
-			?.permitido,
-		false,
-	)
 })
 
 test('Atribuição financeira só amplia a consulta do perfil Gestor', () => {
@@ -80,7 +75,7 @@ test('Matriz mantém os limites de composição, desativados e identificadores d
 					: 'Somente o próprio subsistema, inclusive inativo',
 		)
 		assert.equal(
-			permissoes.find((item) => item.id === 'atribuicao-financeira')
+			permissoes.find((item) => item.id === 'desativar-subsistemas')
 				?.permitido,
 			perfil === 'capitao',
 		)

@@ -69,12 +69,18 @@ export type RegistroAuditoriaDemo = {
 
 class ResponsabilidadeFinanceiraError extends Error {}
 
-const DEMO_DATA_SCHEMA_VERSION = 2
+const DEMO_DATA_SCHEMA_VERSION = 3
 
 const initialData: DemoData = {
 	schemaVersion: DEMO_DATA_SCHEMA_VERSION,
 	auditoria: [],
 	subsistemas: [
+		{
+			id: 'financeiro',
+			nome: 'Financeiro',
+			descricao: 'Gestão administrativa e financeira da equipe.',
+			ativo: false,
+		},
 		{
 			id: 'gestao',
 			nome: 'Gestão',
@@ -122,7 +128,7 @@ const initialData: DemoData = {
 			nome: 'Bruno Lima',
 			identificador: '2345679',
 			perfil: 'gestor',
-			subsistemaId: 'gestao',
+			subsistemaId: 'financeiro',
 			ativo: true,
 			financeiro: true,
 		},
@@ -299,38 +305,57 @@ function validData(value: unknown): value is DemoData {
 }
 
 function safeData(value: DemoData): DemoData {
-	let financialAssignmentUsed = false
-	const migrateInitialCaptainPassword =
+	const subsistemas = value.subsistemas.map((item) => ({
+		id: item.id,
+		nome: item.nome,
+		descricao: item.descricao ?? null,
+		ativo: item.ativo,
+	}))
+	let financeiro = subsistemas.find(
+		(item) => item.nome.toLocaleLowerCase('pt-BR') === 'financeiro',
+	)
+	if (!financeiro) {
+		financeiro = {
+			id: 'financeiro',
+			nome: 'Financeiro',
+			descricao: 'Gestão administrativa e financeira da equipe.',
+			ativo: false,
+		}
+		subsistemas.push(financeiro)
+	}
+	const legacyManagerId =
 		(value.schemaVersion ?? 0) < DEMO_DATA_SCHEMA_VERSION
+			? value.integrantes.find(
+					(item) =>
+						item.perfil === 'gestor' &&
+						item.ativo &&
+						item.financeiro,
+				)?.id
+			: undefined
+	const migrateInitialCaptainPassword = (value.schemaVersion ?? 0) < 2
 	return {
 		schemaVersion: DEMO_DATA_SCHEMA_VERSION,
 		integrantes: value.integrantes.map((item) => {
-			const financeiro =
-				item.perfil === 'gestor' &&
-				item.ativo &&
-				item.financeiro &&
-				!financialAssignmentUsed
-			if (financeiro) financialAssignmentUsed = true
+			const subsistemaId =
+				item.id === legacyManagerId ? financeiro.id : item.subsistemaId
 			return {
 				id: item.id,
 				nome: item.nome,
 				identificador: item.identificador,
 				perfil: item.perfil,
-				subsistemaId: item.subsistemaId,
+				subsistemaId,
 				ativo: item.ativo,
-				financeiro,
+				financeiro:
+					item.ativo &&
+					item.perfil === 'gestor' &&
+					subsistemaId === financeiro.id,
 				passwordChangePending:
 					migrateInitialCaptainPassword && item.id === 'ana'
 						? true
 						: item.passwordChangePending === true,
 			}
 		}),
-		subsistemas: value.subsistemas.map((item) => ({
-			id: item.id,
-			nome: item.nome,
-			descricao: item.descricao ?? null,
-			ativo: item.ativo,
-		})),
+		subsistemas,
 		auditoria: (value.auditoria ?? []).map((item) => ({ ...item })),
 	}
 }
@@ -420,29 +445,49 @@ export function createDemoStore(storage: StoragePort) {
 			(item) => item.id === atorId && item.ativo,
 		)
 		if (!ator || ator.perfil !== 'capitao')
-			throw new ResponsabilidadeFinanceiraError(
-				'Somente o Capitão pode atribuir, retirar ou transferir a responsabilidade financeira.',
+			throw new SubsistemaError(
+				'Somente o Capitão pode desativar subsistemas.',
 			)
 		return ator
 	}
 
-	function gestorFinanceiroAlvo(
-		source: DemoData,
-		gestorId: string,
-	): Integrante {
-		const gestor = source.integrantes.find((item) => item.id === gestorId)
-		if (!gestor || !gestor.ativo || gestor.perfil !== 'gestor')
-			throw new ResponsabilidadeFinanceiraError(
-				'Escolha um Gestor ativo para receber a responsabilidade financeira.',
-			)
-		return gestor
-	}
-
 	function persistedFinancialManager(source: DemoData): Integrante | null {
+		const financeiro = source.subsistemas.find(
+			(item) => item.nome.toLocaleLowerCase('pt-BR') === 'financeiro',
+		)
+		if (!financeiro) return null
 		return (
 			source.integrantes.find(
-				(item) => item.perfil === 'gestor' && item.financeiro,
+				(item) =>
+					item.ativo &&
+					item.perfil === 'gestor' &&
+					item.subsistemaId === financeiro.id,
 			) ?? null
+		)
+	}
+
+	function conflictsWithFinancialManager(
+		source: DemoData,
+		integranteId: string | null,
+		perfil: Integrante['perfil'],
+		subsistemaId: string | null,
+		ativo: boolean,
+	): boolean {
+		const financeiro = source.subsistemas.find(
+			(item) => item.nome.toLocaleLowerCase('pt-BR') === 'financeiro',
+		)
+		return Boolean(
+			ativo &&
+			perfil === 'gestor' &&
+			financeiro &&
+			subsistemaId === financeiro.id &&
+			source.integrantes.some(
+				(item) =>
+					item.id !== integranteId &&
+					item.ativo &&
+					item.perfil === 'gestor' &&
+					item.subsistemaId === financeiro.id,
+			),
 		)
 	}
 
@@ -496,66 +541,13 @@ export function createDemoStore(storage: StoragePort) {
 				)
 			return {
 				responsavel: manager ? summarize(manager) : null,
-				gestoresElegiveis:
-					visualizador.perfil !== 'capitao'
-						? []
-						: source.integrantes
-								.filter(
-									(item) =>
-										item.ativo &&
-										item.perfil === 'gestor' &&
-										item.id !== manager?.id,
-								)
-								.map(summarize),
+				subsistema:
+					source.subsistemas.find(
+						(item) =>
+							item.nome.toLocaleLowerCase('pt-BR') ===
+							'financeiro',
+					) ?? null,
 			}
-		},
-		assignFinancialManager(atorId: string, gestorId: string) {
-			const next = data()
-			capitaoAtivo(next, atorId)
-			const gestor = gestorFinanceiroAlvo(next, gestorId)
-			if (persistedFinancialManager(next))
-				throw new ResponsabilidadeFinanceiraError(
-					'Já existe um Gestor Financeiro. Transfira a responsabilidade ou retire a atribuição atual primeiro.',
-				)
-			gestor.financeiro = true
-			if (!persist(next))
-				throw new ResponsabilidadeFinanceiraError(
-					'Não foi possível salvar a atribuição neste navegador. Verifique o armazenamento e tente novamente.',
-				)
-		},
-		removeFinancialManager(atorId: string) {
-			const next = data()
-			capitaoAtivo(next, atorId)
-			const current = persistedFinancialManager(next)
-			if (!current)
-				throw new ResponsabilidadeFinanceiraError(
-					'Não há Gestor Financeiro atribuído para retirar.',
-				)
-			current.financeiro = false
-			if (!persist(next))
-				throw new ResponsabilidadeFinanceiraError(
-					'Não foi possível salvar a retirada neste navegador. Verifique o armazenamento e tente novamente.',
-				)
-		},
-		transferFinancialManager(atorId: string, gestorId: string) {
-			const next = data()
-			capitaoAtivo(next, atorId)
-			const current = persistedFinancialManager(next)
-			if (!current)
-				throw new ResponsabilidadeFinanceiraError(
-					'Não há Gestor Financeiro atribuído para transferir.',
-				)
-			const gestor = gestorFinanceiroAlvo(next, gestorId)
-			if (gestor.id === current.id)
-				throw new ResponsabilidadeFinanceiraError(
-					'Escolha outro Gestor ativo para transferir a responsabilidade.',
-				)
-			current.financeiro = false
-			gestor.financeiro = true
-			if (!persist(next))
-				throw new ResponsabilidadeFinanceiraError(
-					'Não foi possível salvar a transferência neste navegador. Verifique o armazenamento e tente novamente.',
-				)
 		},
 		listarSubsistemas(visualizador: Visualizador): ConsultaSubsistemas {
 			const source = data()
@@ -815,6 +807,18 @@ export function createDemoStore(storage: StoragePort) {
 				throw new SubsistemaError(
 					'Selecione outro subsistema como destino.',
 				)
+			if (
+				conflictsWithFinancialManager(
+					next,
+					integrante.id,
+					integrante.perfil,
+					destino.id,
+					integrante.ativo,
+				)
+			)
+				throw new SubsistemaError(
+					'O subsistema Financeiro já tem um Gestor ativo.',
+				)
 			const perfil = integrante.perfil
 			integrante.subsistemaId = destino.id
 			next.auditoria.push({
@@ -834,16 +838,16 @@ export function createDemoStore(storage: StoragePort) {
 		},
 		opcoesDesativacaoSubsistema(atorId: string, subsistemaId: string) {
 			const source = data()
-			administradorAtivo(
-				source,
-				atorId,
-				'Você não tem permissão para administrar subsistemas.',
-			)
+			capitaoAtivo(source, atorId)
 			const subsistema = source.subsistemas.find(
 				(item) => item.id === subsistemaId,
 			)
 			if (!subsistema)
 				throw new SubsistemaError('O subsistema não foi encontrado.')
+			if (subsistema.nome.toLocaleLowerCase('pt-BR') === 'financeiro')
+				throw new SubsistemaError(
+					'O subsistema Financeiro é permanente e não pode ser desativado.',
+				)
 			const integrantes = source.integrantes.filter(
 				(item) => item.subsistemaId === subsistemaId,
 			)
@@ -871,16 +875,16 @@ export function createDemoStore(storage: StoragePort) {
 			destinosPorIntegrante: Record<string, string>,
 		) {
 			const next = data()
-			administradorAtivo(
-				next,
-				atorId,
-				'Você não tem permissão para administrar subsistemas.',
-			)
+			capitaoAtivo(next, atorId)
 			const subsistema = next.subsistemas.find(
 				(item) => item.id === subsistemaId,
 			)
 			if (!subsistema)
 				throw new SubsistemaError('O subsistema não foi encontrado.')
+			if (subsistema.nome.toLocaleLowerCase('pt-BR') === 'financeiro')
+				throw new SubsistemaError(
+					'O subsistema Financeiro é permanente e não pode ser desativado.',
+				)
 			if (!subsistema.ativo)
 				throw new SubsistemaError('Este subsistema já está desativado.')
 			const integrantes = next.integrantes.filter(
@@ -938,6 +942,13 @@ export function createDemoStore(storage: StoragePort) {
 			if (dados.id && !target)
 				throw new SubsistemaError('O subsistema não foi encontrado.')
 			const nome = dados.nome.trim()
+			if (
+				target?.nome.toLocaleLowerCase('pt-BR') === 'financeiro' &&
+				nome !== 'Financeiro'
+			)
+				throw new SubsistemaError(
+					'O subsistema Financeiro é permanente e não pode ser renomeado.',
+				)
 			const erros = validarSubsistema(dados)
 			if (Object.keys(erros).length)
 				throw new SubsistemaError('Confira os campos indicados.', erros)
@@ -1055,6 +1066,22 @@ export function createDemoStore(storage: StoragePort) {
 					identificador: message,
 				})
 			}
+			if (
+				conflictsWithFinancialManager(
+					next,
+					null,
+					dados.perfil,
+					dados.subsistemaId,
+					true,
+				)
+			)
+				throw new CadastroIntegranteError(
+					'O subsistema Financeiro já tem um Gestor ativo.',
+					{
+						subsistemaId:
+							'Escolha outro subsistema ou outro Perfil.',
+					},
+				)
 			if (failCreate) {
 				failCreate = false
 				throw new CadastroIntegranteError(
@@ -1144,21 +1171,16 @@ export function createDemoStore(storage: StoragePort) {
 				podeAdministrarPerfil(ator.perfil, target.perfil)
 			const self = atorId === integranteId
 			const bloqueioStatus =
-				permitted && target?.financeiro
-					? 'Retire ou transfira a responsabilidade financeira antes de desativar esta conta.'
-					: permitted && target?.perfil === 'lider' && target.ativo
-						? 'Defina outro Líder para este subsistema antes de desativar esta conta.'
-						: null
+				permitted && target?.perfil === 'lider' && target.ativo
+					? 'Defina outro Líder para este subsistema antes de desativar esta conta.'
+					: null
 			const rolesForActor =
 				ator?.perfil === 'capitao'
 					? (['capitao', 'gestor', 'membro', 'orientador'] as const)
 					: (['membro', 'orientador'] as const)
 			return {
 				perfis:
-					permitted &&
-					!self &&
-					target?.perfil !== 'lider' &&
-					!target?.financeiro
+					permitted && !self && target?.perfil !== 'lider'
 						? [...rolesForActor]
 						: [],
 				subsistemas: permitted ? source.subsistemas : [],
@@ -1166,10 +1188,7 @@ export function createDemoStore(storage: StoragePort) {
 				podeAlterarStatus: permitted && !self && !bloqueioStatus,
 				podeRedefinirSenha: permitted && !self,
 				bloqueioStatus,
-				bloqueioPerfil:
-					permitted && target?.financeiro
-						? 'Retire ou transfira a responsabilidade financeira antes de alterar o perfil.'
-						: null,
+				bloqueioPerfil: null,
 			}
 		},
 		administer(
@@ -1219,23 +1238,11 @@ export function createDemoStore(storage: StoragePort) {
 						'Você não tem permissão para atribuir este perfil.',
 						{ perfil: 'Perfil fora da sua responsabilidade.' },
 					)
-				if (target.financeiro && changes.perfil !== target.perfil)
-					throw new AdministracaoIntegranteError(
-						'Retire ou transfira a responsabilidade financeira antes de alterar o perfil.',
-						{
-							perfil: 'A atribuição financeira precisa ser tratada em seu fluxo próprio.',
-						},
-					)
 			}
 			if (target.perfil === 'lider' && changes.ativo === false)
 				throw new AdministracaoIntegranteError(
 					'Defina outro Líder para este subsistema antes de desativar esta conta.',
 					{ ativo: 'A liderança precisa ser substituída primeiro.' },
-				)
-			if (target.financeiro && changes.ativo === false)
-				throw new AdministracaoIntegranteError(
-					'Retire ou transfira a responsabilidade financeira antes de desativar esta conta.',
-					{ ativo: 'A atribuição financeira ainda está ativa.' },
 				)
 			const proximoPerfil = changes.perfil ?? target.perfil
 			let proximoSubsistemaId = target.subsistemaId
@@ -1286,6 +1293,21 @@ export function createDemoStore(storage: StoragePort) {
 					{
 						subsistemaId:
 							'O subsistema selecionado não está disponível.',
+					},
+				)
+			if (
+				conflictsWithFinancialManager(
+					next,
+					target.id,
+					proximoPerfil,
+					proximoSubsistemaId,
+					changes.ativo ?? target.ativo,
+				)
+			)
+				throw new AdministracaoIntegranteError(
+					'O subsistema Financeiro já tem um Gestor ativo.',
+					{
+						perfil: 'O subsistema Financeiro já tem outro Gestor ativo.',
 					},
 				)
 			if (changes.nome !== undefined) {
@@ -1445,19 +1467,19 @@ export function createDemoStore(storage: StoragePort) {
 				throw new Error('Integrante demonstrativo não encontrado.')
 			if (Object.hasOwn(changes, 'financeiro'))
 				throw new Error(
-					'A responsabilidade financeira só pode ser alterada pelo fluxo próprio do Capitão.',
-				)
-			if (item.financeiro && changes.ativo === false)
-				throw new Error(
-					'Retire ou transfira a responsabilidade financeira antes de desativar esta conta.',
+					'A responsabilidade financeira é determinada pelo perfil e pelo subsistema atual.',
 				)
 			if (
-				item.financeiro &&
-				changes.perfil !== undefined &&
-				changes.perfil !== item.perfil
+				conflictsWithFinancialManager(
+					next,
+					item.id,
+					changes.perfil ?? item.perfil,
+					changes.subsistemaId ?? item.subsistemaId,
+					changes.ativo ?? item.ativo,
+				)
 			)
 				throw new Error(
-					'Retire ou transfira a responsabilidade financeira antes de alterar o perfil.',
+					'O subsistema Financeiro já tem um Gestor ativo.',
 				)
 			const allowed = [
 				'nome',
@@ -1465,7 +1487,6 @@ export function createDemoStore(storage: StoragePort) {
 				'perfil',
 				'subsistemaId',
 				'ativo',
-				'financeiro',
 				'passwordChangePending',
 			] as const
 			for (const key of allowed) {

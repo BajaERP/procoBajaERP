@@ -8,7 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.procobajaerp.backend.equipe.domain.AtribuicaoFinanceira;
 import com.procobajaerp.backend.equipe.domain.Perfil;
 import com.procobajaerp.backend.equipe.domain.Ra;
 import com.procobajaerp.backend.equipe.domain.Senha;
@@ -73,12 +72,9 @@ public class ContaService {
                 permissoes(usuario));
     }
 
-    /** As do Perfil e, para o Gestor Financeiro, as da atribuição financeira. */
+    /** As do Perfil. O módulo Financeiro adicionará as permissões financeiras próprias. */
     private Set<String> permissoes(Usuario usuario) {
         Set<String> permissoes = new HashSet<>(perfis.codigosDePermissao(usuario.getPerfil()));
-        if (usuario.isGestorFinanceiro()) {
-            permissoes.addAll(AtribuicaoFinanceira.PERMISSOES);
-        }
         return permissoes;
     }
 

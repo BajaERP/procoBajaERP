@@ -51,7 +51,8 @@ public abstract class TesteDeIntegracao {
 
     @BeforeEach
     void esvaziarTabelasDaEquipe() {
-        jdbc.execute("TRUNCATE logs_auditoria, atribuicao_financeira, subsistemas, usuarios RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE logs_auditoria, subsistemas, usuarios RESTART IDENTITY CASCADE");
+        jdbc.update("INSERT INTO subsistemas (nome, descricao) VALUES ('Financeiro', 'Gestão administrativa e financeira da equipe.')");
     }
 
     /**
@@ -93,14 +94,16 @@ public abstract class TesteDeIntegracao {
         return subsistema;
     }
 
-    /** Torna o Gestor o Gestor Financeiro, como se o Capitão tivesse feito a atribuição. */
+    /** Associa o Gestor ao Subsistema canônico Financeiro. */
     protected void gestorFinanceiro(long gestor, long capitao) {
-        jdbc.update("INSERT INTO atribuicao_financeira (gestor_usuario_id, atribuida_por_usuario_id) VALUES (?, ?)",
-                gestor, capitao);
+        jdbc.update("UPDATE usuarios SET subsistema_id = (SELECT id FROM subsistemas WHERE nome = 'Financeiro') WHERE id = ?",
+                gestor);
     }
 
     protected Long gestorFinanceiroNoBanco() {
-        return jdbc.query("SELECT gestor_usuario_id FROM atribuicao_financeira", rs -> rs.next() ? rs.getLong(1) : null);
+        return jdbc.query("SELECT u.id FROM usuarios u JOIN subsistemas s ON s.id = u.subsistema_id "
+                + "JOIN perfis p ON p.id = u.perfil_id WHERE s.nome = 'Financeiro' AND p.nome = 'GESTOR' AND u.ativo",
+                rs -> rs.next() ? rs.getLong(1) : null);
     }
 
     protected MockHttpSession login(String apelido) throws Exception {

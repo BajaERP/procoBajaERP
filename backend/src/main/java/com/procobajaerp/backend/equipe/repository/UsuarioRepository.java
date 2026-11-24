@@ -40,5 +40,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("select u from Usuario u join fetch u.perfil where u.subsistema = :subsistema")
     List<Usuario> listarDoSubsistema(Subsistema subsistema);
 
+    @Query("select u from Usuario u join fetch u.perfil left join fetch u.subsistema "
+            + "where u.ativo = true and u.perfil.nome = :perfil and u.subsistema.id = :subsistemaId")
+    Optional<Usuario> buscarGestorFinanceiroAtivo(Perfil perfil, Long subsistemaId);
+
+    @Query("select case when count(u) > 0 then true else false end from Usuario u "
+            + "where u.id <> :usuarioId and u.ativo = true and u.perfil.nome = :perfil and u.subsistema.id = :subsistemaId")
+    boolean existeOutroGestorFinanceiroAtivo(Long usuarioId, Perfil perfil, Long subsistemaId);
+
     long countByPerfilNomeAndAtivoTrue(Perfil perfil);
 }

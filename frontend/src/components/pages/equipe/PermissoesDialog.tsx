@@ -34,11 +34,11 @@ export function PermissoesDialog({
 	const [perspectiva, setPerspectiva] = useState<Perspectiva>(
 		perfil === 'gestor' && financial ? 'gestor-financeiro' : perfil,
 	)
-	const comAtribuicao = perspectiva === 'gestor-financeiro'
+	const gestorFinanceiro = perspectiva === 'gestor-financeiro'
 	const permissoes = consultarPermissoesEquipe(
 		perfil,
-		comAtribuicao ? 'gestor' : perspectiva,
-		comAtribuicao,
+		gestorFinanceiro ? 'gestor' : perspectiva,
+		gestorFinanceiro,
 	)
 	const label = PERFIS.find((item) => item.value === perspectiva)!.label
 
@@ -132,8 +132,8 @@ export function PermissoesDialog({
 					/>
 				</div>
 				<p className="mt-3 text-sm leading-relaxed text-mute">
-					{comAtribuicao
-						? 'Gestor Financeiro é um Gestor com atribuição adicional. Conserva as funções de Gestor e recebe as funções financeiras.'
+					{gestorFinanceiro
+						? 'Gestor Financeiro é o Gestor ativo associado ao subsistema Financeiro. Conserva as funções de Gestor e recebe as funções financeiras.'
 						: 'Selecionar um perfil apenas muda esta consulta; as permissões da sua conta permanecem as mesmas.'}
 				</p>
 
@@ -190,8 +190,10 @@ export function PermissoesDialog({
 							aria-hidden="true"
 						/>
 						<p>
-							Só o Capitão administra contas Gestor e a atribuição
-							financeira. Ninguém altera o próprio nome,
+							Só o Capitão administra contas Gestor e desativa
+							subsistemas. A responsabilidade financeira acompanha
+							o vínculo de um Gestor ativo ao subsistema
+							Financeiro. Ninguém altera o próprio nome,
 							identificador ou perfil, nem desativa a própria
 							conta.
 						</p>
@@ -201,8 +203,9 @@ export function PermissoesDialog({
 						antes de sair do subsistema, ser desativado ou mudar de
 						perfil. Na desativação do subsistema, passa a Membro. O
 						último Capitão ativo não pode ser desativado ou deixar o
-						perfil. Antes de desativar o Gestor Financeiro ou mudar
-						seu perfil, retire ou transfira a atribuição.
+						perfil. Desativar ou mover o Gestor para fora do
+						subsistema Financeiro deixa a responsabilidade vaga
+						automaticamente.
 					</p>
 				</aside>
 				<p className="mt-4 text-xs leading-relaxed text-mute">
