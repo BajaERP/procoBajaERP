@@ -1,5 +1,6 @@
 package com.procobajaerp.backend.seguranca;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,9 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,6 +22,7 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.procobajaerp.backend.equipe.service.ContaService;
 
@@ -31,8 +35,8 @@ import com.procobajaerp.backend.equipe.service.ContaService;
 public class SegurancaConfig {
 
     @Bean
-    SecurityFilterChain filtrosDeSeguranca(HttpSecurity http, ContaService contas, CsrfTokenRepository repositorioDeCsrf)
-            throws Exception {
+    SecurityFilterChain filtrosDeSeguranca(HttpSecurity http, ContaService contas, CsrfTokenRepository repositorioDeCsrf,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver tratadorDeErros) throws Exception {
         http
                 .csrf(csrf -> csrf.spa().csrfTokenRepository(repositorioDeCsrf))
                 .authorizeHttpRequests(rotas -> rotas
@@ -40,8 +44,13 @@ public class SegurancaConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(erros -> erros.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        // Com a Senha provisória, só o Usuário atual e a troca da própria senha; o logout é tratado antes.
+                        .requestMatchers(HttpMethod.GET, "/api/auth/eu").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/auth/senha").authenticated()
+                        .anyRequest().access((autenticacao, contexto) -> new AuthorizationDecision(senhaDefinitiva(autenticacao.get()))))
+                .exceptionHandling(erros -> erros
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler(new TrocaDeSenhaPendenteHandler(tratadorDeErros)))
                 .logout(saida -> saida
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
@@ -50,6 +59,12 @@ public class SegurancaConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .addFilterAfter(new AtualizacaoDaSessaoFilter(contas), SecurityContextHolderFilter.class);
         return http.build();
+    }
+
+    /** Com a Senha provisória, os módulos ficam fechados até o próprio Usuário trocá-la em /api/auth/senha. */
+    private static boolean senhaDefinitiva(Authentication autenticacao) {
+        return autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioAutenticado
+                && !UsuarioAutenticado.comTrocaDeSenhaPendente(autenticacao);
     }
 
     /**

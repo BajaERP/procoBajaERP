@@ -42,11 +42,11 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     @Test
     void capitaoCadastraMembroQueEntraComASenhaProvisoria() throws Exception {
         String resposta = mvc.perform(json(post("/api/usuarios"), Map.of(
-                        "nome", " Ana Souza ", "ra", " A2400001 ", "perfil", "MEMBRO", "subsistemaId", chassi))
+                        "nome", " Ana Souza ", "ra", " 2400001 ", "perfil", "MEMBRO", "subsistemaId", chassi))
                         .session(login("capitao")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.usuario.nome").value("Ana Souza"))
-                .andExpect(jsonPath("$.usuario.ra").value("a2400001"))
+                .andExpect(jsonPath("$.usuario.ra").value("2400001"))
                 .andExpect(jsonPath("$.usuario.subsistema.nome").value("Chassi"))
                 .andExpect(jsonPath("$.usuario.ativo").value(true))
                 .andExpect(jsonPath("$.senhaProvisoria").value(hasLength(12)))
@@ -54,50 +54,50 @@ class UsuarioControllerTest extends TesteDeIntegracao {
 
         String senha = JsonPath.read(resposta, "$.senhaProvisoria");
         long id = ((Number) JsonPath.read(resposta, "$.usuario.id")).longValue();
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "a2400001", "senha", senha))).andExpect(status().isOk());
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "2400001", "senha", senha))).andExpect(status().isOk());
         assertThat(acoesAuditadas("USUARIO", id)).containsExactly("CADASTRADO");
     }
 
     @Test
     void ninguemECadastradoComoLider() throws Exception {
-        cadastrar("capitao", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "LIDER", "subsistemaId", chassi))
+        cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "LIDER", "subsistemaId", chassi))
                 .andExpect(status().isUnprocessableContent());
     }
 
     @Test
     void membroPrecisaDeSubsistemaECapitaoNaoTemSubsistema() throws Exception {
-        cadastrar("capitao", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "MEMBRO"))
+        cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "MEMBRO"))
                 .andExpect(status().isUnprocessableContent());
-        cadastrar("capitao", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "CAPITAO_ADMIN", "subsistemaId", chassi))
+        cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "CAPITAO_ADMIN", "subsistemaId", chassi))
                 .andExpect(status().isUnprocessableContent());
-        cadastrar("capitao", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "ORIENTADOR"))
+        cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "ORIENTADOR"))
                 .andExpect(status().isCreated());
     }
 
     @Test
     void gestorNaoCadastraCapitaoNemGestor() throws Exception {
-        cadastrar("gestor", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "GESTOR"))
+        cadastrar("gestor", Map.of("nome", "Bia", "ra", "2400002", "perfil", "GESTOR"))
                 .andExpect(status().isForbidden());
-        cadastrar("gestor", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "CAPITAO_ADMIN"))
+        cadastrar("gestor", Map.of("nome", "Bia", "ra", "2400002", "perfil", "CAPITAO_ADMIN"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void membroNaoCadastraNinguem() throws Exception {
         usuario("membro", Perfil.MEMBRO, chassi);
-        cadastrar("membro", Map.of("nome", "Bia", "ra", "a2400002", "perfil", "MEMBRO", "subsistemaId", chassi))
+        cadastrar("membro", Map.of("nome", "Bia", "ra", "2400002", "perfil", "MEMBRO", "subsistemaId", chassi))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void raDeUsuarioDesativadoSugereReativarEmVezDeCadastrar() throws Exception {
-        long antigo = usuario("a2400003", Perfil.MEMBRO, chassi, false);
-        usuario("a2400004", Perfil.MEMBRO, chassi);
+        long antigo = usuario("2400003", Perfil.MEMBRO, chassi, false);
+        usuario("2400004", Perfil.MEMBRO, chassi);
 
-        cadastrar("capitao", Map.of("nome", "Caio", "ra", "A2400003", "perfil", "MEMBRO", "subsistemaId", chassi))
+        cadastrar("capitao", Map.of("nome", "Caio", "ra", "2400003", "perfil", "MEMBRO", "subsistemaId", chassi))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.usuarioDesativado.id").value(antigo));
-        cadastrar("capitao", Map.of("nome", "Caio", "ra", "a2400004", "perfil", "MEMBRO", "subsistemaId", chassi))
+        cadastrar("capitao", Map.of("nome", "Caio", "ra", "2400004", "perfil", "MEMBRO", "subsistemaId", chassi))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.usuarioDesativado").doesNotExist());
     }
@@ -110,7 +110,7 @@ class UsuarioControllerTest extends TesteDeIntegracao {
 
     @Test
     void ninguemECadastradoComOPerfilFinanceiro() throws Exception {
-        cadastrar("capitao", Map.of("nome", "Fabi", "ra", "fin1", "perfil", "FINANCEIRO", "subsistemaId", freios))
+        cadastrar("capitao", Map.of("nome", "Fabi", "ra", "2400005", "perfil", "FINANCEIRO", "subsistemaId", freios))
                 .andExpect(status().isBadRequest());
     }
 
@@ -152,7 +152,7 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     @Test
     void perfilLiderSoMudaPelaDefinicaoDeLider() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
-        long lider = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = 'liderchassi'", Long.class);
+        long lider = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = ?", Long.class, ra("liderchassi"));
         trocarPerfil("capitao", membro, Map.of("perfil", "LIDER")).andExpect(status().isUnprocessableContent());
         trocarPerfil("capitao", lider, Map.of("perfil", "MEMBRO")).andExpect(status().isUnprocessableContent());
     }
@@ -205,7 +205,7 @@ class UsuarioControllerTest extends TesteDeIntegracao {
 
     @Test
     void liderSoSaiDepoisDeOutroSerDefinido() throws Exception {
-        long lider = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = 'liderchassi'", Long.class);
+        long lider = jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = ?", Long.class, ra("liderchassi"));
         mvc.perform(post("/api/usuarios/{id}/desativacao", lider).with(csrf()).session(login("capitao")))
                 .andExpect(status().isUnprocessableContent());
     }
@@ -222,13 +222,13 @@ class UsuarioControllerTest extends TesteDeIntegracao {
         gestorFinanceiro(gestorFinanceiro, capitao);
         MockHttpSession sessao = login("gestor");
 
-        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "outro")).session(sessao))
+        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "2400010")).session(sessao))
                 .andExpect(status().isForbidden());
         mvc.perform(post("/api/usuarios/{id}/desativacao", gestorFinanceiro).with(csrf()).session(sessao))
                 .andExpect(status().isForbidden());
         mvc.perform(post("/api/usuarios/{id}/senha-provisoria", gestorFinanceiro).with(csrf()).session(sessao))
                 .andExpect(status().isForbidden());
-        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "outro"))
+        mvc.perform(json(put("/api/usuarios/{id}", gestorFinanceiro), Map.of("nome", "Outro", "ra", "2400010"))
                         .session(login("capitao")))
                 .andExpect(status().isOk());
     }
@@ -280,7 +280,7 @@ class UsuarioControllerTest extends TesteDeIntegracao {
         mvc.perform(get("/api/usuarios/{id}", colega).session(sessao))
                 .andExpect(jsonPath("$.ra").value(nullValue()));
         mvc.perform(get("/api/usuarios/{id}", membro).session(sessao))
-                .andExpect(jsonPath("$.ra").value("membro"));
+                .andExpect(jsonPath("$.ra").value(ra("membro")));
         mvc.perform(get("/api/usuarios/{id}", deFreios).session(sessao)).andExpect(status().isNotFound());
     }
 
@@ -326,7 +326,7 @@ class UsuarioControllerTest extends TesteDeIntegracao {
         mvc.perform(get("/api/usuarios").param("subsistemaId", String.valueOf(chassi)).param("perfil", "MEMBRO")
                         .session(login("gestor")))
                 .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("desativado", "membro")))
-                .andExpect(jsonPath("$[0].ra").value("desativado"));
+                .andExpect(jsonPath("$[0].ra").value(ra("desativado")));
         mvc.perform(get("/api/usuarios").param("subsistemaId", String.valueOf(chassi)).param("ativo", "false")
                         .session(login("gestor")))
                 .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("desativado")));
@@ -337,25 +337,25 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     @Test
     void gestorCorrigeNomeERaEAAuditoriaGuardaOAnterior() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
-        mvc.perform(json(put("/api/usuarios/{id}", membro), Map.of("nome", "Maria Membro", "ra", "A2400009"))
+        mvc.perform(json(put("/api/usuarios/{id}", membro), Map.of("nome", "Maria Membro", "ra", "2400009"))
                         .session(login("gestor")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ra").value("a2400009"));
+                .andExpect(jsonPath("$.ra").value("2400009"));
 
         String detalhes = jdbc.queryForObject(
                 "SELECT detalhes_json::text FROM logs_auditoria WHERE entidade = 'USUARIO' AND registro_id = ? AND acao = 'EDITADO'",
                 String.class, membro);
-        assertThat(detalhes).contains("\"raAnterior\": \"membro\"", "\"ra\": \"a2400009\"");
+        assertThat(detalhes).contains("\"raAnterior\": \"" + ra("membro") + "\"", "\"ra\": \"2400009\"");
     }
 
     @Test
     void correcaoRecusaRaEmUsoEOProprioUsuario() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
-        mvc.perform(json(put("/api/usuarios/{id}", membro), Map.of("nome", "Membro", "ra", "gestor")).session(login("gestor")))
+        mvc.perform(json(put("/api/usuarios/{id}", membro), Map.of("nome", "Membro", "ra", ra("gestor"))).session(login("gestor")))
                 .andExpect(status().isConflict());
-        mvc.perform(json(put("/api/usuarios/{id}", gestor), Map.of("nome", "Outro Nome", "ra", "gestor")).session(login("gestor")))
+        mvc.perform(json(put("/api/usuarios/{id}", gestor), Map.of("nome", "Outro Nome", "ra", ra("gestor"))).session(login("gestor")))
                 .andExpect(status().isUnprocessableContent());
-        mvc.perform(json(put("/api/usuarios/{id}", capitao), Map.of("nome", "Outro Nome", "ra", "capitao")).session(login("gestor")))
+        mvc.perform(json(put("/api/usuarios/{id}", capitao), Map.of("nome", "Outro Nome", "ra", ra("capitao"))).session(login("gestor")))
                 .andExpect(status().isForbidden());
     }
 
@@ -368,8 +368,8 @@ class UsuarioControllerTest extends TesteDeIntegracao {
                 .andReturn().getResponse().getContentAsString();
 
         String senha = JsonPath.read(resposta, "$.senhaProvisoria");
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "membro", "senha", SENHA))).andExpect(status().isUnauthorized());
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "membro", "senha", senha))).andExpect(status().isOk());
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("membro"), "senha", SENHA))).andExpect(status().isUnauthorized());
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("membro"), "senha", senha))).andExpect(status().isOk());
         assertThat(acoesAuditadas("USUARIO", membro)).containsExactly("SENHA_REDEFINIDA");
     }
 

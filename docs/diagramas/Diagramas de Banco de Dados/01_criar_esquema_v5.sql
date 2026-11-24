@@ -142,8 +142,11 @@ CREATE TABLE "usuarios" (
   "perfil_id" bigint NOT NULL,
   "subsistema_id" bigint,
   "ativo" boolean NOT NULL DEFAULT true,
+  "troca_de_senha_pendente" boolean NOT NULL DEFAULT false,
+  "versao_da_senha" integer NOT NULL DEFAULT 0,
   "criado_em" timestamptz NOT NULL DEFAULT (now()),
-  "atualizado_em" timestamptz
+  "atualizado_em" timestamptz,
+  CONSTRAINT "chk_usuario_ra_numerico" CHECK (ra ~ '^[0-9]{1,20}$')
 );
 
 CREATE TABLE "subsistemas" (

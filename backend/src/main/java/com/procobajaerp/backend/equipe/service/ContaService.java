@@ -43,7 +43,7 @@ public class ContaService {
         return usuarios.buscarCompleto(id).map(this::dadosDeAcesso);
     }
 
-    /** Troca da própria senha, confirmando a atual. Não gera Registro de auditoria. */
+    /** Troca da própria senha, confirmando a atual; conclui a troca pendente. Não gera Registro de auditoria. */
     @Transactional
     public void alterarPropriaSenha(Long id, String senhaAtual, String novaSenha) {
         Usuario usuario = usuarios.findById(id).orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado."));
@@ -54,7 +54,7 @@ public class ContaService {
             throw new RegraDeNegocioException("A nova senha precisa ser diferente da atual.");
         }
         Senha.validar(novaSenha);
-        usuario.alterarSenhaHash(codificador.encode(novaSenha));
+        usuario.trocarSenha(codificador.encode(novaSenha));
     }
 
     private DadosDeAcesso dadosDeAcesso(Usuario usuario) {
@@ -68,6 +68,8 @@ public class ContaService {
                 usuario.getSenhaHash(),
                 usuario.isAtivo(),
                 usuario.isGestorFinanceiro(),
+                usuario.isTrocaDeSenhaPendente(),
+                usuario.getVersaoDaSenha(),
                 permissoes(usuario));
     }
 
@@ -90,6 +92,8 @@ public class ContaService {
             String senhaHash,
             boolean ativo,
             boolean gestorFinanceiro,
+            boolean trocaDeSenhaPendente,
+            int versaoDaSenha,
             Set<String> permissoes) {
     }
 }

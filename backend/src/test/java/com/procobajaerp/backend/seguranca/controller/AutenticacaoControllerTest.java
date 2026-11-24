@@ -25,10 +25,10 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
     @Test
     void loginAbreSessaoComPerfilEPermissoes() throws Exception {
         long subsistema = subsistemaComLider("Chassi", "lider1");
-        usuario("a2412345", Perfil.MEMBRO, subsistema);
+        usuario("2412345", Perfil.MEMBRO, subsistema);
 
         MockHttpSession sessao = (MockHttpSession) mvc.perform(json(post("/api/auth/login"),
-                        Map.of("ra", "  A2412345 ", "senha", SENHA)))
+                        Map.of("ra", "  2412345 ", "senha", SENHA)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.perfil").value("MEMBRO"))
                 .andExpect(jsonPath("$.subsistema.nome").value("Chassi"))
@@ -37,7 +37,7 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
 
         mvc.perform(get("/api/auth/eu").session(sessao))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ra").value("a2412345"));
+                .andExpect(jsonPath("$.ra").value("2412345"));
     }
 
     @Test
@@ -46,9 +46,9 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
         usuario("desativado", Perfil.ORIENTADOR, null, false);
 
         for (Map<String, String> credenciais : new Map[] {
-                Map.of("ra", "ativo", "senha", "errada-123"),
-                Map.of("ra", "naoexiste", "senha", SENHA),
-                Map.of("ra", "desativado", "senha", SENHA)}) {
+                Map.of("ra", ra("ativo"), "senha", "errada-123"),
+                Map.of("ra", ra("naoexiste"), "senha", SENHA),
+                Map.of("ra", ra("desativado"), "senha", SENHA)}) {
             mvc.perform(json(post("/api/auth/login"), credenciais))
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.detail").value("RA ou senha inválidos."));
@@ -59,10 +59,10 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
     void sextaTentativaEmQuinzeMinutosERecusadaMesmoComASenhaCerta() throws Exception {
         usuario("limite1", Perfil.ORIENTADOR, null);
         for (int i = 0; i < 5; i++) {
-            mvc.perform(json(post("/api/auth/login"), Map.of("ra", "limite1", "senha", "errada-123")))
+            mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("limite1"), "senha", "errada-123")))
                     .andExpect(status().isUnauthorized());
         }
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "limite1", "senha", SENHA)))
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("limite1"), "senha", SENHA)))
                 .andExpect(status().isTooManyRequests());
     }
 
@@ -133,7 +133,7 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
         long capitao = usuario("capitao", Perfil.CAPITAO_ADMIN, null);
         gestorFinanceiro(usuario("gestor", Perfil.GESTOR, null), capitao);
 
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "gestor", "senha", SENHA)))
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("gestor"), "senha", SENHA)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.gestorFinanceiro").value(true));
     }
@@ -160,7 +160,7 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
         mvc.perform(json(put("/api/auth/senha"), Map.of("senhaAtual", SENHA, "novaSenha", "nova-senha-1")).session(sessao))
                 .andExpect(status().isNoContent());
 
-        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "orientador", "senha", "nova-senha-1")))
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra("orientador"), "senha", "nova-senha-1")))
                 .andExpect(status().isOk());
     }
 

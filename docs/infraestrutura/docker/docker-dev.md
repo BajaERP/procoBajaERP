@@ -51,8 +51,9 @@ Altere pelo menos `POSTGRES_PASSWORD` e
 Git e não deve ser commitado.
 
 Para entrar no ERP, preencha também `PROCOBAJA_CAPITAO_INICIAL_RA`,
-`PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`, com uma
-senha de 8 a 64 caracteres. Com o banco sem nenhum Capitão ativo, o backend cria
+`PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`, com um RA
+só de dígitos e uma senha de 8 a 64 caracteres, que é provisória: o primeiro
+login exige trocá-la. Com o banco sem nenhum Capitão ativo, o backend cria
 esse Capitão ao iniciar; enquanto as variáveis estiverem vazias, ele não cria
 nenhum e avisa no log.
 

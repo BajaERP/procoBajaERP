@@ -20,7 +20,7 @@ import com.procobajaerp.backend.equipe.service.ContaService.DadosDeAcesso;
 
 /**
  * Recarrega do banco, a cada requisição, quem está logado. Assim uma Troca de Perfil vale na requisição
- * seguinte, e um Usuário desativado perde a sessão (ADR 0001).
+ * seguinte, e um Usuário desativado ou com a senha redefinida depois do login perde a sessão (ADR 0001).
  */
 class AtualizacaoDaSessaoFilter extends OncePerRequestFilter {
 
@@ -37,6 +37,7 @@ class AtualizacaoDaSessaoFilter extends OncePerRequestFilter {
         if (atual != null && atual.getPrincipal() instanceof UsuarioAutenticado logado) {
             Optional<UsuarioAutenticado> recarregado = contas.buscarPorId(logado.getId())
                     .filter(DadosDeAcesso::ativo)
+                    .filter(dados -> dados.versaoDaSenha() == logado.getVersaoDaSenha())
                     .map(UsuarioAutenticado::new);
             if (recarregado.isPresent()) {
                 UsuarioAutenticado usuario = recarregado.get();

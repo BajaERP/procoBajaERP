@@ -41,7 +41,7 @@ class FluxoDoNavegadorTest extends TesteDeIntegracao {
         String tokenAnonimo = cookies.get("XSRF-TOKEN");
         assertThat(tokenAnonimo).isNotBlank();
 
-        String credenciais = "{\"ra\":\"orientador\",\"senha\":\"" + SENHA + "\"}";
+        String credenciais = "{\"ra\":\"" + ra("orientador") + "\",\"senha\":\"" + SENHA + "\"}";
         assertThat(enviar("POST", "/api/auth/login", credenciais, null).statusCode()).isEqualTo(403);
 
         HttpResponse<String> login = enviar("POST", "/api/auth/login", credenciais, tokenAnonimo);

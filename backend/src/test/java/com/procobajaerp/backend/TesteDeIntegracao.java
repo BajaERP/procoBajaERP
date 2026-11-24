@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import com.procobajaerp.backend.equipe.domain.Perfil;
+import com.procobajaerp.backend.equipe.domain.Ra;
 
 /**
  * Testes de ponta a ponta pela API, num PostgreSQL real com as migrations aplicadas. As tabelas do módulo de
@@ -53,19 +54,30 @@ public abstract class TesteDeIntegracao {
         jdbc.execute("TRUNCATE logs_auditoria, atribuicao_financeira, subsistemas, usuarios RESTART IDENTITY CASCADE");
     }
 
-    /** Usuário ativo, com nome igual ao RA e a senha {@link #SENHA}. */
-    protected long usuario(String ra, Perfil perfil, Long subsistemaId) {
-        return usuario(ra, perfil, subsistemaId, true);
+    /**
+     * RA numérico de quem o teste chama por um apelido, como "capitao" ou "liderchassi". Um RA já numérico fica
+     * como está.
+     */
+    protected static String ra(String apelido) {
+        if (apelido.matches(Ra.DIGITOS)) {
+            return apelido;
+        }
+        return String.valueOf(1_000_000_000L + Math.floorMod(apelido.hashCode(), 1_000_000_000));
     }
 
-    protected long usuario(String ra, Perfil perfil, Long subsistemaId, boolean ativo) {
+    /** Usuário ativo, com nome igual ao apelido, RA {@link #ra(String)} e a senha definitiva {@link #SENHA}. */
+    protected long usuario(String apelido, Perfil perfil, Long subsistemaId) {
+        return usuario(apelido, perfil, subsistemaId, true);
+    }
+
+    protected long usuario(String apelido, Perfil perfil, Long subsistemaId, boolean ativo) {
         if (hashDaSenha == null) {
             hashDaSenha = codificador.encode(SENHA);
         }
         return jdbc.queryForObject("""
                 INSERT INTO usuarios (ra, nome, senha_hash, perfil_id, subsistema_id, ativo)
                 VALUES (?, ?, ?, (SELECT id FROM perfis WHERE nome = ?), ?, ?)
-                RETURNING id""", Long.class, ra, ra, hashDaSenha, perfil.name(), subsistemaId, ativo);
+                RETURNING id""", Long.class, ra(apelido), apelido, hashDaSenha, perfil.name(), subsistemaId, ativo);
     }
 
     /** Subsistema desativado e sem Líder, como nasce. */
@@ -73,11 +85,11 @@ public abstract class TesteDeIntegracao {
         return jdbc.queryForObject("INSERT INTO subsistemas (nome) VALUES (?) RETURNING id", Long.class, nome);
     }
 
-    /** Subsistema ativo, com um Líder cujo RA é informado. */
-    protected long subsistemaComLider(String nome, String raDoLider) {
+    /** Subsistema ativo, com um Líder cujo apelido é informado. */
+    protected long subsistemaComLider(String nome, String lider) {
         long subsistema = subsistema(nome);
-        long lider = usuario(raDoLider, Perfil.LIDER, subsistema);
-        jdbc.update("UPDATE subsistemas SET lider_usuario_id = ?, ativo = true WHERE id = ?", lider, subsistema);
+        long liderId = usuario(lider, Perfil.LIDER, subsistema);
+        jdbc.update("UPDATE subsistemas SET lider_usuario_id = ?, ativo = true WHERE id = ?", liderId, subsistema);
         return subsistema;
     }
 
@@ -91,8 +103,8 @@ public abstract class TesteDeIntegracao {
         return jdbc.query("SELECT gestor_usuario_id FROM atribuicao_financeira", rs -> rs.next() ? rs.getLong(1) : null);
     }
 
-    protected MockHttpSession login(String ra) throws Exception {
-        return (MockHttpSession) mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra, "senha", SENHA)))
+    protected MockHttpSession login(String apelido) throws Exception {
+        return (MockHttpSession) mvc.perform(json(post("/api/auth/login"), Map.of("ra", ra(apelido), "senha", SENHA)))
                 .andExpect(status().isOk())
                 .andReturn().getRequest().getSession();
     }
