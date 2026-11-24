@@ -17,7 +17,9 @@ frontend/src/
 │   ├── pages/             # Componentes específicos de cada página
 │   └── shared/            # Componentes compartilhados
 ├── contexts/              # Sessão demonstrativa e tema
+├── mocks/                 # Dados fictícios exclusivos do desenvolvimento
 ├── pages/                 # Composição das páginas e navegação
+├── services/              # Fronteira de consulta e regras de visibilidade
 ├── App.tsx                # Provedores e roteador
 ├── main.tsx               # Inicialização do React
 └── styles.css             # Tokens, temas e estilos globais
@@ -31,14 +33,22 @@ O roteador usa `createHashRouter`, portanto os caminhos aparecem após `#` no en
 
 - `/` apresenta a introdução e avança automaticamente para o login; uma sessão demonstrativa existente segue para o Dashboard.
 - `/login` recebe RA e senha. Após o acesso demonstrativo, abre o Dashboard ou restaura uma rota protegida solicitada anteriormente.
-- `/app/*` usa `ProtectedRoute` e `Shell`. O shell reúne sidebar, barra superior e conteúdo da rota. No mobile, a navegação é apresentada em um drawer.
-- A sidebar organiza módulos e alguns subitens, mas ainda não adapta o menu por perfil; várias rotas exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
+- `/app/*` usa `ProtectedRoute` e `Shell`. Enquanto a identidade tiver troca de senha pendente, `ProtectedRoute` apresenta o formulário obrigatório antes de montar o `Shell`, inclusive em rotas acessadas diretamente; após o sucesso, mantém a rota solicitada. O shell reúne sidebar, barra superior e conteúdo da rota. No mobile, a navegação é apresentada em um drawer.
+- A sidebar apresenta uma entrada principal por módulo, sem subitens; ainda não adapta o menu por perfil. Equipe e Subsistemas oferece abas internas para Integrantes e Subsistemas. A responsabilidade financeira abre pelo indicador de Gestor Financeiro na lista, em um painel lateral no desktop e uma tela adaptada ao mobile. Outras rotas ainda exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
+
+Em desenvolvimento, a página de Integrantes consulta `services/equipe.ts`, que seleciona o serviço fictício em `mocks/equipe.ts`. O serviço aplica a visibilidade demonstrativa antes de entregar dados à tela; busca, filtros e paginação operam somente sobre essa lista recebida. O botão de simulação provoca uma falha na próxima consulta para conferir o estado de recuperação. Esta regra local não é autorização de dados reais. No build de produção, o módulo apresenta indisponibilidade até a integração e não inclui os dados fictícios do módulo.
 
 ## Sessão e tema
 
-`AuthContext` mantém uma sessão **apenas demonstrativa** no navegador. Ele aceita um RA numérico de até 20 caracteres e uma senha não vazia, cria um usuário fictício e armazena os dados em `localStorage` sob `proco.auth.user`. A senha não é armazenada; os dados locais não representam um usuário autenticado pelo backend. `ProtectedRoute` depende desse estado local para o fluxo de interface: isso **não é autenticação ou autorização** e não protege dados reais. As informações indisponíveis não devem ser apresentadas como se viessem do servidor.
+`AuthContext` mantém uma sessão **apenas demonstrativa e exclusiva de desenvolvimento**. O login preserva os campos de RA numérico (até 20 caracteres) e senha não vazia, mas assume o primeiro Gestor ativo dos dados fictícios, sem conferir credenciais. O armazenamento `proco.auth.user` guarda somente ID e perspectiva; a identidade é recuperada dos dados compartilhados. A inicialização aguarda essa recuperação antes de redirecionar rotas protegidas. A senha não é armazenada. `ProtectedRoute` coordena o fluxo local de interface; isso **não é autenticação ou autorização** e não protege dados reais. Em produção, o login informa indisponibilidade, não cria nem recupera sessões demonstrativas e não oferece os controles Dev.
 
-Após o login, o botão **Dev** no header permite escolher um dos seis perfis para a sessão demonstrativa. A seleção permanece após recarregar a página e é usada pelos componentes que leem o perfil, como a sidebar e a seção de conta. Essa ferramenta existe apenas no servidor de desenvolvimento do Vite; ela não testa nem concede permissões reais. Ao integrar autenticação, o perfil deve vir do backend e a autorização deve ser verificada no servidor.
+Após o login, o botão **Dev** permite escolher um dos cinco perfis e uma pessoa ativa daquele perfil, inclusive identidades com troca de senha pendente. A visão adicional **Gestor Financeiro** seleciona o Gestor com atribuição financeira; não cria um sexto perfil. Header, sidebar e Conta refletem nome, perfil e situação demonstrativa. A seção Conta em Configurações permite a troca voluntária da própria senha. Na troca obrigatória e voluntária, o mock solicita a senha atual, mas não a verifica: esta sessão não autentica nem altera credenciais reais. As senhas ficam somente em memória durante a operação; os dados compartilhados persistem apenas a flag `passwordChangePending`, que é limpa após o sucesso.
+
+`mocks/equipeStore.ts` mantém os registros compartilhados em `proco.demo.equipe.v1`, sem senhas, e grava a versão do esquema dos dados. Ao ler dados anteriores à troca de senha, migra uma vez a flag pendente de Ana, Capitão inicial, preservando os demais registros; a versão salva impede que uma senha já trocada volte a ficar pendente após recarga. Cada leitura e alteração consulta o estado persistido, preservando alterações realizadas em outras abas. Mudanças do serviço e eventos de armazenamento atualizam a identidade e a listagem. Se a pessoa selecionada ficar indisponível para a perspectiva atual, outra da mesma perspectiva é escolhida; na ausência dela, a sessão tenta um Gestor ou outra pessoa ativa, atualiza a perspectiva e avisa. Sem pessoas ativas, volta ao login com a indicação de indisponibilidade. Uma tentativa de selecionar um perfil vazio mantém a identidade atual e apresenta um aviso.
+
+Gestor Financeiro é uma atribuição adicional a um Gestor ativo. O Capitão atribui, retira ou transfere a responsabilidade por operações específicas do serviço mock; há no máximo uma atribuição, e a transferência grava a troca em uma única operação. A atribuição é persistida junto aos dados compartilhados e sincronizada com a visão demonstrativa `financeiro`. Desativação ou troca de perfil do responsável exige retirada ou transferência prévia, inclusive em operações gerais de administração. A interface demonstra essas regras locais e não autoriza operações no servidor.
+
+O controle **Restaurar dados demonstrativos** pede confirmação, restaura a base inicial e retorna ao Gestor padrão. A falha de consulta pode ser simulada uma vez pelo botão da listagem. Alterações de dados para testar reatividade podem ser feitas pela operação de desenvolvimento `equipeService.atualizarIntegranteDemo`. O cadastro, a edição, a alteração de situação e a redefinição de senha provisória são demonstrativos e atualizam a lista sem descartar busca, filtros ou página selecionada. Esses recursos não concedem permissões reais: a integração deve buscar identidade e autorização no backend.
 
 O backend possui migrações de banco, mas o frontend ainda não consome endpoints de autenticação ou uma API de aplicação. O formulário de login atual não testa credenciais contra o servidor. O modelo relacional proposto está em [`docs/diagramas`](../docs/diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml). Uma futura integração deve autenticar e autorizar no servidor; variáveis públicas do Vite usam o prefixo `VITE_` e não devem conter segredos.
 
@@ -59,9 +69,10 @@ O Vite normalmente inicia em `http://localhost:5173`; caso a porta esteja ocupad
 ```bash
 npm run format:check
 npm run build
+node --experimental-strip-types --test
 ```
 
-`npm run format` aplica o Prettier, e `npm run preview` serve o build localmente. Não há comando de testes configurado no frontend; verifique as interações afetadas no navegador quando necessário.
+`npm run format` aplica o Prettier, e `npm run preview` serve o build localmente. A suíte usa o runner nativo do Node, sem script ou dependência adicional; com Node 22.18+ ou 24, o comando acima executa todos os arquivos `*.test.*` a partir de `frontend/`. Verifique também as interações afetadas no navegador.
 
 Para Docker Compose e configuração de ambiente, consulte os guias de [desenvolvimento](../docs/infraestrutura/docker/docker-dev.md) e [produção](../docs/infraestrutura/docker/docker-prod.md). No desenvolvimento, `node_modules` fica em um volume próprio do container; ao adicionar uma dependência, atualize também esse ambiente e reinicie o servidor se necessário.
 

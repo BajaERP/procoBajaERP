@@ -8,7 +8,7 @@ import { LoginThemeSelector } from '../components/pages/login/LoginThemeSelector
 export default function LoginPage() {
 	const navigate = useNavigate()
 	const location = useLocation()
-	const { isAuthenticated } = useAuth()
+	const { isAuthenticated, isReady, demoNotice } = useAuth()
 	const requestedDestination = (location.state as { from?: unknown } | null)
 		?.from
 	const destination =
@@ -18,8 +18,8 @@ export default function LoginPage() {
 			: '/app/dashboard'
 
 	useEffect(() => {
-		if (isAuthenticated) navigate(destination, { replace: true })
-	}, [destination, isAuthenticated, navigate])
+		if (isReady && isAuthenticated) navigate(destination, { replace: true })
+	}, [destination, isAuthenticated, isReady, navigate])
 
 	return (
 		<main
@@ -29,11 +29,21 @@ export default function LoginPage() {
 			<section className="relative flex flex-1 flex-col items-center px-6 pb-12 pt-6 sm:px-10 md:items-start md:px-[6.9%] md:pt-[174px]">
 				<LoginThemeSelector />
 				<div className="w-full max-w-[614px]">
+					{import.meta.env.DEV && demoNotice && (
+						<p
+							role="status"
+							className="mb-5 rounded-md border border-state-warning bg-state-warning-bg p-3 text-sm text-state-warning"
+						>
+							{demoNotice}
+						</p>
+					)}
 					<h2 className="text-center text-[32px] font-bold leading-tight md:text-left">
 						Acesse sua conta
 					</h2>
 					<p className="mt-3 text-center text-[15px] text-mute md:text-left">
-						Entre com o RA e a senha cadastrada no ERP.
+						{import.meta.env.DEV
+							? 'Entre com o RA e a senha para acessar a demonstração.'
+							: 'Acesso indisponível até a integração com o servidor.'}
 					</p>
 					<LoginForm
 						onSuccess={() =>

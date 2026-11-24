@@ -1,5 +1,6 @@
 import { ROLE_LABELS, type AuthUser } from '../../../contexts/AuthContext'
 import { LogOut as LogoutIcon } from 'lucide-react'
+import { PasswordChangeForm } from './PasswordChangeForm'
 
 export function ContaSection({
 	user,
@@ -20,19 +21,31 @@ export function ContaSection({
 			<dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<Field label="Nome" value={user?.name ?? '—'} />
 				<Field
-					label="RA"
+					label={user?.role === 'orientador' ? 'SIAPE' : 'RA'}
+					value={user?.ra || 'Não disponível'}
+				/>
+				<Field
+					label="Perfil"
 					value={
-						user?.ra && !user.ra.includes('@')
-							? user.ra
+						user
+							? user.financial
+								? 'Gestor Financeiro (Gestor)'
+								: ROLE_LABELS[user.role]
 							: 'Não disponível'
 					}
 				/>
 				<Field
-					label="Perfil"
-					value={user ? ROLE_LABELS[user.role] : 'Não disponível'}
+					label="Subsistema"
+					value={user?.subsistema ?? 'Sem subsistema'}
 				/>
-				<Field label="Subsistema" value="Não disponível" />
-				<Field label="Situação" value="Não disponível" />
+				<Field
+					label="Situação"
+					value={
+						user?.passwordChangePending
+							? 'Troca de senha pendente'
+							: 'Ativo'
+					}
+				/>
 				<Field label="Data de cadastro" value="Não disponível" />
 			</dl>
 
@@ -40,6 +53,8 @@ export function ContaSection({
 				Sessão de demonstração. Os dados da conta ainda não estão
 				conectados ao servidor.
 			</p>
+
+			<PasswordChangeForm required={false} />
 
 			<button
 				onClick={onLogout}
