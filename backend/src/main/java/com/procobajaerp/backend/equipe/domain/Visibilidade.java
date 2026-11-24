@@ -7,10 +7,15 @@ public final class Visibilidade {
     }
 
     /**
-     * Cada um vê a si mesmo. Desativados só aparecem para Capitão e Gestor. Líder e Membro veem só quem é do
-     * próprio Subsistema; os demais Perfis veem toda a equipe.
+     * Desativados só aparecem para Capitão e Gestor. O Orientador vê a equipe ativa, exceto pessoas vinculadas a
+     * Subsistemas inativos; para consultar o próprio perfil nesses casos, usa /api/auth/eu. Líder e Membro veem só quem
+     * é do próprio Subsistema; os demais Perfis veem toda a equipe.
      */
     public static boolean podeVer(Usuario quem, Usuario alvo) {
+        if (quem.getPerfil() == Perfil.ORIENTADOR && alvo.getSubsistema() != null
+                && !alvo.getSubsistema().isAtivo()) {
+            return false;
+        }
         if (quem.mesmoUsuario(alvo)) {
             return true;
         }
@@ -29,8 +34,13 @@ public final class Visibilidade {
         return quem.getPerfil().veComposicaoGeral() || quem.pertenceA(subsistema);
     }
 
-    /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, só de Capitão e Gestor. */
+    /**
+     * Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, de Capitão, Gestor e do Líder ou Membro que
+     * ainda pertence a ele, que continua vendo o próprio Subsistema e sua Composição. O Orientador só vê os ativos,
+     * mesmo quando pertence a um desativado.
+     */
     public static boolean podeVer(Usuario quem, Subsistema subsistema) {
-        return subsistema.isAtivo() || quem.getPerfil().administraEquipe();
+        return subsistema.isAtivo() || quem.getPerfil().administraEquipe()
+                || (!quem.getPerfil().veComposicaoGeral() && quem.pertenceA(subsistema));
     }
 }

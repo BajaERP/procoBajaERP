@@ -4,8 +4,10 @@ import static com.procobajaerp.backend.auditoria.service.AuditoriaService.detalh
 
 import java.text.Collator;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import com.procobajaerp.backend.equipe.domain.Subsistema;
 import com.procobajaerp.backend.equipe.domain.Usuario;
 import com.procobajaerp.backend.equipe.domain.Visibilidade;
 import com.procobajaerp.backend.equipe.dto.DadosDeSubsistemaRequisicao;
+import com.procobajaerp.backend.equipe.dto.DesativacaoDeSubsistemaRequisicao.Destino;
+import com.procobajaerp.backend.equipe.dto.Resumo;
 import com.procobajaerp.backend.equipe.dto.SubsistemaResposta;
 import com.procobajaerp.backend.equipe.dto.UsuarioResposta;
 import com.procobajaerp.backend.equipe.repository.PerfilRepository;
@@ -49,7 +53,7 @@ public class SubsistemaService {
         this.auditoria = auditoria;
     }
 
-    /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados aparecem só para Capitão e Gestor. */
+    /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, de Capitão, Gestor e de quem pertence a ele. */
     @Transactional(readOnly = true)
     public List<SubsistemaResposta> listar(Long atorId) {
         Usuario ator = usuario(atorId);
@@ -134,17 +138,18 @@ public class SubsistemaService {
     }
 
     /**
-     * Todos os Usuários do Subsistema, inclusive os desativados, vão para o destino, e o Líder vai como Membro.
-     * Para reativar, basta uma nova Definição de Líder.
+     * Cada Usuário do Subsistema, inclusive os desativados, vai para o Subsistema ativo escolhido para ele, e o Líder vai
+     * como Membro. Sem outro Subsistema ativo, só um Subsistema vazio pode ser desativado. Tudo é validado antes de
+     * qualquer mudança. Para reativar, basta uma nova Definição de Líder.
      */
-    public SubsistemaResposta desativar(Long atorId, Long id, Long destinoId) {
-        Usuario ator = administrador(atorId);
+    public SubsistemaResposta desativar(Long atorId, Long id, List<Destino> destinosInformados) {
+        Usuario ator = capitao(atorId);
         Subsistema subsistema = subsistema(id);
         if (!subsistema.isAtivo()) {
             throw new RegraDeNegocioException("O Subsistema já está desativado.");
         }
         List<Usuario> pessoas = usuarios.listarDoSubsistema(subsistema);
-        Subsistema destino = destinoDaDesativacao(subsistema, destinoId, !pessoas.isEmpty());
+        Map<Usuario, Subsistema> destinos = destinosDaDesativacao(subsistema, pessoas, destinosInformados);
         Usuario lider = subsistema.getLider();
         subsistema.desativar();
         // O Líder só pode sair depois que o Subsistema deixa de apontar para ele.
@@ -152,11 +157,12 @@ public class SubsistemaService {
         if (lider != null) {
             trocarPerfil(ator, lider, Perfil.MEMBRO, "SUBSISTEMA_DESATIVADO");
         }
-        for (Usuario pessoa : pessoas) {
-            transferir(ator, pessoa, destino, "SUBSISTEMA_DESATIVADO");
-        }
+        destinos.forEach((pessoa, destino) -> transferir(ator, pessoa, destino, "SUBSISTEMA_DESATIVADO"));
         auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "DESATIVADO", detalhes(
-                "destinoSubsistemaId", destino == null ? null : destino.getId(), "usuariosTransferidos", pessoas.size()));
+                "usuariosTransferidos", pessoas.size(),
+                "destinos", destinos.entrySet().stream()
+                        .map(d -> Map.of("usuarioId", d.getKey().getId(), "subsistemaId", d.getValue().getId()))
+                        .toList()));
         return SubsistemaResposta.de(subsistema);
     }
 
@@ -210,21 +216,43 @@ public class SubsistemaService {
                 detalhes("perfilAnterior", anterior, "perfil", novo, "motivo", motivo));
     }
 
-    private Subsistema destinoDaDesativacao(Subsistema subsistema, Long destinoId, boolean temUsuarios) {
-        if (!temUsuarios) {
-            return null;
+    /** Exige exatamente um destino ativo, diferente da origem, para cada Usuário do Subsistema e para nenhum outro. */
+    private Map<Usuario, Subsistema> destinosDaDesativacao(Subsistema origem, List<Usuario> pessoas,
+            List<Destino> informados) {
+        if (!pessoas.isEmpty() && !subsistemas.existsByAtivoTrueAndIdNot(origem.getId())) {
+            throw new RegraDeNegocioException("Não há outro Subsistema ativo para receber os Usuários deste. "
+                    + "Ative outro Subsistema, definindo seu Líder, antes de desativar este.");
         }
-        if (destinoId == null) {
-            throw new RegraDeNegocioException("Informe o Subsistema que vai receber os Usuários deste.");
+        Map<Long, Usuario> porId = new LinkedHashMap<>();
+        pessoas.stream().sorted(Comparator.comparing(Usuario::getNome, COLLATOR)).forEach(u -> porId.put(u.getId(), u));
+        Map<Long, Subsistema> destinoPorUsuario = new LinkedHashMap<>();
+        for (Destino informado : informados) {
+            Usuario pessoa = porId.get(informado.usuarioId());
+            if (pessoa == null) {
+                throw new NaoEncontradoException("Usuário " + informado.usuarioId() + " não encontrado neste Subsistema.");
+            }
+            Subsistema destino = subsistema(informado.subsistemaId());
+            if (destino.getId().equals(origem.getId())) {
+                throw new RegraDeNegocioException("O destino de " + pessoa.getNome() + " precisa ser outro Subsistema.");
+            }
+            if (!destino.isAtivo()) {
+                throw new RegraDeNegocioException("O destino de " + pessoa.getNome() + " precisa ser um Subsistema ativo.");
+            }
+            if (destinoPorUsuario.put(pessoa.getId(), destino) != null) {
+                throw new RegraDeNegocioException("Informe um só destino para " + pessoa.getNome() + ".");
+            }
         }
-        Subsistema destino = subsistema(destinoId);
-        if (destino.getId().equals(subsistema.getId())) {
-            throw new RegraDeNegocioException("O destino precisa ser outro Subsistema.");
+        List<Resumo> semDestino = porId.values().stream()
+                .filter(u -> !destinoPorUsuario.containsKey(u.getId()))
+                .map(Resumo::de)
+                .toList();
+        if (!semDestino.isEmpty()) {
+            throw new RegraDeNegocioException("Escolha um Subsistema ativo para cada Usuário deste, inclusive os desativados.",
+                    Map.of("semDestino", semDestino));
         }
-        if (!destino.isAtivo()) {
-            throw new RegraDeNegocioException("O destino precisa ser um Subsistema ativo.");
-        }
-        return destino;
+        Map<Usuario, Subsistema> destinos = new LinkedHashMap<>();
+        porId.forEach((usuarioId, pessoa) -> destinos.put(pessoa, destinoPorUsuario.get(usuarioId)));
+        return destinos;
     }
 
     private void exigirNomeLivre(String nome, Subsistema proprio) {
@@ -252,6 +280,14 @@ public class SubsistemaService {
         Usuario ator = usuario(atorId);
         if (!ator.getPerfil().administraEquipe()) {
             throw new AcessoNegadoException("Só o Capitão e os Gestores administram Subsistemas.");
+        }
+        return ator;
+    }
+
+    private Usuario capitao(Long atorId) {
+        Usuario ator = usuario(atorId);
+        if (ator.getPerfil() != Perfil.CAPITAO_ADMIN) {
+            throw new AcessoNegadoException("Só o Capitão pode desativar Subsistemas.");
         }
         return ator;
     }
