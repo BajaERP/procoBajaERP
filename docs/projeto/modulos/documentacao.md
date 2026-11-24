@@ -28,7 +28,7 @@ Consulte a tabela 7 do PDF para a matriz integral e as regras de associação e 
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-05%20-%20Documenta%C3%A7%C3%A3o.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_34_Documentacao_Arquivos_e_Versoes.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v4.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-05%20-%20Documenta%C3%A7%C3%A3o.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_34_Documentacao_Arquivos_e_Versoes.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
 
 No modelo proposto, as tabelas relacionadas incluem `documentos`, `categorias_documentos`, `versoes_documentos`, `documentos_subsistemas`, `documentos_atividades`, `documentos_eventos`, `documentos_compras`, `solicitacoes_exclusao_documentos`. A lista orienta a leitura e não substitui o dicionário de dados ou as migrações efetivas.
 

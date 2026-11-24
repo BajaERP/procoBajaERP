@@ -34,7 +34,7 @@ CREATE TYPE "status_compra" AS ENUM (
 
 CREATE TYPE "papel_aprovador" AS ENUM (
   'CAPITAO',
-  'FINANCEIRO'
+  'GESTOR_FINANCEIRO'
 );
 
 CREATE TYPE "decisao_aprovacao" AS ENUM (
@@ -156,11 +156,12 @@ CREATE TABLE "subsistemas" (
   CONSTRAINT "chk_subsistema_ativo_lider" CHECK (NOT ativo OR lider_usuario_id IS NOT NULL)
 );
 
-CREATE TABLE "vinculos_financeiro_gestor" (
-  "financeiro_usuario_id" bigint PRIMARY KEY,
-  "gestor_usuario_id" bigint NOT NULL,
-  "definido_por_usuario_id" bigint NOT NULL,
-  "definido_em" timestamptz NOT NULL DEFAULT (now())
+CREATE TABLE "atribuicao_financeira" (
+  "id" smallint PRIMARY KEY DEFAULT 1,
+  "gestor_usuario_id" bigint UNIQUE NOT NULL,
+  "atribuida_por_usuario_id" bigint NOT NULL,
+  "atribuida_em" timestamptz NOT NULL DEFAULT (now()),
+  CONSTRAINT "chk_atribuicao_financeira_unica" CHECK (id = 1)
 );
 
 CREATE TABLE "sprints" (
@@ -656,8 +657,6 @@ CREATE INDEX ON "usuarios" ("subsistema_id");
 
 CREATE UNIQUE INDEX ON "usuarios" ("id", "subsistema_id");
 
-CREATE INDEX ON "vinculos_financeiro_gestor" ("gestor_usuario_id");
-
 CREATE INDEX ON "sprints" ("inicio", "fim");
 
 CREATE INDEX ON "atividades" ("status");
@@ -782,11 +781,11 @@ CREATE INDEX ON "logs_auditoria" ("entidade", "registro_id");
 
 CREATE INDEX ON "logs_auditoria" ("registrado_em");
 
-COMMENT ON TABLE "perfis" IS 'Seis papeis oficiais. O catalogo e as permissoes nao anulam regras obrigatorias de negocio e contexto.';
+COMMENT ON TABLE "perfis" IS 'Cinco papeis oficiais. A responsabilidade financeira e uma atribuicao do Gestor, nao um Perfil. O catalogo e as permissoes nao anulam regras obrigatorias de negocio e contexto.';
 
 COMMENT ON TABLE "permissoes" IS 'Catalogo de operacoes do RBAC. Restricoes por subsistema, propriedade e confidencialidade exigem validacao no backend.';
 
-COMMENT ON TABLE "perfil_permissoes" IS 'Relacao N:N. Alteracoes nas permissoes nao devem liberar acesso financeiro ao Gestor.';
+COMMENT ON TABLE "perfil_permissoes" IS 'Relacao N:N. O acesso financeiro vem da atribuicao financeira, nunca do Perfil Gestor.';
 
 COMMENT ON TABLE "usuarios" IS 'Um perfil ativo por usuario, e no maximo um subsistema simultaneo. Sem autenticacao UTFPR.';
 
@@ -798,7 +797,7 @@ COMMENT ON TABLE "subsistemas" IS 'Criacao em duas etapas ou transacao resolve r
 
 COMMENT ON COLUMN "subsistemas"."lider_usuario_id" IS 'Obrigatorio para subsistema ativo; verificar perfil Lider; pertencimento ao mesmo subsistema garantido por FK composta';
 
-COMMENT ON TABLE "vinculos_financeiro_gestor" IS 'Um Gestor por Financeiro; somente Capitão pode manter o vinculo. Nao concede acesso financeiro ao Gestor.';
+COMMENT ON TABLE "atribuicao_financeira" IS 'Gestor Financeiro: no maximo um Gestor ativo com a responsabilidade financeira; tabela vazia e posicao vaga. Somente o Capitao atribui, transfere ou retira. O Gestor Financeiro nao e desativado nem troca de Perfil antes de a responsabilidade ser retirada ou transferida.';
 
 COMMENT ON TABLE "sprints" IS 'Sprints de trabalho do PROCOBAJA com duracao prevista de 15 dias; nao confundir com sprints de desenvolvimento. Validar duracao na aplicacao.';
 
@@ -832,7 +831,7 @@ COMMENT ON TABLE "solicitacoes_compra_subsistemas" IS 'Associacao de subsistemas
 
 COMMENT ON TABLE "orcamentos_compra" IS 'Pelo menos 3 orcamentos na submissao de cada revisao; validacao transacional/backend. Nao e necessariamente um orcamento por item.';
 
-COMMENT ON TABLE "aprovacoes_compra" IS 'Uma decisao por papel e por revisao. Apenas duas aprovacoes positivas (Capitao e Financeiro) liberam a compra.';
+COMMENT ON TABLE "aprovacoes_compra" IS 'Uma decisao por papel e por revisao. Apenas duas aprovacoes positivas (Capitao e Gestor Financeiro) liberam a compra.';
 
 COMMENT ON TABLE "historico_solicitacoes_compra" IS 'Historico de status, reprovacao, reenvio e cancelamento. Preservar cada ciclo de aprovacao.';
 
@@ -924,11 +923,9 @@ ALTER TABLE "usuarios" ADD FOREIGN KEY ("subsistema_id") REFERENCES "subsistemas
 
 ALTER TABLE "subsistemas" ADD FOREIGN KEY ("lider_usuario_id", "id") REFERENCES "usuarios" ("id", "subsistema_id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "vinculos_financeiro_gestor" ADD FOREIGN KEY ("financeiro_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "atribuicao_financeira" ADD FOREIGN KEY ("gestor_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
 
-ALTER TABLE "vinculos_financeiro_gestor" ADD FOREIGN KEY ("gestor_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "vinculos_financeiro_gestor" ADD FOREIGN KEY ("definido_por_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "atribuicao_financeira" ADD FOREIGN KEY ("atribuida_por_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "sprints" ADD FOREIGN KEY ("criada_por_usuario_id") REFERENCES "usuarios" ("id") ON DELETE RESTRICT DEFERRABLE INITIALLY IMMEDIATE;
 

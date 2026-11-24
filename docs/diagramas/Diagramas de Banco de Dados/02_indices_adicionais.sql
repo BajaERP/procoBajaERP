@@ -1,5 +1,5 @@
--- ERP PROCOBAJA — complemento ao esquema exportado da V4 (PostgreSQL)
--- Executar somente DEPOIS de exportar e aplicar o SQL da V4 em um PostgreSQL DE TESTE.
+-- ERP PROCOBAJA — complemento ao esquema exportado da V5 (PostgreSQL)
+-- Executar somente DEPOIS de exportar e aplicar o SQL da V5 em um PostgreSQL DE TESTE.
 -- Este arquivo nao substitui o esquema completo, nem valida sozinho regras de negocio.
 -- Para migrar um banco V3 existente, criar migracao propria: NAO reaplicar o DDL em producao.
 
@@ -38,10 +38,11 @@ COMMIT;
 -- ON CONFLICT (tipo, nome) DO NOTHING;
 
 -- REGRAS QUE EXIGEM BACKEND, TRANSACOES E/OU TRIGGERS (NAO GARANTIDAS PELAS FKs):
--- 1. Somente Capitao e Financeiro leem/alteram informacoes monetarias protegidas.
+-- 1. Somente Capitao e Gestor Financeiro leem/alteram informacoes monetarias protegidas.
 -- 2. Solicitacoes enviadas: >=3 cotacoes, perfis legitimados, revisao atual imutavel.
 -- 3. Aprovacao conjunta valida dos dois papeis na revisao atual antes do pagamento.
--- 4. Um Financeiro ativo esta vinculado a um unico Gestor e o vinculo so muda pelo Capitao.
+-- 4. A atribuicao financeira so vai para um Gestor ativo e so muda pelo Capitao; o Gestor Financeiro
+--    nao e desativado nem troca de Perfil antes de a responsabilidade ser retirada ou transferida.
 -- 5. Pagamento, compra REALIZADA_PAGA, previsao REALIZADA e movimentacao SAIDA em transacao unica.
 -- 6. Ao cancelar pagamento, reconciliar status da compra e previsao sem apagar historicos.
 -- 7. Movimentacao efetiva vinculada a previsao precisa estar ATIVA e ser apropriada
