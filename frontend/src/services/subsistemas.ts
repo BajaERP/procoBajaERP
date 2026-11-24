@@ -38,11 +38,17 @@ export function siglaSubsistema(nome: string): string {
 
 export class SubsistemaError extends Error {
 	campos: ErrosSubsistema
+	partialSubsystemId: string | null
 
-	constructor(message: string, campos: ErrosSubsistema = {}) {
+	constructor(
+		message: string,
+		campos: ErrosSubsistema = {},
+		partialSubsystemId: string | null = null,
+	) {
 		super(message)
 		this.name = 'SubsistemaError'
 		this.campos = campos
+		this.partialSubsystemId = partialSubsystemId
 	}
 }
 

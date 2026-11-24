@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertCircle, Plus, RotateCcw, ShieldCheck } from 'lucide-react'
 import { useAuth, type AuthUser } from '../contexts/AuthContext'
 import { PermissoesDialog } from '../components/pages/equipe/PermissoesDialog'
-import { podeConsultarPermissoes } from '../services/equipePermissions'
+import { possuiPermissao } from '../services/equipePermissions'
+import { DEMO_MODE } from '../services/demoMode'
 import { IntegrantesList } from '../components/pages/equipe/IntegrantesList'
 import { equipeService } from '../services/equipe'
 import type {
@@ -26,7 +27,7 @@ type LoadState =
 	| { status: 'error'; message: string }
 
 export default function EquipePage() {
-	const { user, demoRevision } = useAuth()
+	const { user, dataRevision } = useAuth()
 	const pageKeys = getEquipePageContentKeys(
 		user?.id ?? '',
 		user?.role ?? '',
@@ -37,9 +38,11 @@ export default function EquipePage() {
 	const permissoesLinkRef = useRef<HTMLAnchorElement>(null)
 	const permissoes = location.pathname.endsWith('/permissoes')
 	const historicoAuditoria = location.pathname.endsWith('/auditoria')
-	const podeConsultar = Boolean(user && podeConsultarPermissoes(user.role))
+	const podeConsultar = Boolean(
+		user && possuiPermissao(user, 'USUARIOS_GERENCIAR'),
+	)
 	const podeConsultarAuditoria = Boolean(
-		user && ['capitao', 'gestor', 'lider'].includes(user.role),
+		user && possuiPermissao(user, 'AUDITORIA_CONSULTAR'),
 	)
 	const origem =
 		location.state?.returnTo === '/app/equipe/subsistemas'
@@ -58,13 +61,11 @@ export default function EquipePage() {
 	const [createSubsystemRequest, setCreateSubsystemRequest] = useState(false)
 	const [sucessaoCapitaoAberta, setSucessaoCapitaoAberta] = useState(false)
 	const podeCadastrar =
-		import.meta.env.DEV &&
 		!!user &&
+		possuiPermissao(user, 'USUARIOS_GERENCIAR') &&
 		perfisParaCadastro(user.role).length > 0
 	const podeAdministrarSubsistemas =
-		import.meta.env.DEV &&
-		!!user &&
-		['capitao', 'gestor'].includes(user.role)
+		!!user && possuiPermissao(user, 'SUBSISTEMAS_GERENCIAR')
 	useEffect(() => {
 		setCadastroAtor(null)
 		setDetalheIntegrante(null)
@@ -108,8 +109,9 @@ export default function EquipePage() {
 							</p>
 						)}
 					</div>
-					{import.meta.env.DEV &&
-						user?.role === 'capitao' &&
+					{user?.role === 'capitao' &&
+						user &&
+						possuiPermissao(user, 'USUARIOS_GERENCIAR') &&
 						!permissoes &&
 						!historicoAuditoria &&
 						!responsabilidadeFinanceira && (
@@ -121,7 +123,8 @@ export default function EquipePage() {
 								Passar a capitania
 							</button>
 						)}
-					{import.meta.env.DEV &&
+					{user &&
+						possuiPermissao(user, 'USUARIOS_GERENCIAR') &&
 						podeConsultar &&
 						!historicoAuditoria && (
 							<Link
@@ -146,6 +149,7 @@ export default function EquipePage() {
 							</button>
 						</div>
 					) : podeCadastrar &&
+					  user &&
 					  !historicoAuditoria &&
 					  !subsistemas &&
 					  !responsabilidadeFinanceira ? (
@@ -196,20 +200,7 @@ export default function EquipePage() {
 					))}
 				</nav>
 
-				{!import.meta.env.DEV ? (
-					<section
-						role="status"
-						className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
-					>
-						<h2 className="text-lg font-semibold text-ink">
-							Módulo indisponível
-						</h2>
-						<p className="mt-2">
-							A consulta de Equipe e Subsistemas estará disponível
-							após a integração com o servidor.
-						</p>
-					</section>
-				) : permissoes && !podeConsultar ? (
+				{permissoes && !podeConsultar ? (
 					<section
 						role="status"
 						className="mt-6 rounded-lg border border-hairline bg-surface-card p-6 text-sm text-body"
@@ -251,13 +242,13 @@ export default function EquipePage() {
 					<HistoricoAuditoriaContent
 						key={pageKeys.auditoria}
 						user={user}
-						revision={demoRevision}
+						revision={dataRevision}
 					/>
 				) : subsistemas && user ? (
 					<SubsistemasContent
 						key={pageKeys.subsistemas}
 						user={user}
-						revision={demoRevision}
+						revision={dataRevision}
 						createRequest={createSubsystemRequest}
 						onCreateRequestConsumed={() =>
 							setCreateSubsystemRequest(false)
@@ -268,22 +259,22 @@ export default function EquipePage() {
 					<IntegrantesContent
 						key={pageKeys.integrantes}
 						user={user}
-						demoRevision={demoRevision}
+						dataRevision={dataRevision}
 						onOpen={setDetalheIntegrante}
 						onOpenFinancial={() =>
 							navigate('/app/equipe/financeiro')
 						}
 					/>
 				) : null}
-				{import.meta.env.DEV && user && responsabilidadeFinanceira && (
+				{user && responsabilidadeFinanceira && (
 					<ResponsabilidadeFinanceiraContent
 						key={pageKeys.financeiro}
 						user={user}
-						revision={demoRevision}
+						revision={dataRevision}
 						onClose={() => navigate('/app/equipe/integrantes')}
 					/>
 				)}
-				{import.meta.env.DEV && permissoes && podeConsultar && user && (
+				{permissoes && podeConsultar && user && (
 					<PermissoesDialog
 						key={pageKeys.permissoes}
 						perfil={user.role}
@@ -299,12 +290,15 @@ export default function EquipePage() {
 						onClose={() => setCadastroAtor(null)}
 					/>
 				)}
-				{sucessaoCapitaoAberta && user?.role === 'capitao' && (
-					<SucessaoCapitaoDialog
-						atorId={user.id}
-						onClose={() => setSucessaoCapitaoAberta(false)}
-					/>
-				)}
+				{sucessaoCapitaoAberta &&
+					user?.role === 'capitao' &&
+					user &&
+					possuiPermissao(user, 'USUARIOS_GERENCIAR') && (
+						<SucessaoCapitaoDialog
+							atorId={user.id}
+							onClose={() => setSucessaoCapitaoAberta(false)}
+						/>
+					)}
 				{user && detalheIntegrante && !subsistemas && (
 					<AdministrarIntegranteDialog
 						key={JSON.stringify([
@@ -315,6 +309,7 @@ export default function EquipePage() {
 						])}
 						ator={user}
 						integranteId={detalheIntegrante}
+						revision={dataRevision}
 						onClose={() => setDetalheIntegrante(null)}
 					/>
 				)}
@@ -325,12 +320,12 @@ export default function EquipePage() {
 
 function IntegrantesContent({
 	user,
-	demoRevision,
+	dataRevision,
 	onOpen,
 	onOpenFinancial,
 }: {
 	user: AuthUser
-	demoRevision: number
+	dataRevision: number
 	onOpen: (id: string) => void
 	onOpenFinancial: () => void
 }) {
@@ -361,7 +356,7 @@ function IntegrantesContent({
 		return () => {
 			cancelled = true
 		}
-	}, [user.id, user.role, user.subsistemaId, demoRevision, attempt])
+	}, [user.id, user.role, user.subsistemaId, dataRevision, attempt])
 
 	function retry() {
 		setLoadState({ status: 'loading' })
@@ -375,9 +370,7 @@ function IntegrantesContent({
 
 	return loadState.status === 'loading' ? (
 		<section role="status" aria-live="polite" className="mt-6 space-y-4">
-			<p className="text-sm text-mute">
-				Carregando integrantes demonstrativos...
-			</p>
+			<p className="text-sm text-mute">Carregando integrantes...</p>
 			<div className="h-16 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
 			<div className="h-48 animate-pulse rounded-lg bg-surface-card motion-reduce:animate-none" />
 		</section>
@@ -428,13 +421,15 @@ function IntegrantesContent({
 				}
 			/>
 			<div className="mt-4 flex justify-end">
-				<button
-					type="button"
-					onClick={simulateFailure}
-					className="text-xs text-mute underline underline-offset-4 hover:text-ink"
-				>
-					Simular falha na próxima consulta
-				</button>
+				{DEMO_MODE && (
+					<button
+						type="button"
+						onClick={simulateFailure}
+						className="text-xs text-mute underline underline-offset-4 hover:text-ink"
+					>
+						Simular falha na próxima consulta
+					</button>
+				)}
 			</div>
 		</>
 	)

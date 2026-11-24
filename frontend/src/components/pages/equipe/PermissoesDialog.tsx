@@ -209,8 +209,8 @@ export function PermissoesDialog({
 					</p>
 				</aside>
 				<p className="mt-4 text-xs leading-relaxed text-mute">
-					Consulta demonstrativa das regras do módulo. Alguns fluxos
-					ainda estão em construção.
+					Matriz informativa das regras de acesso. O backend valida a
+					autorização e o escopo em cada operação.
 				</p>
 			</div>
 

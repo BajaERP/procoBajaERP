@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { AlertCircle, RotateCcw } from 'lucide-react'
 import type { AuthUser } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
+import { DEMO_MODE } from '../../../services/demoMode'
+import { possuiPermissao } from '../../../services/equipePermissions'
 import type {
 	ConsultaSubsistemas,
 	ResumoSubsistemas,
@@ -41,8 +43,7 @@ export function SubsistemasContent({
 		| { kind: 'deactivate'; subsistemaId: string }
 		| null
 	>(null)
-	const podeAdministrar =
-		import.meta.env.DEV && ['capitao', 'gestor'].includes(user.role)
+	const podeAdministrar = possuiPermissao(user, 'SUBSISTEMAS_GERENCIAR')
 
 	useEffect(() => {
 		let active = true
@@ -160,15 +161,17 @@ export function SubsistemasContent({
 							podeAdministrar={podeAdministrar}
 							onOpen={setDetailsId}
 						/>
-						<div className="mt-4 flex justify-end">
-							<button
-								type="button"
-								onClick={simulateFailure}
-								className="min-h-11 text-left text-xs text-mute underline underline-offset-4 hover:text-ink"
-							>
-								Simular falha na próxima consulta
-							</button>
-						</div>
+						{DEMO_MODE && (
+							<div className="mt-4 flex justify-end">
+								<button
+									type="button"
+									onClick={simulateFailure}
+									className="min-h-11 text-left text-xs text-mute underline underline-offset-4 hover:text-ink"
+								>
+									Simular falha na próxima consulta
+								</button>
+							</div>
+						)}
 					</>
 				)}
 			</div>

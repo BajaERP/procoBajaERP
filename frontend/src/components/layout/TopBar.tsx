@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { DevProfileSwitcher } from '../dev/DevProfileSwitcher'
+import { DEMO_MODE } from '../../services/demoMode'
+import { toast } from 'sonner'
 
 export interface TopBarBreadcrumb {
 	label: string
@@ -60,10 +62,18 @@ export function TopBar({
 		}
 	}, [menuOpen])
 
-	function handleLogout() {
+	async function handleLogout() {
 		setMenuOpen(false)
-		logout()
-		navigate('/', { replace: true })
+		try {
+			await logout()
+			navigate('/', { replace: true })
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: 'Não foi possível encerrar a sessão.',
+			)
+		}
 	}
 
 	const initials = user?.initials ?? '?'
@@ -124,7 +134,7 @@ export function TopBar({
 			</div>
 
 			<div className="flex items-center gap-2">
-				{import.meta.env.DEV && <DevProfileSwitcher />}
+				{DEMO_MODE && <DevProfileSwitcher />}
 				{/* Profile menu */}
 				<div className="relative ml-1" ref={menuRef}>
 					<button

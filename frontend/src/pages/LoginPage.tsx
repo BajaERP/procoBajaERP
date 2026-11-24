@@ -4,11 +4,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { LoginBrand } from '../components/pages/login/LoginBrand'
 import { LoginForm } from '../components/pages/login/LoginForm'
 import { LoginThemeSelector } from '../components/pages/login/LoginThemeSelector'
+import { DEMO_MODE } from '../services/demoMode'
 
 export default function LoginPage() {
 	const navigate = useNavigate()
 	const location = useLocation()
-	const { isAuthenticated, isReady, demoNotice } = useAuth()
+	const { isAuthenticated, isReady, demoNotice, sessionError, retrySession } =
+		useAuth()
 	const requestedDestination = (location.state as { from?: unknown } | null)
 		?.from
 	const destination =
@@ -29,7 +31,7 @@ export default function LoginPage() {
 			<section className="relative flex flex-1 flex-col items-center px-6 pb-12 pt-6 sm:px-10 md:items-start md:px-[6.9%] md:pt-[174px]">
 				<LoginThemeSelector />
 				<div className="w-full max-w-[614px]">
-					{import.meta.env.DEV && demoNotice && (
+					{DEMO_MODE && demoNotice && (
 						<p
 							role="status"
 							className="mb-5 rounded-md border border-state-warning bg-state-warning-bg p-3 text-sm text-state-warning"
@@ -37,13 +39,28 @@ export default function LoginPage() {
 							{demoNotice}
 						</p>
 					)}
+					{!DEMO_MODE && sessionError && (
+						<div
+							role="alert"
+							className="mb-5 rounded-md border border-state-warning bg-state-warning-bg p-3 text-sm text-state-warning"
+						>
+							<p>{sessionError}</p>
+							<button
+								type="button"
+								onClick={() => void retrySession()}
+								className="mt-2 font-semibold underline underline-offset-4"
+							>
+								Tentar novamente
+							</button>
+						</div>
+					)}
 					<h2 className="text-center text-[32px] font-bold leading-tight md:text-left">
 						Acesse sua conta
 					</h2>
 					<p className="mt-3 text-center text-[15px] text-mute md:text-left">
-						{import.meta.env.DEV
+						{DEMO_MODE
 							? 'Entre com o RA e a senha para acessar a demonstração.'
-							: 'Acesso indisponível até a integração com o servidor.'}
+							: 'Entre com o RA e a senha para acessar o sistema.'}
 					</p>
 					<LoginForm
 						onSuccess={() =>

@@ -1,4 +1,5 @@
 import type { UserRole } from '../contexts/AuthContext'
+import type { AuthUser } from '../contexts/AuthContext'
 
 export interface PermissaoEquipe {
 	id: string
@@ -9,6 +10,19 @@ export interface PermissaoEquipe {
 
 export function podeConsultarPermissoes(perfil: UserRole): boolean {
 	return perfil === 'capitao' || perfil === 'gestor'
+}
+
+export function possuiPermissao(user: AuthUser, permission: string): boolean {
+	if (!user.isDemo) return user.permissions.includes(permission)
+	if (permission === 'EQUIPE_CONSULTAR') return true
+	if (permission === 'AUDITORIA_CONSULTAR')
+		return ['capitao', 'gestor', 'lider'].includes(user.role)
+	if (permission === 'USUARIOS_GERENCIAR')
+		return ['capitao', 'gestor'].includes(user.role)
+	if (permission === 'SUBSISTEMAS_GERENCIAR')
+		return ['capitao', 'gestor'].includes(user.role)
+	if (permission === 'VINCULOS_GERENCIAR') return user.role === 'capitao'
+	return false
 }
 
 // Catálogo informativo do módulo 1. A autorização real pertence ao servidor.

@@ -35,6 +35,7 @@ export function AdministrarSubsistemaDialog({
 	const [attempt, setAttempt] = useState(0)
 	const [nome, setNome] = useState(subsistema?.nome ?? '')
 	const [descricao, setDescricao] = useState(subsistema?.descricao ?? '')
+	const [criadoId, setCriadoId] = useState<string | null>(null)
 	const [integranteIds, setIntegranteIds] = useState<string[]>([])
 	const [errors, setErrors] = useState<ErrosSubsistema>({})
 	const [failure, setFailure] = useState<string | null>(null)
@@ -100,7 +101,9 @@ export function AdministrarSubsistemaDialog({
 		event.preventDefault()
 		if (saving || options.status !== 'ready') return
 		const dados: DadosSubsistema = {
-			...(subsistema ? { id: subsistema.id } : {}),
+			...((subsistema?.id ?? criadoId)
+				? { id: subsistema?.id ?? criadoId! }
+				: {}),
 			nome,
 			descricao,
 			integranteIds,
@@ -131,6 +134,8 @@ export function AdministrarSubsistemaDialog({
 			onClose()
 		} catch (error: unknown) {
 			const fields = error instanceof SubsistemaError ? error.campos : {}
+			if (error instanceof SubsistemaError && error.partialSubsystemId)
+				setCriadoId(error.partialSubsystemId)
 			setErrors(fields)
 			const message =
 				error instanceof Error

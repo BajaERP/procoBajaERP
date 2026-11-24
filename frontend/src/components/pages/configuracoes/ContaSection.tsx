@@ -1,6 +1,7 @@
 import { ROLE_LABELS, type AuthUser } from '../../../contexts/AuthContext'
 import { LogOut as LogoutIcon } from 'lucide-react'
 import { PasswordChangeForm } from './PasswordChangeForm'
+import { DEMO_MODE } from '../../../services/demoMode'
 
 export function ContaSection({
 	user,
@@ -49,10 +50,12 @@ export function ContaSection({
 				<Field label="Data de cadastro" value="Não disponível" />
 			</dl>
 
-			<p className="text-xs text-mute">
-				Sessão de demonstração. Os dados da conta ainda não estão
-				conectados ao servidor.
-			</p>
+			{DEMO_MODE && (
+				<p className="text-xs text-mute">
+					Sessão demonstrativa. Os dados da conta não são enviados ao
+					servidor.
+				</p>
+			)}
 
 			<PasswordChangeForm required={false} />
 

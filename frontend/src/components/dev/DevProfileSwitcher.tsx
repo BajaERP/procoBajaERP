@@ -3,6 +3,7 @@ import { ChevronDown, RotateCcw, Wrench } from 'lucide-react'
 import { DEMO_PERSPECTIVE_LABELS, useAuth } from '../../contexts/AuthContext'
 import { identitiesForPerspective } from '../../services/demoSession'
 import type { DemoPerspective } from '../../services/equipeTypes'
+import { DEMO_MODE } from '../../services/demoMode'
 
 export function DevProfileSwitcher() {
 	const {
@@ -39,7 +40,7 @@ export function DevProfileSwitcher() {
 		}
 	}, [open])
 
-	if (!import.meta.env.DEV || !user?.isDemo) return null
+	if (!DEMO_MODE || !user?.isDemo) return null
 
 	const roleLabel = user.financial
 		? 'Gestor Financeiro'

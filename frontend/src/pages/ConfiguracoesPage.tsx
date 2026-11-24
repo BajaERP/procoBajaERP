@@ -3,15 +3,24 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import { AparenciaSection } from '../components/pages/configuracoes/AparenciaSection'
 import { ContaSection } from '../components/pages/configuracoes/ContaSection'
+import { toast } from 'sonner'
 
 export default function ConfiguracoesPage() {
 	const { preference, setPreference } = useTheme()
 	const { user, logout } = useAuth()
 	const navigate = useNavigate()
 
-	function handleLogout() {
-		logout()
-		navigate('/', { replace: true })
+	async function handleLogout() {
+		try {
+			await logout()
+			navigate('/', { replace: true })
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: 'Não foi possível encerrar a sessão.',
+			)
+		}
 	}
 
 	return (
