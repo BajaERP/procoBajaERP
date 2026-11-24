@@ -122,6 +122,13 @@ export const mockEquipeService: EquipeService = {
 		await new Promise((resolve) => window.setTimeout(resolve, 250))
 		store.desativarSubsistema(atorId, subsistemaId, destinosPorIntegrante)
 	},
+	async opcoesSucessaoCapitao(atorId) {
+		return store.opcoesSucessaoCapitao(atorId)
+	},
+	async sucederCapitao(atorId, sucessorId, subsistemaDestinoId) {
+		await new Promise((resolve) => window.setTimeout(resolve, 250))
+		store.sucederCapitao(atorId, sucessorId, subsistemaDestinoId)
+	},
 	simularFalhaNaProximaConsulta() {
 		store.failNextRead()
 	},

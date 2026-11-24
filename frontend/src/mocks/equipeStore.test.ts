@@ -317,14 +317,24 @@ test('cadastro usa o perfil persistido do ator e rejeita perfis fora da responsa
 	assert.equal(store.data().integrantes.length, 9)
 })
 
-test('Capitão cadastra Capitão sem subsistema e Gestor; Orientador tem SIAPE e subsistema opcional', () => {
+test('cadastro não cria Capitão; Capitão cadastra Gestor e Orientador mantém subsistema opcional', () => {
 	const store = createDemoStore(storage())
-	const captain = store.createIntegrante('ana', {
-		...cadastro,
-		perfil: 'capitao',
-		subsistemaId: null,
-	})
-	assert.equal(captain.integrante.subsistemaId, null)
+	assert.throws(
+		() =>
+			store.createIntegrante('ana', {
+				...cadastro,
+				perfil: 'capitao',
+				subsistemaId: null,
+			}),
+		(error: unknown) => {
+			assert.ok(error instanceof Error)
+			assert.ok(
+				'campos' in error &&
+					(error.campos as Record<string, string>).perfil,
+			)
+			return true
+		},
+	)
 	const manager = store.createIntegrante('ana', {
 		...cadastro,
 		identificador: '2',
@@ -339,7 +349,7 @@ test('Capitão cadastra Capitão sem subsistema e Gestor; Orientador tem SIAPE e
 		subsistemaId: null,
 	})
 	assert.equal(advisor.integrante.perfil, 'orientador')
-	assert.notEqual(captain.senhaProvisoria, manager.senhaProvisoria)
+	assert.ok(manager.senhaProvisoria)
 })
 
 test('nome, identificador e subsistema inválidos retornam erros associados aos campos sem criar conta', () => {
@@ -352,7 +362,7 @@ test('nome, identificador e subsistema inválidos retornam erros associados aos 
 		[{ identificador: '1'.repeat(21) }, 'identificador'],
 		[{ subsistemaId: null }, 'subsistemaId'],
 		[{ subsistemaId: 'ausente' }, 'subsistemaId'],
-		[{ perfil: 'capitao' }, 'subsistemaId'],
+		[{ perfil: 'capitao' }, 'perfil'],
 	] as const
 	for (const [changes, field] of cases) {
 		assert.throws(
@@ -971,7 +981,14 @@ test('falha ao persistir subsistema é reportada e não confirma a alteração',
 
 test('duplicidade só orienta reativação quando o ator pode administrar a conta desativada', () => {
 	const store = createDemoStore(storage())
-	store.updateIntegrante('ana', { ativo: false })
+	store.updateIntegrante('ana', { identificador: '9999999' })
+	const inaccessible = store.createIntegrante('ana', {
+		...cadastro,
+		identificador: '2345678',
+		perfil: 'gestor',
+		subsistemaId: 'gestao',
+	})
+	store.updateIntegrante(inaccessible.integrante.id, { ativo: false })
 	assert.throws(
 		() =>
 			store.createIntegrante('bruno', {
@@ -1001,7 +1018,7 @@ test('duplicidade só orienta reativação quando o ator pode administrar a cont
 			}),
 		/em uso/,
 	)
-	assert.equal(store.data().integrantes.length, 9)
+	assert.equal(store.data().integrantes.length, 10)
 })
 
 test('falhas de cadastro e armazenamento não anunciam nem persistem criação; nova tentativa funciona', () => {
@@ -1183,8 +1200,10 @@ test('administração valida duplicidade, dados próprios e mantém Capitão ati
 		() => store.administer('ana', 'ana', { ativo: false }),
 		/próprios dados/,
 	)
-	store.updateIntegrante('ana', { ativo: false })
-	store.updateIntegrante('ana', { ativo: true })
+	assert.throws(
+		() => store.updateIntegrante('ana', { ativo: false }),
+		/sucessão/,
+	)
 	assert.throws(
 		() => store.administer('ana', 'ana', { nome: 'Ana' }),
 		/próprios dados/,
@@ -1247,27 +1266,18 @@ test('falha ao persistir atualização genérica retorna erro e preserva os dado
 	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
 })
 
-test('troca de perfil mantém a regra de subsistema do Capitão e impede transferência implícita', () => {
+test('troca de perfil comum não pode atribuir ou retirar o perfil de Capitão', () => {
 	const store = createDemoStore(storage())
-	store.administer('ana', 'elisa', { perfil: 'capitao' })
-	assert.equal(
-		store.data().integrantes.find((item) => item.id === 'elisa')
-			?.subsistemaId,
-		null,
-	)
 	assert.throws(
-		() => store.administer('ana', 'elisa', { perfil: 'membro' }),
-		/subsistema/,
+		() => store.administer('ana', 'elisa', { perfil: 'capitao' }),
+		/sucessão/,
 	)
-	store.administer('ana', 'elisa', {
-		perfil: 'membro',
-		subsistemaId: 'chassi',
-	})
 	assert.equal(
 		store.data().integrantes.find((item) => item.id === 'elisa')
 			?.subsistemaId,
 		'chassi',
 	)
+	assert.equal(store.identity('elisa')?.role, 'membro')
 	assert.throws(
 		() =>
 			store.administer('ana', 'elisa', {
@@ -1297,4 +1307,79 @@ test('troca de perfil mantém a regra de subsistema do Capitão e impede transfe
 			?.subsistemaId,
 		'gestao',
 	)
+})
+
+test('sucessão troca os dois perfis e a associação financeira numa única gravação', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	const options = store.opcoesSucessaoCapitao('ana')
+	assert.deepEqual(
+		options.sucessores.map(({ id }) => id),
+		['bruno', 'carla', 'elisa', 'helena'],
+	)
+	assert.ok(
+		options.sucessores.every(
+			(item) => item.perfil === 'gestor' || item.perfil === 'membro',
+		),
+	)
+	assert.equal(
+		options.sucessores.find((item) => item.id === 'bruno')?.financeiro,
+		true,
+	)
+	assert.deepEqual(
+		options.subsistemasDestino.map(({ id }) => id),
+		['chassi', 'eletrica', 'projeto'],
+	)
+
+	store.sucederCapitao('ana', 'bruno', 'chassi')
+	assert.deepEqual(
+		[
+			store.identity('ana')?.role,
+			store.identity('ana')?.subsistemaId,
+			store.identity('bruno')?.role,
+			store.identity('bruno')?.subsistemaId,
+			store.identity('bruno')?.financial,
+		],
+		['membro', 'chassi', 'capitao', null, false],
+	)
+	assert.equal(
+		store
+			.data()
+			.integrantes.filter(
+				(item) => item.ativo && item.perfil === 'capitao',
+			).length,
+		1,
+	)
+	assert.equal(store.data().auditoria.at(-1)?.tipo, 'sucessao_capitao')
+	assert.equal(createDemoStore(localStorage).identity('ana')?.role, 'membro')
+})
+
+test('sucessão exige Capitão ativo, candidato permitido e subsistema ativo', () => {
+	const store = createDemoStore(storage())
+	store.updateIntegrante('carla', { ativo: false })
+	for (const [ator, sucessor, destino] of [
+		['bruno', 'elisa', 'chassi'],
+		['ana', 'ana', 'chassi'],
+		['ana', 'diego', 'chassi'],
+		['ana', 'carla', 'chassi'],
+		['ana', 'elisa', 'inativo'],
+	] as const) {
+		assert.throws(() => store.sucederCapitao(ator, sucessor, destino))
+	}
+	assert.equal(store.identity('ana')?.role, 'capitao')
+	assert.equal(store.identity('bruno')?.role, 'gestor')
+})
+
+test('falha ao persistir sucessão preserva a capitania e todos os dados', () => {
+	const localStorage = storage()
+	const store = createDemoStore(localStorage)
+	localStorage.setWritesFail(true)
+	assert.throws(
+		() => store.sucederCapitao('ana', 'bruno', 'chassi'),
+		/Não foi possível salvar a sucessão/,
+	)
+	localStorage.setWritesFail(false)
+	assert.equal(store.identity('ana')?.role, 'capitao')
+	assert.equal(store.identity('bruno')?.role, 'gestor')
+	assert.equal(store.data().auditoria.length, 0)
 })

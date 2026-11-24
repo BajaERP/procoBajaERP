@@ -88,14 +88,15 @@ public class UsuarioService {
         return UsuarioResposta.de(alvo, Visibilidade.podeVerRa(ator, alvo));
     }
 
-    /**
-     * Cadastra com uma Senha provisória, devolvida só nesta resposta. A responsabilidade financeira não vem no
-     * cadastro: o Capitão a atribui depois a um Gestor ativo.
-     */
+    /** Cadastra com Senha provisória; a responsabilidade financeira decorre da associação ao Subsistema Financeiro. */
     public UsuarioCadastradoResposta cadastrar(Long atorId, CadastroDeUsuarioRequisicao dados) {
         Usuario ator = usuario(atorId);
         Perfil perfil = dados.perfil();
         ator.exigirQueAdministre(perfil);
+        if (perfil == Perfil.CAPITAO_ADMIN) {
+            throw new RegraDeNegocioException(
+                    "Só a sucessão do Capitão pode definir quem ocupa esse Perfil.");
+        }
         if (perfil == Perfil.LIDER) {
             throw new RegraDeNegocioException(
                     "Ninguém é cadastrado como Líder: cadastre como Membro e faça a Definição de Líder no Subsistema.");
@@ -143,14 +144,15 @@ public class UsuarioService {
         Perfil novo = dados.perfil();
         ator.exigirQueAdministre(atual);
         ator.exigirQueAdministre(novo);
+        if (atual == Perfil.CAPITAO_ADMIN || novo == Perfil.CAPITAO_ADMIN) {
+            throw new RegraDeNegocioException(
+                    "Use a sucessão do Capitão para transferir esse Perfil.");
+        }
         if (atual == novo) {
             throw new RegraDeNegocioException("O Usuário já tem o Perfil " + novo.rotulo() + ".");
         }
         if (atual == Perfil.LIDER || novo == Perfil.LIDER) {
             throw new RegraDeNegocioException("O Perfil Líder só muda pela Definição de Líder do Subsistema.");
-        }
-        if (atual == Perfil.CAPITAO_ADMIN && alvo.isAtivo()) {
-            exigirOutroCapitaoAtivo();
         }
         Subsistema subsistema = subsistemaDaTroca(alvo, novo, dados.subsistemaId());
         gestorFinanceiro.validarAlteracao(alvo, novo, subsistema, alvo.isAtivo());
@@ -191,6 +193,10 @@ public class UsuarioService {
         ator.exigirQueAdministre(alvo.getPerfil());
         if (alvo.isAtivo()) {
             throw new RegraDeNegocioException("O Usuário já está ativo.");
+        }
+        if (alvo.getPerfil() == Perfil.CAPITAO_ADMIN) {
+            throw new RegraDeNegocioException(
+                    "O Perfil Capitão não pode ser reativado por uma operação comum.");
         }
         gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), alvo.getSubsistema(), true);
         alvo.reativar();
@@ -233,10 +239,7 @@ public class UsuarioService {
         return subsistema(subsistemaId);
     }
 
-    /**
-     * Quem passa a Capitão sai do Subsistema. Quem não tem Subsistema e passa a um Perfil que exige informa um.
-     * Quem já tem continua nele: mudar de Subsistema é uma Transferência de integrante.
-     */
+    /** Quem não tem Subsistema e passa a um Perfil que exige informa um; a mudança de Capitão usa SucessaoCapitaoService. */
     private Subsistema subsistemaDaTroca(Usuario alvo, Perfil novo, Long subsistemaId) {
         Subsistema atual = alvo.getSubsistema();
         if (!novo.admiteSubsistema()) {

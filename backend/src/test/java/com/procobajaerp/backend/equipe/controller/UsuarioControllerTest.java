@@ -65,10 +65,12 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void membroPrecisaDeSubsistemaECapitaoNaoTemSubsistema() throws Exception {
+    void membroPrecisaDeSubsistemaECapitaoSoPodeSerDefinidoPorSucessao() throws Exception {
         cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "MEMBRO"))
                 .andExpect(status().isUnprocessableContent());
         cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "CAPITAO_ADMIN", "subsistemaId", chassi))
+                .andExpect(status().isUnprocessableContent());
+        cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400003", "perfil", "CAPITAO_ADMIN"))
                 .andExpect(status().isUnprocessableContent());
         cadastrar("capitao", Map.of("nome", "Bia", "ra", "2400002", "perfil", "ORIENTADOR"))
                 .andExpect(status().isCreated());
@@ -126,12 +128,14 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
-    void quemViraCapitaoSaiDoSubsistema() throws Exception {
+    void trocaDePerfilGenericaNaoPodeCriarUmSegundoCapitao() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
         trocarPerfil("capitao", membro, Map.of("perfil", "CAPITAO_ADMIN", "subsistemaId", chassi))
                 .andExpect(status().isUnprocessableContent());
-        trocarPerfil("capitao", membro, Map.of("perfil", "CAPITAO_ADMIN")).andExpect(status().isOk());
-        assertThat(subsistemaNoBanco(membro)).isNull();
+        trocarPerfil("capitao", membro, Map.of("perfil", "CAPITAO_ADMIN"))
+                .andExpect(status().isUnprocessableContent());
+        assertThat(perfilNoBanco(membro)).isEqualTo("MEMBRO");
+        assertThat(subsistemaNoBanco(membro)).isEqualTo(chassi);
     }
 
     @Test
@@ -250,6 +254,18 @@ class UsuarioControllerTest extends TesteDeIntegracao {
                 .andExpect(jsonPath("$.ativo").value(true));
         mvc.perform(post("/api/usuarios/{id}/reativacao", membro).with(csrf()).session(login("gestor")))
                 .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    void capitaoDesativadoNaoPodeSerReativadoPorOperacaoComum() throws Exception {
+        long antigoCapitao = usuario("capitao-antigo", Perfil.CAPITAO_ADMIN, null, false);
+
+        mvc.perform(post("/api/usuarios/{id}/reativacao", antigoCapitao).with(csrf()).session(login("capitao")))
+                .andExpect(status().isUnprocessableContent());
+
+        assertThat(ativoNoBanco(antigoCapitao)).isFalse();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM usuarios WHERE ativo AND perfil_id = "
+                + "(SELECT id FROM perfis WHERE nome = 'CAPITAO_ADMIN')", Integer.class)).isOne();
     }
 
     // Visibilidade

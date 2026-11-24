@@ -32,8 +32,11 @@ Mudança do Perfil de um Usuário; é o que o Documento de Projeto chama de alte
 _Avoid_: Alterar cargo, alterar permissões
 
 **Capitão/Administrador**:
-Perfil com administração geral da equipe e do ERP, publica Governança e aprova compras junto ao Gestor Financeiro. A equipe tem sempre pelo menos um Capitão ativo e pode ter vários. Não pertence a nenhum Subsistema, porque atua em todos: quem passa a Capitão deixa o seu. Na forma curta, "Capitão".
+Perfil com administração geral da equipe e do ERP, publica Governança e aprova compras junto ao Gestor Financeiro. Há um único Capitão ativo. A sucessão é iniciada pelo Capitão atual: ele escolhe um Gestor ou Membro ativo para assumir e um Subsistema ativo para continuar como Membro. As duas mudanças são feitas juntas. O Capitão não pertence a Subsistema enquanto ocupa o Perfil.
 _Avoid_: Admin
+
+**Sucessão do Capitão**:
+Operação exclusiva do Capitão ativo que transfere esse Perfil a um Gestor ou Membro ativo e associa o Capitão anterior, como Membro, a um Subsistema ativo escolhido na mesma operação. A conta promovida deixa seu Subsistema, se tiver um; se era Gestor Financeiro, perde essa responsabilidade ao deixar o Financeiro. Não se faz sucessão por cadastro nem por Troca de Perfil.
 
 **Gestor**:
 Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Entre os Usuários, administra só os de Perfil Líder, Membro e Orientador. Um Gestor associado ao Subsistema Financeiro passa a ser identificado como Gestor Financeiro e tem acesso à Informação financeira restrita.

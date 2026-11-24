@@ -105,6 +105,17 @@ export interface OpcoesDesativacaoSubsistema {
 	bloqueio: string | null
 }
 
+export interface OpcoesSucessaoCapitao {
+	sucessores: {
+		id: string
+		nome: string
+		perfil: Extract<UserRole, 'gestor' | 'membro'>
+		subsistema: string | null
+		financeiro: boolean
+	}[]
+	subsistemasDestino: SubsistemaDemo[]
+}
+
 export interface OpcoesDefinicaoLider {
 	integrantesDisponiveis: (IntegranteDeSubsistema & {
 		subsistemaNome: string | null
@@ -159,6 +170,12 @@ export interface EquipeService {
 		atorId: string,
 		subsistemaId: string,
 		destinosPorIntegrante: Record<string, string>,
+	): Promise<void>
+	opcoesSucessaoCapitao(atorId: string): Promise<OpcoesSucessaoCapitao>
+	sucederCapitao(
+		atorId: string,
+		sucessorId: string,
+		subsistemaDestinoId: string,
 	): Promise<void>
 	obterDetalheIntegrante?(
 		visualizador: Visualizador,

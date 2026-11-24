@@ -2,13 +2,13 @@
 
 > **Revisão necessária:** as implementações originais das issues 01–04 foram incorporadas à `develop`; decisões posteriores alteraram as regras de Gestor Financeiro, RA, senha provisória e subsistemas. Consulte [CONTEXT.md](../../CONTEXT.md), o [ADR 0002](../../docs/adr/0002-gestor-financeiro-derivado-do-subsistema.md) e as issues de acompanhamento [06](issues/06-correcao-gestor-financeiro-banco.md), [07](issues/07-identificacao-e-senha-provisoria.md) e [08](issues/08-ajustar-desativacao-e-visibilidade-subsistemas.md).
 
-Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável pelo projeto em 2026-11-04 e atualizada por decisões posteriores. Complementa o [resumo do módulo](../../docs/projeto/modulos/equipe-e-subsistemas.md), o glossário em [CONTEXT.md](../../CONTEXT.md), os [ADRs 0001 e 0002](../../docs/adr/) e as issues de acompanhamento. O esquema foi adotado na migration V4 e evoluiu pelas migrations subsequentes; a V8 corrige o modelo efetivo do Gestor Financeiro.
+Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável pelo projeto em 2026-11-04 e atualizada por decisões posteriores. Complementa o [resumo do módulo](../../docs/projeto/modulos/equipe-e-subsistemas.md), o glossário em [CONTEXT.md](../../CONTEXT.md), os [ADRs 0001–0003](../../docs/adr/) e as issues de acompanhamento. O esquema foi adotado na migration V4 e evoluiu pelas migrations subsequentes; a V8 corrige o modelo efetivo do Gestor Financeiro.
 
 ## Perfis e permissões
 
 - Os cinco Perfis e suas permissões são fixos. O catálogo (`permissoes`) e a matriz (`perfil_permissoes`) são semeados por migration, e não há tela para editá-los. "Alterar cargo e permissões" é a Troca de Perfil.
 - O Capitão administra Usuários de qualquer Perfil. O Gestor administra apenas Líder, Membro e Orientador: não cadastra nem altera Gestores ou Capitães, nem troca alguém para esses Perfis.
-- Sempre existe pelo menos um Capitão ativo. O último não pode ser rebaixado nem desativado.
+- Há um único Capitão ativo. Ele não pode ser cadastrado, desativado nem ter o Perfil alterado por operações genéricas; o Capitão atual transfere o Perfil somente pela sucessão atômica para um Gestor ou Membro ativo, e escolhe um Subsistema ativo para continuar como Membro.
 - O primeiro Capitão é criado na inicialização do backend, a partir de variáveis de ambiente, quando não existe nenhum Capitão ativo.
 - Ninguém troca o próprio Perfil, desativa a si mesmo, corrige o próprio Nome ou RA nem redefine a própria senha (para isso há a troca de senha).
 
@@ -30,11 +30,11 @@ Especificação de RF01–RF05 e RF32, fechada em entrevista com o responsável 
 - **Troca de Perfil:**
   - Não pode ser feita para Líder nem a partir de Líder.
   - Gestor que troca para outro Perfil deixa de exercer a responsabilidade financeira, caso esteja associado ao Subsistema Financeiro.
-  - Quem passa a Capitão sai do Subsistema.
+  - O Perfil de Capitão só muda pela sucessão. O sucessor sai do Subsistema na mesma operação; o Capitão anterior passa a Membro e escolhe seu Subsistema ativo de destino.
   - Quem não tem Subsistema e passa a um Perfil que exige um informa o Subsistema na mesma operação.
 - **Desativação e Reativação:** nada é excluído.
   - Usuário desativado não faz login e perde a sessão na requisição seguinte.
-  - Não podem ser desativados: um Líder, antes de ser substituído; o último Capitão ativo.
+  - Não podem ser desativados: um Líder, antes de ser substituído; o Capitão ativo. Um Capitão inativo também não pode ser reativado por operação genérica; use a sucessão para transferir o Perfil.
   - Desativar um Gestor associado ao Financeiro retira automaticamente sua responsabilidade financeira; a reativação a valida novamente.
   - Reativar exige a mesma permissão que desativar.
 
@@ -92,6 +92,7 @@ Cada operação abaixo grava um Registro de auditoria em `logs_auditoria`, com o
 - Usuário: cadastro, edição de Nome e RA (com os valores antigo e novo), Troca de Perfil, desativação, reativação, redefinição de senha e Transferência de integrante.
 - Subsistema: criação, edição, Definição de Líder, ativação e desativação.
 - Associação de integrante ao Financeiro: registrada como Transferência de integrante; a responsabilidade não tem entidade de auditoria separada.
+- Sucessão do Capitão: registra a troca de Perfil do sucessor, a troca de Perfil e a associação a Subsistema do Capitão anterior.
 
 Login, logout e a troca da própria senha não são registrados.
 

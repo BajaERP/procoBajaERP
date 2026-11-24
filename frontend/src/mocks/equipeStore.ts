@@ -65,6 +65,12 @@ export type RegistroAuditoriaDemo = {
 				perfilAtual: Integrante['perfil']
 			}[]
 	  }
+	| {
+			tipo: 'sucessao_capitao'
+			capitaoAnteriorId: string
+			sucessorId: string
+			destinoId: string
+	  }
 )
 
 class ResponsabilidadeFinanceiraError extends Error {}
@@ -244,6 +250,12 @@ function validAuditEntry(value: unknown): value is RegistroAuditoriaDemo {
 					typeof item.origemId === 'string' &&
 					typeof item.destinoId === 'string',
 			)
+		)
+	if (entry.tipo === 'sucessao_capitao')
+		return (
+			typeof entry.capitaoAnteriorId === 'string' &&
+			typeof entry.sucessorId === 'string' &&
+			typeof entry.destinoId === 'string'
 		)
 	return false
 }
@@ -929,6 +941,83 @@ export function createDemoStore(storage: StoragePort) {
 					'Não foi possível salvar a desativação neste navegador. Verifique o armazenamento e tente novamente.',
 				)
 		},
+		opcoesSucessaoCapitao(atorId: string) {
+			const source = data()
+			capitaoAtivo(source, atorId)
+			return {
+				sucessores: source.integrantes
+					.filter(
+						(item) =>
+							item.ativo &&
+							(item.perfil === 'gestor' ||
+								item.perfil === 'membro'),
+					)
+					.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+					.map((item) => ({
+						id: item.id,
+						nome: item.nome,
+						perfil: item.perfil as 'gestor' | 'membro',
+						financeiro: item.financeiro,
+						subsistema:
+							source.subsistemas.find(
+								(subsystem) =>
+									subsystem.id === item.subsistemaId,
+							)?.nome ?? null,
+					})),
+				subsistemasDestino: source.subsistemas
+					.filter((item) => item.ativo)
+					.map((item) => ({ ...item })),
+			}
+		},
+		sucederCapitao(
+			atorId: string,
+			sucessorId: string,
+			subsistemaDestinoId: string,
+		) {
+			const next = data()
+			const capitao = capitaoAtivo(next, atorId)
+			if (sucessorId === atorId)
+				throw new SubsistemaError(
+					'Escolha outra pessoa como próximo Capitão.',
+				)
+			const sucessor = next.integrantes.find(
+				(item) => item.id === sucessorId,
+			)
+			if (
+				!sucessor ||
+				!sucessor.ativo ||
+				(sucessor.perfil !== 'gestor' && sucessor.perfil !== 'membro')
+			)
+				throw new SubsistemaError(
+					'O próximo Capitão precisa ser um Gestor ou Membro ativo.',
+				)
+			const destino = next.subsistemas.find(
+				(item) => item.id === subsistemaDestinoId && item.ativo,
+			)
+			if (!destino)
+				throw new SubsistemaError(
+					'Escolha um subsistema ativo para o Capitão atual.',
+				)
+			const anteriorId = capitao.id
+			capitao.perfil = 'membro'
+			capitao.subsistemaId = destino.id
+			capitao.financeiro = false
+			sucessor.perfil = 'capitao'
+			sucessor.subsistemaId = null
+			sucessor.financeiro = false
+			next.auditoria.push({
+				tipo: 'sucessao_capitao',
+				registradoEm: new Date().toISOString(),
+				atorId,
+				capitaoAnteriorId: anteriorId,
+				sucessorId,
+				destinoId: destino.id,
+			})
+			if (!persist(next))
+				throw new SubsistemaError(
+					'Não foi possível salvar a sucessão neste navegador. Verifique o armazenamento e tente novamente.',
+				)
+		},
 		salvarSubsistema(atorId: string, dados: DadosSubsistema) {
 			const next = data()
 			administradorAtivo(
@@ -1171,16 +1260,21 @@ export function createDemoStore(storage: StoragePort) {
 				podeAdministrarPerfil(ator.perfil, target.perfil)
 			const self = atorId === integranteId
 			const bloqueioStatus =
-				permitted && target?.perfil === 'lider' && target.ativo
-					? 'Defina outro Líder para este subsistema antes de desativar esta conta.'
-					: null
+				permitted && target?.perfil === 'capitao'
+					? 'A situação do Capitão só pode mudar pela sucessão.'
+					: permitted && target?.perfil === 'lider' && target.ativo
+						? 'Defina outro Líder para este subsistema antes de desativar esta conta.'
+						: null
 			const rolesForActor =
 				ator?.perfil === 'capitao'
-					? (['capitao', 'gestor', 'membro', 'orientador'] as const)
+					? (['gestor', 'membro', 'orientador'] as const)
 					: (['membro', 'orientador'] as const)
 			return {
 				perfis:
-					permitted && !self && target?.perfil !== 'lider'
+					permitted &&
+					!self &&
+					target?.perfil !== 'lider' &&
+					target?.perfil !== 'capitao'
 						? [...rolesForActor]
 						: [],
 				subsistemas: permitted ? source.subsistemas : [],
@@ -1222,6 +1316,11 @@ export function createDemoStore(storage: StoragePort) {
 					'Você não pode alterar seus próprios dados administrativos nem desativar sua conta.',
 				)
 			if (changes.perfil !== undefined) {
+				if (changes.perfil === 'capitao' || target.perfil === 'capitao')
+					throw new AdministracaoIntegranteError(
+						'A mudança de Capitão só pode ser feita pela sucessão.',
+						{ perfil: 'Use o fluxo de sucessão da capitania.' },
+					)
 				if (
 					target.perfil === 'lider' ||
 					String(changes.perfil) === 'lider'
@@ -1239,6 +1338,11 @@ export function createDemoStore(storage: StoragePort) {
 						{ perfil: 'Perfil fora da sua responsabilidade.' },
 					)
 			}
+			if (changes.ativo !== undefined && target.perfil === 'capitao')
+				throw new AdministracaoIntegranteError(
+					'A situação do Capitão só pode mudar pela sucessão.',
+					{ ativo: 'Use o fluxo de sucessão da capitania.' },
+				)
 			if (target.perfil === 'lider' && changes.ativo === false)
 				throw new AdministracaoIntegranteError(
 					'Defina outro Líder para este subsistema antes de desativar esta conta.',
@@ -1358,22 +1462,6 @@ export function createDemoStore(storage: StoragePort) {
 					'Não é possível desativar o último Capitão ativo.',
 					{ ativo: 'Mantenha ao menos um Capitão ativo.' },
 				)
-			if (
-				changes.perfil !== undefined &&
-				target.perfil === 'capitao' &&
-				target.ativo &&
-				changes.perfil !== 'capitao' &&
-				next.integrantes.filter(
-					(item) =>
-						item.ativo &&
-						item.perfil === 'capitao' &&
-						item.id !== target.id,
-				).length === 0
-			)
-				throw new AdministracaoIntegranteError(
-					'Não é possível alterar o perfil do último Capitão ativo.',
-					{ perfil: 'Mantenha ao menos um Capitão ativo.' },
-				)
 			if (changes.perfil !== undefined) target.perfil = changes.perfil
 			target.subsistemaId = proximoSubsistemaId
 			if (changes.ativo !== undefined) target.ativo = changes.ativo
@@ -1465,6 +1553,15 @@ export function createDemoStore(storage: StoragePort) {
 			)
 			if (!item)
 				throw new Error('Integrante demonstrativo não encontrado.')
+			if (
+				changes.perfil === 'capitao' ||
+				(item.perfil === 'capitao' &&
+					(changes.perfil !== undefined ||
+						changes.ativo !== undefined))
+			)
+				throw new Error(
+					'A mudança ou desativação do Capitão só pode ocorrer pela sucessão.',
+				)
 			if (Object.hasOwn(changes, 'financeiro'))
 				throw new Error(
 					'A responsabilidade financeira é determinada pelo perfil e pelo subsistema atual.',

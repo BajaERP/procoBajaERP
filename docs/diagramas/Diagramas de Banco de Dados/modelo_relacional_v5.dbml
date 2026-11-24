@@ -172,7 +172,7 @@ Table usuarios {
     subsistema_id
     (id, subsistema_id) [unique]
   }
-  Note: 'Um perfil ativo por usuario, e no maximo um subsistema simultaneo. Sem autenticacao UTFPR.'
+  Note: 'Um perfil ativo por usuario e no maximo um subsistema simultaneo. Deve haver um unico CAPITAO_ADMIN ativo, garantido no banco por indice unico parcial criado depois que os perfis forem semeados. A sucessao altera as duas contas atomicamente. Sem autenticacao UTFPR.'
 }
 
 Table subsistemas {
