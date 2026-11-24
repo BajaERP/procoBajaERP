@@ -21,6 +21,8 @@ public interface SubsistemaRepository extends JpaRepository<Subsistema, Long> {
 
     boolean existsByAtivoTrueAndIdNot(Long id);
 
+    List<Subsistema> findByAtivoTrueOrderByNomeAsc();
+
     @Query("select s from Subsistema s left join fetch s.lider")
     List<Subsistema> listarComLider();
 }
