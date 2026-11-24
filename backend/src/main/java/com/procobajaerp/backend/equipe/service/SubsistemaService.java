@@ -92,7 +92,8 @@ public class SubsistemaService {
         String nome = dados.nome().strip();
         exigirNomeLivre(nome, null);
         Subsistema subsistema = subsistemas.save(new Subsistema(nome, descricao(dados)));
-        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, subsistema.getId(), "CRIADO", detalhes("nome", nome));
+        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, subsistema.getId(), "CRIADO",
+                null, subsistema.getId(), detalhes("nome", nome));
         return SubsistemaResposta.de(subsistema);
     }
 
@@ -104,7 +105,7 @@ public class SubsistemaService {
             throw new RegraDeNegocioException("O Subsistema Financeiro é permanente e não pode ser renomeado.");
         }
         exigirNomeLivre(nome, subsistema);
-        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "EDITADO", detalhes(
+        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "EDITADO", id, id, detalhes(
                 "nomeAnterior", subsistema.getNome(), "nome", nome,
                 "descricaoAnterior", subsistema.getDescricao(), "descricao", descricao(dados)));
         subsistema.editar(nome, descricao(dados));
@@ -134,10 +135,10 @@ public class SubsistemaService {
         trocarPerfil(ator, novo, Perfil.LIDER, "DEFINIDO_COMO_LIDER");
         boolean ativou = !subsistema.isAtivo();
         subsistema.definirLider(novo);
-        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "LIDER_DEFINIDO",
+        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "LIDER_DEFINIDO", id, id,
                 detalhes("liderAnteriorId", anterior == null ? null : anterior.getId(), "liderId", novo.getId()));
         if (ativou) {
-            auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "ATIVADO", detalhes());
+            auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "ATIVADO", id, id, detalhes());
         }
         return SubsistemaResposta.de(subsistema);
     }
@@ -167,7 +168,7 @@ public class SubsistemaService {
             trocarPerfil(ator, lider, Perfil.MEMBRO, "SUBSISTEMA_DESATIVADO");
         }
         destinos.forEach((pessoa, destino) -> transferir(ator, pessoa, destino, "SUBSISTEMA_DESATIVADO"));
-        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "DESATIVADO", detalhes(
+        auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "DESATIVADO", id, null, detalhes(
                 "usuariosTransferidos", pessoas.size(),
                 "destinos", destinos.entrySet().stream()
                         .map(d -> Map.of("usuarioId", d.getKey().getId(), "subsistemaId", d.getValue().getId()))
@@ -214,7 +215,8 @@ public class SubsistemaService {
         gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), destino, alvo.isAtivo());
         Long origemId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         alvo.transferirPara(destino);
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "TRANSFERIDO", detalhes(
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "TRANSFERIDO",
+                origemId, destino == null ? null : destino.getId(), detalhes(
                 "subsistemaOrigemId", origemId, "subsistemaDestinoId", destino == null ? null : destino.getId(),
                 "motivo", motivo));
     }
@@ -222,7 +224,9 @@ public class SubsistemaService {
     private void trocarPerfil(Usuario ator, Usuario alvo, Perfil novo, String motivo) {
         Perfil anterior = alvo.getPerfil();
         alvo.trocarPerfil(perfis.findByNome(novo).orElseThrow());
+        Long subsistemaId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "PERFIL_ALTERADO",
+                subsistemaId, subsistemaId,
                 detalhes("perfilAnterior", anterior, "perfil", novo, "motivo", motivo));
     }
 

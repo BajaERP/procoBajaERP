@@ -111,7 +111,8 @@ public class UsuarioService {
         String senha = gerador.gerar();
         Usuario novo = usuarios.save(new Usuario(ra, dados.nome().strip(), codificador.encode(senha),
                 perfilEntidade(perfil), subsistema, true));
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, novo.getId(), "CADASTRADO", detalhes(
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, novo.getId(), "CADASTRADO",
+                null, subsistema == null ? null : subsistema.getId(), detalhes(
                 "perfil", perfil, "subsistemaId", subsistema == null ? null : subsistema.getId(), "ativo", novo.isAtivo()));
         return new UsuarioCadastradoResposta(UsuarioResposta.de(novo, true), senha);
     }
@@ -130,7 +131,8 @@ public class UsuarioService {
         if (nome.equals(alvo.getNome()) && ra.equals(alvo.getRa())) {
             return UsuarioResposta.de(alvo, true);
         }
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "EDITADO",
+        Long subsistemaId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "EDITADO", subsistemaId, subsistemaId,
                 detalhes("nomeAnterior", alvo.getNome(), "nome", nome, "raAnterior", alvo.getRa(), "ra", ra));
         alvo.corrigir(nome, ra);
         return UsuarioResposta.de(alvo, true);
@@ -160,7 +162,8 @@ public class UsuarioService {
         Long subsistemaAnteriorId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         alvo.trocarPerfil(perfilEntidade(novo));
         alvo.transferirPara(subsistema);
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "PERFIL_ALTERADO", detalhes(
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "PERFIL_ALTERADO",
+                subsistemaAnteriorId, subsistema == null ? null : subsistema.getId(), detalhes(
                 "perfilAnterior", atual, "perfil", novo,
                 "subsistemaAnteriorId", subsistemaAnteriorId, "subsistemaId", subsistema == null ? null : subsistema.getId()));
         return UsuarioResposta.de(alvo, true);
@@ -183,7 +186,9 @@ public class UsuarioService {
         }
         gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), null, false);
         alvo.desativar();
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "DESATIVADO", Map.of());
+        Long subsistemaId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "DESATIVADO",
+                subsistemaId, subsistemaId, Map.of());
         return UsuarioResposta.de(alvo, true);
     }
 
@@ -200,7 +205,9 @@ public class UsuarioService {
         }
         gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), alvo.getSubsistema(), true);
         alvo.reativar();
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "REATIVADO", Map.of());
+        Long subsistemaId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "REATIVADO",
+                subsistemaId, subsistemaId, Map.of());
         return UsuarioResposta.de(alvo, true);
     }
 
@@ -211,7 +218,9 @@ public class UsuarioService {
         ator.exigirQueAdministre(alvo.getPerfil());
         String senha = gerador.gerar();
         alvo.redefinirSenha(codificador.encode(senha));
-        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "SENHA_REDEFINIDA", Map.of());
+        Long subsistemaId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
+        auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "SENHA_REDEFINIDA",
+                subsistemaId, subsistemaId, Map.of());
         return new SenhaProvisoriaResposta(senha);
     }
 

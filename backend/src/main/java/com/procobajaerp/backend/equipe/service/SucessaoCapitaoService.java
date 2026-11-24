@@ -72,12 +72,15 @@ public class SucessaoCapitaoService {
         usuarios.flush();
 
         auditoria.registrar(capitao.getId(), Entidades.USUARIO, capitao.getId(), "PERFIL_ALTERADO",
+                null, destino.getId(),
                 detalhes("perfilAnterior", Perfil.CAPITAO_ADMIN, "perfil", Perfil.MEMBRO,
                         "motivo", "SUCESSAO_CAPITAO", "capitaoSucessorId", sucessor.getId()));
         auditoria.registrar(capitao.getId(), Entidades.USUARIO, capitao.getId(), "TRANSFERIDO",
+                null, destino.getId(),
                 detalhes("subsistemaOrigemId", null, "subsistemaDestinoId", destino.getId(),
                         "motivo", "SUCESSAO_CAPITAO"));
         auditoria.registrar(capitao.getId(), Entidades.USUARIO, sucessor.getId(), "PERFIL_ALTERADO",
+                subsistemaAnteriorId, null,
                 detalhes("perfilAnterior", perfilAnterior, "perfil", Perfil.CAPITAO_ADMIN,
                         "subsistemaAnteriorId", subsistemaAnteriorId, "motivo", "SUCESSAO_CAPITAO",
                         "capitaoAnteriorId", capitao.getId()));
