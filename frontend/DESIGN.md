@@ -45,7 +45,7 @@ A preferência de tema pode ser **Claro**, **Escuro** ou **Sistema** e é contro
 
 ### Sidebar e header
 
-A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Diferencie a página ativa dos demais itens usando `bg-selected` e `text-link`; mantenha a seleção coerente com a rota. Cada módulo tem somente sua entrada principal, sem subitens. Em Equipe e Subsistemas, use as abas internas Integrantes e Subsistemas. No modo recolhido, centralize os ícones e mantenha nomes acessíveis.
+A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Diferencie a página ativa dos demais itens usando `bg-selected` e `text-link`; mantenha a seleção coerente com a rota. Cada módulo tem somente sua entrada principal, sem subitens. Em Equipe e Subsistemas, use as abas internas Integrantes e Subsistemas e mostre Histórico de auditoria somente a Capitão, Gestor e Líder. No modo recolhido, centralize os ícones e mantenha nomes acessíveis.
 
 O drawer mobile fecha pelo botão, pelo fundo ou por Escape. Ao abri-lo, mova o foco para dentro e mantenha-o contido; ao fechá-lo, devolva o foco ao botão de abertura. Ao mudar para desktop, libere o conteúdo da página.
 
@@ -56,6 +56,8 @@ O seletor Dev existe apenas em desenvolvimento e separa perspectiva de pessoa at
 ### Formulários e feedback
 
 Associe cada rótulo ao campo e mantenha foco visível, áreas de toque adequadas e mensagens compreensíveis. No login, o RA aceita somente números; os campos e a validação atual fazem parte de um fluxo demonstrativo, sem conferência de credenciais no servidor.
+
+O histórico apresenta eventos em cartões responsivos, com ação, tipo de registro, data, ator e escopo. Nunca exiba o JSON interno nem identificadores acadêmicos ou credenciais. Inclua filtros rotulados, estados de carregamento, vazio e erro, recuperação e paginação acessível.
 
 Para erros, associe a mensagem ao contexto e use os tokens de erro com texto legível nos dois temas. Para interfaces com dados reais, trate carregamento, ausência de resultados e falha conforme o fluxo; não apresente dados fictícios como se viessem do servidor.
 
