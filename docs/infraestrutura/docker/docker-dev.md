@@ -38,6 +38,14 @@ npm run dev
 O Docker executa esse mesmo fluxo no target de desenvolvimento e mantém
 `node_modules` em um volume separado.
 
+Por padrão, o frontend usa identidades e dados demonstrativos. Para testar a
+integração local com o backend, defina `VITE_DEMO_MODE=false` no `.env` antes
+de iniciar o Compose. O Vite encaminha `/api` para o serviço `backend`, então
+login, sessão e chamadas da equipe continuam na mesma origem do frontend. Em
+execução direta pelo npm, use `VITE_DEMO_MODE=false npm run dev`; o destino do
+proxy padrão é `http://localhost:8080` e pode ser alterado por
+`VITE_API_PROXY_TARGET`.
+
 ## Configurar o ambiente
 
 Se ainda não existir um `.env` local, crie-o a partir do exemplo:
