@@ -109,6 +109,7 @@ export function Shell() {
 						subsistemas: 'Subsistemas',
 						financeiro: 'Gestor Financeiro',
 						permissoes: 'Perfis e permissões',
+						auditoria: 'Histórico de auditoria',
 					} as Record<string, string>
 				)[subsegment]
 			: undefined

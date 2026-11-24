@@ -76,6 +76,12 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async listarSubsistemas(visualizador) {
 				return (await mockService()).listarSubsistemas(visualizador)
 			},
+			async consultarAuditoria(visualizador, filtros) {
+				return (await mockService()).consultarAuditoria(
+					visualizador,
+					filtros,
+				)
+			},
 			async consultarResponsabilidadeFinanceira(visualizador) {
 				return (
 					await mockService()
@@ -202,6 +208,11 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async listarSubsistemas() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',
+				)
+			},
+			async consultarAuditoria() {
+				throw new Error(
+					'Histórico indisponível até a integração com o servidor.',
 				)
 			},
 			async consultarResponsabilidadeFinanceira() {

@@ -4,5 +4,5 @@ import { getEquipePageContentKeys } from './equipePageKeys.ts'
 
 test('conteúdos de equipe têm chaves distintas quando são irmãos', () => {
 	const keys = getEquipePageContentKeys('ana', 'capitao', null)
-	assert.equal(new Set(Object.values(keys)).size, 4)
+	assert.equal(new Set(Object.values(keys)).size, 5)
 })

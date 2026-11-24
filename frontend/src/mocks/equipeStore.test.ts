@@ -71,6 +71,76 @@ test('identidades ativas pertencem ao perfil real e Financeiro é o Gestor atrib
 	assert.equal(store.identity('inexistente'), null)
 })
 
+test('histórico de auditoria limita líderes ao escopo e entrega apenas campos de apresentação', () => {
+	const store = createDemoStore(storage())
+	const filtros = {
+		page: 0,
+		size: 25,
+		entidade: '' as const,
+		acao: '',
+	}
+	const capitao = store.consultarAuditoria(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		filtros,
+	)
+	const liderChassi = store.consultarAuditoria(
+		{ id: 'diego', perfil: 'lider', subsistemaId: 'chassi' },
+		filtros,
+	)
+
+	assert.equal(capitao.totalElements, 3)
+	assert.equal(liderChassi.totalElements, 2)
+	assert.ok(
+		liderChassi.content.every(
+			(item) =>
+				item.subsistemaOrigem?.id === 'chassi' ||
+				item.subsistemaDestino?.id === 'chassi',
+		),
+	)
+	assert.ok(
+		!liderChassi.content.some((item) =>
+			item.descricao.includes('Financeiro'),
+		),
+	)
+	assert.throws(
+		() =>
+			store.consultarAuditoria(
+				{ id: 'elisa', perfil: 'membro', subsistemaId: 'chassi' },
+				filtros,
+			),
+		/consultar o histórico/i,
+	)
+	for (const evento of capitao.content) {
+		assert.equal('detalhesJson' in evento, false)
+		assert.equal('ra' in evento, false)
+		assert.equal('senha' in evento, false)
+	}
+	const apresentacao = JSON.stringify(capitao)
+	assert.ok(!apresentacao.includes('2345678'))
+	assert.ok(!apresentacao.includes('SIAPE'))
+})
+
+test('histórico de auditoria aplica filtros e paginação na demonstração', () => {
+	const store = createDemoStore(storage())
+	const resultado = store.consultarAuditoria(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		{ page: 1, size: 1, entidade: '', acao: '' },
+	)
+
+	assert.equal(resultado.totalElements, 3)
+	assert.equal(resultado.totalPages, 3)
+	assert.equal(resultado.page, 1)
+	assert.equal(resultado.content.length, 1)
+
+	const primeiro = store.consultarAuditoria(
+		{ id: 'ana', perfil: 'capitao', subsistemaId: null },
+		{ page: 0, size: 1, entidade: 'USUARIO', acao: 'TRANSFERIDO' },
+	)
+	assert.equal(primeiro.totalElements, 1)
+	assert.equal(primeiro.content[0]?.acao, 'TRANSFERIDO')
+	assert.equal(primeiro.content[0]?.entidade, 'USUARIO')
+})
+
 test('troca obrigatória atualiza apenas a pendência e nunca persiste senhas', () => {
 	const localStorage = storage()
 	const store = createDemoStore(localStorage)
@@ -794,6 +864,7 @@ test('falha de persistência mantém vínculos e auditoria da transferência', (
 		removeItem: (key: string) => values.delete(key),
 	}
 	const store = createDemoStore(localStorage)
+	const auditCount = store.read().auditoria.length
 	writeCount = 0
 	failWrites = true
 	assert.throws(
@@ -802,7 +873,7 @@ test('falha de persistência mantém vínculos e auditoria da transferência', (
 	)
 	assert.equal(writeCount, 1)
 	assert.equal(store.identity('elisa')?.subsistemaId, 'chassi')
-	assert.equal(store.read().auditoria.length, 0)
+	assert.equal(store.read().auditoria.length, auditCount)
 })
 
 test('definição de Líder exige administrador e Membro ativo e falha sem alteração parcial', () => {
@@ -1373,6 +1444,7 @@ test('sucessão exige Capitão ativo, candidato permitido e subsistema ativo', (
 test('falha ao persistir sucessão preserva a capitania e todos os dados', () => {
 	const localStorage = storage()
 	const store = createDemoStore(localStorage)
+	const auditCount = store.data().auditoria.length
 	localStorage.setWritesFail(true)
 	assert.throws(
 		() => store.sucederCapitao('ana', 'bruno', 'chassi'),
@@ -1381,5 +1453,5 @@ test('falha ao persistir sucessão preserva a capitania e todos os dados', () =>
 	localStorage.setWritesFail(false)
 	assert.equal(store.identity('ana')?.role, 'capitao')
 	assert.equal(store.identity('bruno')?.role, 'gestor')
-	assert.equal(store.data().auditoria.length, 0)
+	assert.equal(store.data().auditoria.length, auditCount)
 })
