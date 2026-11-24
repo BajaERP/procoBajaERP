@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Sidebar } from '../components/layout/Sidebar'
 import { TopBar } from '../components/layout/TopBar'
 import { useAuth } from '../contexts/AuthContext'
+import { DEMO_MODE } from '../services/demoMode'
+import { Notifications } from '../components/shared/Notifications'
 import {
 	LayoutGrid as GridIcon,
 	UsersRound as PeopleIcon,
@@ -164,6 +166,7 @@ export function Shell() {
 
 	return (
 		<div className="flex h-dvh min-h-0 bg-surface-soft dark:bg-surface-dark font-sans overflow-hidden transition-colors">
+			<Notifications />
 			<Sidebar
 				appName="ProcoBaja ERP"
 				nav={NAV}
@@ -194,7 +197,7 @@ export function Shell() {
 				/>
 
 				<main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-surface-soft dark:bg-surface-dark transition-colors">
-					{import.meta.env.DEV && demoNotice && (
+					{DEMO_MODE && demoNotice && (
 						<p
 							role="status"
 							className="border-b border-state-warning bg-state-warning-bg px-4 py-2 text-sm text-state-warning"

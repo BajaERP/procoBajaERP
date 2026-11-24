@@ -3,6 +3,7 @@ import { Check, Copy, KeyRound, LoaderCircle, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ROLE_LABELS, type UserRole } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
+import { DEMO_MODE } from '../../../services/demoMode'
 import {
 	AdministracaoIntegranteError,
 	validarEdicaoIntegrante,
@@ -33,10 +34,12 @@ type State =
 export function AdministrarIntegranteDialog({
 	ator,
 	integranteId,
+	revision,
 	onClose,
 }: {
 	ator: AuthUser
 	integranteId: string
+	revision: number
 	onClose: () => void
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
@@ -111,7 +114,7 @@ export function AdministrarIntegranteDialog({
 		return () => {
 			active = false
 		}
-	}, [ator, integranteId, attempt])
+	}, [ator, integranteId, attempt, revision])
 
 	const integrante = (state.status === 'ready' ? state.integrante : null)!
 	const opcoes = (state.status === 'ready' ? state.opcoes : null)!
@@ -374,8 +377,9 @@ export function AdministrarIntegranteDialog({
 						</button>
 					</div>
 					<p className="text-xs text-mute">
-						Demonstração local: esta senha não autentica uma conta
-						real e não é armazenada.
+						{DEMO_MODE
+							? 'Demonstração local: esta senha não autentica uma conta real e não é armazenada.'
+							: 'Senha provisória de uso único. Entregue-a por um canal seguro; no próximo acesso, será necessário definir uma senha pessoal.'}
 					</p>
 					<div className="flex justify-end">
 						<button

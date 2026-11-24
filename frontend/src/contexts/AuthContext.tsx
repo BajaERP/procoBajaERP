@@ -12,6 +12,14 @@ import {
 	identitiesForPerspective,
 } from '../services/demoSession'
 import type { DemoIdentity, DemoPerspective } from '../services/equipeTypes'
+import { DEMO_MODE } from '../services/demoMode'
+import {
+	AUTH_SESSION_EXPIRED,
+	AUTH_USER_CHANGED,
+	authApi,
+} from '../services/authApi'
+import { ApiError } from '../services/apiClient'
+import { mapCurrentUser } from '../services/apiMappers'
 import {
 	DEMO_DATA_KEY,
 	DEMO_SESSION_KEY as STORAGE_KEY,
@@ -43,6 +51,7 @@ export interface AuthUser {
 	subsistemaId: string | null
 	subsistema: string | null
 	passwordChangePending: boolean
+	permissions: string[]
 }
 
 interface AuthContextValue {
@@ -50,11 +59,13 @@ interface AuthContextValue {
 	isAuthenticated: boolean
 	isReady: boolean
 	login: (ra: string, password: string) => Promise<AuthUser>
-	logout: () => void
+	logout: () => Promise<void>
+	sessionError: string | null
+	retrySession: () => Promise<void>
 	demoIdentities: DemoIdentity[]
 	demoPerspective: DemoPerspective
 	demoNotice: string | null
-	demoRevision: number
+	dataRevision: number
 	setDemoPerspective: (perspective: DemoPerspective) => void
 	setDemoIdentity: (id: string) => void
 	adotarIdentidadeDemo: (
@@ -112,24 +123,26 @@ function asAuthUser(identity: DemoIdentity): AuthUser {
 		...identity,
 		initials: initialsFromName(identity.name),
 		isDemo: true,
+		permissions: [],
 	}
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<AuthUser | null>(null)
 	const [isReady, setReady] = useState(false)
+	const [sessionError, setSessionError] = useState<string | null>(null)
 	const [demoIdentities, setDemoIdentities] = useState<DemoIdentity[]>([])
 	const [demoPerspective, setPerspective] =
 		useState<DemoPerspective>('gestor')
 	const [demoNotice, setNotice] = useState<string | null>(null)
-	const [demoRevision, setRevision] = useState(0)
+	const [dataRevision, setDataRevision] = useState(0)
 	const identityRefresh = useRef(0)
 	const sessionUserId = user?.id ?? null
 
 	useEffect(() => {
 		let active = true
 		async function hydrate() {
-			if (import.meta.env.DEV) {
+			if (DEMO_MODE) {
 				const identities =
 					(await equipeService.listarIdentidades?.()) ?? []
 				if (!active) return
@@ -147,14 +160,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					setPerspective(chosen.perspective)
 					setNotice(chosen.notice)
 				}
+			} else {
+				try {
+					const current = await authApi.currentUser()
+					if (active) setUser(mapCurrentUser(current))
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 401) {
+						if (active) setUser(null)
+					} else if (active) {
+						setSessionError(
+							'Não foi possível verificar sua sessão. Verifique a conexão e tente novamente.',
+						)
+					}
+				}
 			}
 			if (active) setReady(true)
 		}
 		void hydrate().catch(() => {
 			if (active) {
-				setNotice(
-					'Não foi possível carregar as identidades demonstrativas.',
-				)
+				if (DEMO_MODE)
+					setNotice(
+						'Não foi possível carregar as identidades demonstrativas.',
+					)
+				else
+					setSessionError(
+						'Não foi possível verificar sua sessão. Verifique a conexão e tente novamente.',
+					)
 				setReady(true)
 			}
 		})
@@ -164,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [])
 
 	useEffect(() => {
-		if (!import.meta.env.DEV || !isReady) return
+		if (!DEMO_MODE || !isReady) return
 		try {
 			if (sessionUserId)
 				window.localStorage.setItem(
@@ -181,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [demoPerspective, isReady, sessionUserId])
 
 	useEffect(() => {
-		if (!import.meta.env.DEV || !isReady) return
+		if (!DEMO_MODE || !isReady) return
 		let active = true
 		async function refresh(
 			requestedId: string | null,
@@ -201,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				setNotice(chosen.notice)
 				setPerspective(chosen.perspective)
 			} else setUser(null)
-			setRevision((value) => value + 1)
+			setDataRevision((value) => value + 1)
 		}
 		function onChange(event: Event) {
 			if (
@@ -228,11 +259,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, [demoPerspective, isReady, user?.id])
 
+	async function refreshServerUser() {
+		try {
+			const current = await authApi.currentUser()
+			setUser(mapCurrentUser(current))
+			setSessionError(null)
+		} catch (error) {
+			if (error instanceof ApiError && error.status === 401) {
+				setUser(null)
+				setSessionError('Sua sessão expirou. Entre novamente.')
+			} else {
+				setSessionError(
+					'Não foi possível atualizar sua sessão. Verifique a conexão e tente novamente.',
+				)
+			}
+		}
+	}
+
+	useEffect(() => {
+		if (DEMO_MODE || !isReady) return
+		function onExpired() {
+			setUser(null)
+			setSessionError('Sua sessão expirou. Entre novamente.')
+		}
+		function onUserChanged() {
+			setDataRevision((value) => value + 1)
+			void refreshServerUser()
+		}
+		window.addEventListener(AUTH_SESSION_EXPIRED, onExpired)
+		window.addEventListener(AUTH_USER_CHANGED, onUserChanged)
+		return () => {
+			window.removeEventListener(AUTH_SESSION_EXPIRED, onExpired)
+			window.removeEventListener(AUTH_USER_CHANGED, onUserChanged)
+		}
+	}, [isReady])
+
+	async function retrySession() {
+		if (DEMO_MODE) return
+		setSessionError(null)
+		setReady(false)
+		await refreshServerUser()
+		setReady(true)
+	}
+
 	async function login(ra: string, password: string): Promise<AuthUser> {
-		if (!import.meta.env.DEV)
-			throw new Error(
-				'Acesso indisponível até a integração com o servidor.',
-			)
 		const normalizedRa = ra.trim()
 		if (!normalizedRa || !password)
 			throw new Error('RA e senha são obrigatórios.')
@@ -240,6 +310,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			throw new Error('O RA deve conter apenas números.')
 		if (normalizedRa.length > 20)
 			throw new Error('O RA deve ter no máximo 20 caracteres.')
+		if (!DEMO_MODE) {
+			const next = mapCurrentUser(
+				await authApi.login(normalizedRa, password),
+			)
+			setUser(next)
+			setSessionError(null)
+			setNotice(null)
+			return next
+		}
 		await new Promise((resolve) => setTimeout(resolve, 250))
 		const identity = await equipeService.identidadePadrao?.()
 		if (!identity)
@@ -249,18 +328,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		const next = asAuthUser(identity)
 		setUser(next)
 		setPerspective(identity.financial ? 'financeiro' : 'gestor')
+		setSessionError(null)
 		setNotice(null)
 		return next
 	}
 
-	function logout() {
+	async function logout() {
+		if (!DEMO_MODE) {
+			try {
+				await authApi.logout()
+			} catch (error) {
+				if (!(error instanceof ApiError && error.status === 401))
+					throw error
+			}
+		}
 		setUser(null)
 		setNotice(null)
+		setSessionError(null)
 	}
 
 	function setDemoPerspective(perspective: DemoPerspective) {
 		if (
-			!import.meta.env.DEV ||
+			!DEMO_MODE ||
 			!user ||
 			!Object.hasOwn(DEMO_PERSPECTIVE_LABELS, perspective)
 		)
@@ -279,7 +368,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}
 
 	function setDemoIdentity(id: string) {
-		if (!import.meta.env.DEV || !user) return
+		if (!DEMO_MODE || !user) return
 		const identity = identitiesForPerspective(
 			demoIdentities,
 			demoPerspective,
@@ -296,7 +385,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		id: string,
 		perspective: DemoPerspective,
 	) {
-		if (!import.meta.env.DEV)
+		if (!DEMO_MODE)
 			throw new Error('A troca de identidade só existe na demonstração.')
 		const refreshId = ++identityRefresh.current
 		const identities = (await equipeService.listarIdentidades?.()) ?? []
@@ -310,11 +399,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setUser(asAuthUser(identity))
 		setPerspective(perspective)
 		setNotice(null)
-		setRevision((value) => value + 1)
+		setDataRevision((value) => value + 1)
 	}
 
 	async function restoreDemo() {
-		if (!import.meta.env.DEV || !user) return
+		if (!DEMO_MODE || !user) return
 		await equipeService.restaurarDadosDemo?.()
 		const identities = (await equipeService.listarIdentidades?.()) ?? []
 		const identity = await equipeService.identidadePadrao?.()
@@ -326,23 +415,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				? 'Dados demonstrativos restaurados.'
 				: 'Nenhum Gestor ativo está disponível para a demonstração.',
 		)
-		setRevision((value) => value + 1)
+		setDataRevision((value) => value + 1)
 	}
 
 	async function changeOwnPassword(
 		currentPassword: string,
 		newPassword: string,
 	) {
-		if (!import.meta.env.DEV || !user?.isDemo)
-			throw new Error(
-				'Troca indisponível até a integração com o servidor.',
+		if (DEMO_MODE) {
+			if (!user?.isDemo)
+				throw new Error('A sessão demonstrativa não está disponível.')
+			await equipeService.trocarSenhaPropria(
+				user.id,
+				currentPassword,
+				newPassword,
 			)
-		await equipeService.trocarSenhaPropria(
-			user.id,
-			currentPassword,
-			newPassword,
+			return
+		}
+		await authApi.changePassword(currentPassword, newPassword)
+		setUser((current) =>
+			current ? { ...current, passwordChangePending: false } : current,
 		)
-		// The DEMO_DATA_CHANGED listener is the sole identity refresh path.
+		void refreshServerUser()
 	}
 
 	return (
@@ -351,12 +445,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				user,
 				isAuthenticated: !!user,
 				isReady,
+				sessionError,
+				retrySession,
 				login,
 				logout,
 				demoIdentities,
 				demoPerspective,
 				demoNotice,
-				demoRevision,
+				dataRevision,
 				setDemoPerspective,
 				setDemoIdentity,
 				adotarIdentidadeDemo,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { useAuth } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
+import { DEMO_MODE } from '../../../services/demoMode'
 import {
 	PasswordChangeError,
 	validatePasswordChange,
@@ -44,6 +45,19 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 		setErrors((current) => ({ ...current, [field]: undefined }))
 	}
 
+	async function handleRequiredLogout() {
+		try {
+			await logout()
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: 'Não foi possível encerrar a sessão.',
+				{ toasterId: 'troca-senha' },
+			)
+		}
+	}
+
 	async function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		if (submitting.current) return
@@ -61,23 +75,28 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 		setSaving(true)
 		setErrors({})
 		try {
-			if (import.meta.env.DEV && simulateFailure) {
+			if (DEMO_MODE && simulateFailure) {
 				setSimulateFailure(false)
 				await equipeService.simularFalhaNaProximaTrocaSenha?.()
 			}
 			await changeOwnPassword(currentPassword, newPassword)
 			setCurrentPassword('')
 			setNewPassword('')
-			toast.success('Troca demonstrativa concluída.', {
-				toasterId: 'troca-senha',
-			})
+			toast.success(
+				DEMO_MODE
+					? 'Troca demonstrativa concluída.'
+					: 'Senha alterada com sucesso.',
+				{
+					toasterId: 'troca-senha',
+				},
+			)
 		} catch (error: unknown) {
 			setCurrentPassword('')
 			setNewPassword('')
 			const message =
 				error instanceof Error
 					? error.message
-					: 'Não foi possível concluir a troca demonstrativa.'
+					: 'Não foi possível alterar a senha.'
 			if (error instanceof PasswordChangeError) {
 				setErrors(error.fields)
 				focusFirstError(error.fields)
@@ -113,15 +132,27 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 					</h3>
 				)}
 				<p className="text-sm text-mute">
-					{required
-						? 'Esta identidade precisa definir uma senha própria para continuar na demonstração.'
-						: 'Troque a senha da identidade fictícia nesta sessão de demonstração.'}
+					{DEMO_MODE
+						? required
+							? 'Esta identidade precisa definir uma senha própria para continuar na demonstração.'
+							: 'Troque a senha da identidade fictícia nesta sessão de demonstração.'
+						: required
+							? 'Defina uma senha pessoal para continuar usando o ERP.'
+							: 'Atualize a senha da sua conta.'}
 				</p>
-				<p className="text-xs text-mute">
-					A senha atual é solicitada, mas não pode ser conferida pelo
-					mock. A operação não autentica ninguém nem altera
-					credenciais reais. Os campos não são salvos no navegador.
-				</p>
+				{DEMO_MODE ? (
+					<p className="text-xs text-mute">
+						A senha atual é solicitada, mas não pode ser conferida
+						pelo mock. A operação não autentica ninguém nem altera
+						credenciais reais. Os campos não são salvos no
+						navegador.
+					</p>
+				) : (
+					<p className="text-xs text-mute">
+						Confirme sua senha atual. Os campos não são salvos no
+						navegador.
+					</p>
+				)}
 			</header>
 
 			<form
@@ -164,8 +195,9 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 						</p>
 					) : (
 						<p id="senha-atual-ajuda" className="text-xs text-mute">
-							Campo obrigatório para a simulação; o valor não é
-							verificado.
+							{DEMO_MODE
+								? 'Campo obrigatório para a simulação; o valor não é verificado.'
+								: 'Digite a senha usada atualmente na sua conta.'}
 						</p>
 					)}
 				</div>
@@ -212,7 +244,7 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 					)}
 				</div>
 
-				{import.meta.env.DEV && (
+				{DEMO_MODE && (
 					<label className="flex min-h-11 items-center gap-2 text-sm text-mute">
 						<input
 							type="checkbox"
@@ -236,7 +268,7 @@ export function PasswordChangeForm({ required }: { required: boolean }) {
 				{required && (
 					<button
 						type="button"
-						onClick={logout}
+						onClick={() => void handleRequiredLogout()}
 						disabled={saving}
 						className="ml-3 inline-flex min-h-11 items-center justify-center rounded-md border border-hairline px-5 text-sm font-semibold text-ink hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red disabled:cursor-wait disabled:opacity-60"
 					>

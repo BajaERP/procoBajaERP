@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import type { AuthUser } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
+import { DEMO_MODE } from '../../../services/demoMode'
 import type {
 	ConsultaAuditoria,
 	EventoAuditoria,
@@ -344,7 +345,7 @@ export function HistoricoAuditoriaContent({
 				</>
 			)}
 
-			{import.meta.env.DEV && (
+			{DEMO_MODE && (
 				<div className="mt-3 flex justify-end">
 					<button
 						type="button"

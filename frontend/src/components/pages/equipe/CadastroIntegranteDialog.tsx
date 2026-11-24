@@ -3,6 +3,7 @@ import { Check, Copy, Info, LoaderCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ROLE_LABELS } from '../../../contexts/AuthContext'
 import { equipeService } from '../../../services/equipe'
+import { DEMO_MODE } from '../../../services/demoMode'
 import {
 	CadastroIntegranteError,
 	validarCadastroIntegrante,
@@ -300,8 +301,9 @@ export function CadastroIntegranteDialog({
 								</div>
 							</div>
 							<p className="text-xs text-mute">
-								Cadastro demonstrativo. Esta senha não autentica
-								uma conta real.
+								{DEMO_MODE
+									? 'Cadastro demonstrativo. Esta senha não autentica uma conta real.'
+									: 'Senha provisória de uso único. Entregue-a por um canal seguro; no primeiro acesso, será necessário definir uma senha pessoal.'}
 							</p>
 						</div>
 						<footer className="flex justify-end border-t border-hairline px-4 py-5 sm:px-7">
@@ -524,7 +526,7 @@ export function CadastroIntegranteDialog({
 									{failure}
 								</p>
 							)}
-							{import.meta.env.DEV && (
+							{DEMO_MODE && (
 								<label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs text-mute">
 									<input
 										type="checkbox"
