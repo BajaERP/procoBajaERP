@@ -57,7 +57,7 @@ export interface GestorFinanceiroResumo {
 
 export interface ConsultaResponsabilidadeFinanceira {
 	responsavel: GestorFinanceiroResumo | null
-	gestoresElegiveis: GestorFinanceiroResumo[]
+	subsistema: Pick<SubsistemaDemo, 'id' | 'nome' | 'ativo'> | null
 }
 
 export interface IntegranteDeSubsistema {
@@ -128,15 +128,6 @@ export interface EquipeService {
 	consultarResponsabilidadeFinanceira(
 		visualizador: Visualizador,
 	): Promise<ConsultaResponsabilidadeFinanceira>
-	atribuirResponsabilidadeFinanceira(
-		atorId: string,
-		gestorId: string,
-	): Promise<void>
-	retirarResponsabilidadeFinanceira(atorId: string): Promise<void>
-	transferirResponsabilidadeFinanceira(
-		atorId: string,
-		gestorId: string,
-	): Promise<void>
 	opcoesSubsistema(
 		atorId: string,
 		subsistemaId?: string,

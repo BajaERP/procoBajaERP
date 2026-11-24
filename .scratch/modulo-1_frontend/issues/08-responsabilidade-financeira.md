@@ -1,4 +1,4 @@
-# 08: Atribuição de responsabilidade financeira
+# 08: Responsabilidade financeira derivada do Subsistema Financeiro
 
 Status: ready-for-human
 
@@ -6,14 +6,12 @@ Status: ready-for-human
 
 ## O que construir
 
-Permitir ao Capitão atribuir, retirar ou transferir a responsabilidade financeira de um Gestor fictício.
+Apresentar a responsabilidade financeira como consequência da associação de um Gestor ativo ao Subsistema Financeiro, sem controles de concessão manual.
 
-- [x] Tratar Gestor Financeiro como Gestor com atribuição adicional, nunca como perfil ou usuário separado; preservar suas permissões de Gestor.
-- [x] Somente Capitão pode atribuir a responsabilidade a Gestor ativo, independentemente do estado de seu subsistema; pode haver zero ou um responsável.
-- [x] Permitir retirada sem desativar a conta e transferência entre Gestores ativos em uma confirmação e operação única.
-- [x] Bloquear e explicar a desativação ou mudança de perfil do responsável até que a atribuição seja retirada ou transferida.
-- [x] Atualizar identidade e permissões demonstrativas, persistir alterações e verificar atribuição, retirada, transferência, concorrência de responsáveis e bloqueios.
+- [x] Tratar Gestor Financeiro como Gestor associado ao Subsistema Financeiro, nunca como Perfil ou Usuário separado; preservar suas permissões de Gestor.
+- [x] Consultar e exibir o Gestor ativo associado ao Subsistema Financeiro ou o estado vago.
+- [x] Remover operações manuais de atribuição, retirada e transferência da interface e dos serviços de dados.
+- [x] Derivar identidade e permissões demonstrativas da associação atual ao Subsistema Financeiro.
+- [x] Atualizar mocks e validar transições decorrentes de cadastro, transferência, troca de Perfil, desativação e reativação.
 
-Consulte a [especificação do módulo](../spec.md) para as regras completas, o Figma e os critérios transversais de interface e verificação.
-
-## Comments
+Consulte a [especificação do módulo](../spec.md), a [issue 06 do backend](../../modulo-1_backend/issues/06-correcao-gestor-financeiro-banco.md) e o [ADR 0002](../../../docs/adr/0002-gestor-financeiro-derivado-do-subsistema.md).

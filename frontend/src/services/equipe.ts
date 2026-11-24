@@ -81,24 +81,6 @@ export const equipeService: EquipeService = import.meta.env.DEV
 					await mockService()
 				).consultarResponsabilidadeFinanceira(visualizador)
 			},
-			async atribuirResponsabilidadeFinanceira(atorId, gestorId) {
-				await (
-					await mockService()
-				).atribuirResponsabilidadeFinanceira(atorId, gestorId)
-				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
-			},
-			async retirarResponsabilidadeFinanceira(atorId) {
-				await (
-					await mockService()
-				).retirarResponsabilidadeFinanceira(atorId)
-				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
-			},
-			async transferirResponsabilidadeFinanceira(atorId, gestorId) {
-				await (
-					await mockService()
-				).transferirResponsabilidadeFinanceira(atorId, gestorId)
-				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
-			},
 			async opcoesSubsistema(atorId, subsistemaId) {
 				return (await mockService()).opcoesSubsistema(
 					atorId,
@@ -216,21 +198,6 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async consultarResponsabilidadeFinanceira() {
 				throw new Error(
 					'Módulo indisponível até a integração com o servidor.',
-				)
-			},
-			async atribuirResponsabilidadeFinanceira() {
-				throw new Error(
-					'Administração indisponível até a integração com o servidor.',
-				)
-			},
-			async retirarResponsabilidadeFinanceira() {
-				throw new Error(
-					'Administração indisponível até a integração com o servidor.',
-				)
-			},
-			async transferirResponsabilidadeFinanceira() {
-				throw new Error(
-					'Administração indisponível até a integração com o servidor.',
 				)
 			},
 			async opcoesSubsistema() {

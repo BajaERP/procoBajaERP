@@ -172,15 +172,18 @@ export function DetalhesSubsistemaDialog({
 				</button>
 				{podeAdministrar && (
 					<>
-						{subsistema.ativo && (
-							<button
-								type="button"
-								onClick={onDeactivate}
-								className="inline-flex min-h-11 items-center gap-2 rounded-md border border-state-error bg-canvas px-4 text-sm font-semibold text-state-error hover:bg-state-error-bg"
-							>
-								Desativar subsistema
-							</button>
-						)}
+						{subsistema.ativo &&
+							atorPerfil === 'capitao' &&
+							subsistema.nome.toLocaleLowerCase('pt-BR') !==
+								'financeiro' && (
+								<button
+									type="button"
+									onClick={onDeactivate}
+									className="inline-flex min-h-11 items-center gap-2 rounded-md border border-state-error bg-canvas px-4 text-sm font-semibold text-state-error hover:bg-state-error-bg"
+								>
+									Desativar subsistema
+								</button>
+							)}
 						<button
 							type="button"
 							onClick={onEdit}

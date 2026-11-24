@@ -8,13 +8,13 @@ Status: ready-for-agent
 
 Integrar os fluxos concluídos à API e à sessão real, mantendo a demonstração isolada no desenvolvimento.
 
-- [ ] Conferir os contratos finais com o backend e conectar os serviços do módulo, inclusive liderança, transferências, atribuição financeira, identificadores e troca de senha; não recriar as issues de backend 01–04.
+- [ ] Conferir os contratos finais com o backend e conectar os serviços do módulo, inclusive liderança, transferências, consulta somente leitura do Gestor Financeiro, identificadores e troca de senha; não recriar as issues de backend 01–04.
 - [ ] Implementar login, consulta do usuário atual, logout e sessão por cookie HttpOnly com proteção CSRF; configurar mesma origem via proxy em desenvolvimento e roteamento HTTPS em produção. Não guardar credenciais nem sessão real no armazenamento local.
 - [ ] Aguardar a consulta da sessão antes de redirecionar, distinguir sessão ausente ou expirada de falha de rede, preservar a rota solicitada e limpar ou atualizar a identidade no logout.
 - [ ] Aplicar troca obrigatória e voluntária de senha e refletir mudanças de permissões recebidas ou na próxima requisição; o servidor valida autorização e regras em todas as operações.
 - [ ] Filtrar, pesquisar e paginar somente os dados autorizados recebidos; nunca inferir identificadores ausentes. Apresentar erros de API compreensíveis e erros de campo quando disponíveis.
 - [ ] Disponibilizar o módulo real em produção e manter a demonstração somente em desenvolvimento, sem confundir identidades ou permitir que o seletor Dev altere permissões do servidor.
-- [ ] Verificar com backend e contas apropriadas autenticação, CSRF, expiração, logout, retorno à rota, senhas, permissões, mudanças de atribuição, falhas de rede e roteamento; executar build e verificações pertinentes.
+- [ ] Verificar com backend e contas apropriadas autenticação, CSRF, expiração, logout, retorno à rota, senhas, permissões, mudanças de associação ao Subsistema Financeiro, falhas de rede e roteamento; executar build e verificações pertinentes.
 
 Consulte a [especificação do módulo](../spec.md) para as regras completas, o Figma e os critérios transversais de interface e verificação.
 

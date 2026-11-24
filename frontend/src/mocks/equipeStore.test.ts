@@ -28,12 +28,13 @@ test('consulta financeira respeita a visibilidade da composição e não expõe 
 		/permissão/,
 	)
 	assert.equal(store.financialResponsibility('ana').responsavel?.id, 'bruno')
-	store.updateIntegrante('bruno', { subsistemaId: 'chassi' })
+	store.definirLider('ana', 'financeiro', 'elisa')
 	assert.equal(store.financialResponsibility('joao').responsavel?.id, 'bruno')
 	const visible = store.financialResponsibility('elisa')
 	assert.equal(visible.responsavel?.id, 'bruno')
-	assert.deepEqual(visible.gestoresElegiveis, [])
-	store.updateIntegrante('bruno', { subsistemaId: 'inativo' })
+	assert.equal(visible.subsistema?.id, 'financeiro')
+	store.updateIntegrante('bruno', { subsistemaId: 'chassi' })
+	assert.equal(store.financialResponsibility('ana').responsavel, null)
 	assert.throws(() => store.financialResponsibility('joao'), /permissão/)
 })
 
@@ -143,7 +144,7 @@ test('migra dados antigos uma vez, preserva a demonstração e não reativa a tr
 	)
 	assert.equal(
 		JSON.parse(localStorage.getItem('proco.demo.equipe.v1')!).schemaVersion,
-		2,
+		3,
 	)
 
 	migratedStore.changeOwnPassword(
@@ -159,93 +160,26 @@ test('migra dados antigos uma vez, preserva a demonstração e não reativa a tr
 	)
 })
 
-test('somente o Capitão atribui a responsabilidade a Gestor ativo, mesmo em subsistema inativo', () => {
-	const store = createDemoStore(storage())
-	store.removeFinancialManager('ana')
-	const inactiveManager = store.createIntegrante('ana', {
-		nome: 'Gestor Inativo',
-		identificador: '9999989',
-		perfil: 'gestor',
-		subsistemaId: 'gestao',
-	})
-	store.updateIntegrante(inactiveManager.integrante.id, { ativo: false })
-	store.updateIntegrante('bruno', { subsistemaId: 'inativo' })
-	store.assignFinancialManager('ana', 'bruno')
-	assert.equal(store.getFinancialManager()?.id, 'bruno')
-	assert.equal(store.identity('bruno')?.financial, true)
-	assert.throws(
-		() => store.assignFinancialManager('bruno', 'ana'),
-		/Somente o Capitão/,
-	)
-	assert.throws(
-		() => store.assignFinancialManager('ana', 'carla'),
-		/Gestor ativo/,
-	)
-	assert.throws(
-		() =>
-			store.assignFinancialManager('ana', inactiveManager.integrante.id),
-		/Gestor ativo/,
-	)
-})
-
-test('a atribuição admite zero ou um responsável e operações concorrentes não criam dois', async () => {
-	const store = createDemoStore(storage())
-	store.removeFinancialManager('ana')
-	const carla = store.createIntegrante('ana', {
-		nome: 'Carla Gestora',
-		identificador: '9999991',
-		perfil: 'gestor',
-		subsistemaId: 'inativo',
-	})
-	const results = await Promise.allSettled([
-		Promise.resolve().then(() =>
-			store.assignFinancialManager('ana', 'bruno'),
-		),
-		Promise.resolve().then(() =>
-			store.assignFinancialManager('ana', carla.integrante.id),
-		),
-	])
-	assert.equal(
-		results.filter((result) => result.status === 'fulfilled').length,
-		1,
-	)
-	assert.equal(
-		results.filter((result) => result.status === 'rejected').length,
-		1,
-	)
-	assert.equal(
-		store.data().integrantes.filter((item) => item.financeiro).length,
-		1,
-	)
-})
-
-test('transferência financeira troca o responsável em uma gravação e retirada conserva a conta', () => {
+test('a responsabilidade acompanha o vínculo do Gestor e fica vaga ao sair de Financeiro', () => {
 	const localStorage = storage()
 	const store = createDemoStore(localStorage)
-	const manager = store.createIntegrante('ana', {
-		nome: 'Carla Gestora',
-		identificador: '9999990',
-		perfil: 'gestor',
-		subsistemaId: 'inativo',
-	})
-	store.transferFinancialManager('ana', manager.integrante.id)
-	const persisted = JSON.parse(
-		localStorage.getItem('proco.demo.equipe.v1')!,
-	) as { integrantes: { id: string; financeiro: boolean }[] }
-	assert.deepEqual(
-		persisted.integrantes
-			.filter((item) => item.financeiro)
-			.map((item) => item.id),
-		[manager.integrante.id],
-	)
-	assert.equal(store.identity('bruno')?.financial, false)
-	store.removeFinancialManager('ana')
+	store.updateIntegrante('bruno', { subsistemaId: 'chassi' })
 	assert.equal(store.getFinancialManager(), null)
-	assert.equal(store.identity(manager.integrante.id)?.role, 'gestor')
-	assert.equal(store.identity(manager.integrante.id)?.financial, false)
+	assert.equal(store.identity('bruno')?.financial, false)
+	assert.equal(store.financialResponsibility('ana').responsavel, null)
+	store.transferirIntegrante('ana', 'bruno', 'financeiro')
+	assert.equal(store.getFinancialManager()?.id, 'bruno')
+	assert.equal(store.identity('bruno')?.financial, true)
+	assert.equal(
+		JSON.parse(
+			localStorage.getItem('proco.demo.equipe.v1')!,
+		).integrantes.find((item: { id: string }) => item.id === 'bruno')
+			.subsistemaId,
+		'financeiro',
+	)
 })
 
-test('falha de persistência mantém o responsável anterior durante transferência', () => {
+test('falha ao transferir para Financeiro preserva os vínculos persistidos', () => {
 	const localStorage = storage()
 	const store = createDemoStore(localStorage)
 	const manager = store.createIntegrante('ana', {
@@ -254,50 +188,41 @@ test('falha de persistência mantém o responsável anterior durante transferên
 		perfil: 'gestor',
 		subsistemaId: 'inativo',
 	})
+	store.updateIntegrante('bruno', { subsistemaId: 'chassi' })
 	localStorage.setWritesFail(true)
 	assert.throws(
-		() => store.transferFinancialManager('ana', manager.integrante.id),
+		() =>
+			store.transferirIntegrante(
+				'ana',
+				manager.integrante.id,
+				'financeiro',
+			),
 		/Não foi possível salvar a transferência/,
 	)
-	assert.equal(store.getFinancialManager()?.id, 'bruno')
+	assert.equal(store.getFinancialManager(), null)
 	assert.equal(store.identity(manager.integrante.id)?.financial, false)
 })
 
-test('atribuição financeira bloqueia desativação e troca de perfil inclusive pela edição geral', () => {
+test('mudar o perfil ou desativar o Gestor Financeiro retira a função automaticamente', () => {
 	const store = createDemoStore(storage())
 	const options = store.administrationOptions('ana', 'bruno')
-	assert.equal(
-		options.bloqueioPerfil,
-		'Retire ou transfira a responsabilidade financeira antes de alterar o perfil.',
-	)
-	assert.equal(
-		options.bloqueioStatus,
-		'Retire ou transfira a responsabilidade financeira antes de desativar esta conta.',
-	)
-	assert.equal(options.podeAlterarStatus, false)
-	assert.throws(
-		() => store.removeFinancialManager('bruno'),
-		/Somente o Capitão/,
-	)
-	assert.throws(
-		() => store.administer('ana', 'bruno', { ativo: false }),
-		/Retire ou transfira/,
-	)
-	assert.throws(
-		() => store.administer('ana', 'bruno', { perfil: 'membro' }),
-		/Retire ou transfira/,
-	)
+	assert.equal(options.bloqueioPerfil, null)
+	assert.equal(options.bloqueioStatus, null)
+	assert.equal(options.podeAlterarStatus, true)
+	assert.ok(options.perfis.includes('membro'))
+	store.administer('ana', 'bruno', { perfil: 'membro' })
+	assert.equal(store.identity('bruno')?.financial, false)
+	assert.equal(store.getFinancialManager(), null)
+
+	store.administer('ana', 'bruno', { perfil: 'gestor' })
+	assert.equal(store.identity('bruno')?.financial, true)
+	store.administer('ana', 'bruno', { ativo: false })
+	assert.equal(store.identity('bruno'), null)
+	assert.equal(store.getFinancialManager(), null)
 	assert.throws(
 		() => store.updateIntegrante('bruno', { financeiro: false }),
-		/fluxo próprio/,
+		/determinada pelo perfil e pelo subsistema/,
 	)
-	assert.throws(
-		() => store.updateIntegrante('bruno', { ativo: false }),
-		/Retire ou transfira/,
-	)
-	store.removeFinancialManager('ana')
-	store.updateIntegrante('bruno', { ativo: false })
-	assert.equal(store.identity('bruno'), null)
 })
 
 test('alterações fictícias são compartilhadas entre instâncias e restauração recupera o padrão', () => {
@@ -305,7 +230,7 @@ test('alterações fictícias são compartilhadas entre instâncias e restauraç
 	const first = createDemoStore(localStorage)
 	const second = createDemoStore(localStorage)
 	first.updateIntegrante('bruno', { nome: 'Bruno Atualizado' })
-	first.removeFinancialManager('ana')
+	first.updateIntegrante('bruno', { subsistemaId: 'chassi' })
 	second.updateIntegrante('carla', { ativo: false })
 	assert.equal(second.identity('bruno')?.name, 'Bruno Atualizado')
 	assert.equal(first.identity('carla'), null)
@@ -387,7 +312,6 @@ test('cadastro usa o perfil persistido do ator e rejeita perfis fora da responsa
 			store.createIntegrante('bruno', { ...cadastro, perfil } as never),
 		)
 	}
-	store.removeFinancialManager('ana')
 	store.updateIntegrante('bruno', { perfil: 'membro' })
 	assert.throws(() => store.createIntegrante('bruno', cadastro), /permissão/)
 	assert.equal(store.data().integrantes.length, 9)
@@ -1105,7 +1029,7 @@ test('administração autoriza campos e preserva privacidade nos detalhes', () =
 	const store = createDemoStore(storage())
 	const managerOptions = store.administrationOptions('bruno', 'elisa')
 	assert.deepEqual(managerOptions.perfis, ['membro', 'orientador'])
-	assert.equal(managerOptions.subsistemas.length, 5)
+	assert.equal(managerOptions.subsistemas.length, 6)
 	assert.equal(managerOptions.podeEditarDados, true)
 	assert.equal(managerOptions.podeAlterarStatus, true)
 	assert.equal(
@@ -1211,7 +1135,7 @@ test('falha ao persistir administração retorna erro e preserva os dados anteri
 	assert.equal(store.identity('elisa')?.name, 'Elisa Persistida')
 })
 
-test('liderança não muda por edição comum e Gestor Financeiro exige tratar a atribuição à parte', () => {
+test('liderança tem fluxo próprio e a responsabilidade financeira acompanha o vínculo', () => {
 	const store = createDemoStore(storage())
 	assert.deepEqual(store.administrationOptions('bruno', 'diego').perfis, [])
 	assert.throws(
@@ -1227,17 +1151,13 @@ test('liderança não muda por edição comum e Gestor Financeiro exige tratar a
 		/Defina outro Líder/,
 	)
 	const financial = store.administrationOptions('ana', 'bruno')
-	assert.match(financial.bloqueioStatus ?? '', /responsabilidade financeira/)
-	assert.equal(financial.podeAlterarStatus, false)
-	assert.deepEqual(financial.perfis, [])
-	assert.throws(
-		() => store.administer('ana', 'bruno', { ativo: false }),
-		/responsabilidade financeira/,
-	)
-	assert.throws(
-		() => store.administer('ana', 'bruno', { perfil: 'membro' }),
-		/responsabilidade financeira/,
-	)
+	assert.equal(financial.bloqueioStatus, null)
+	assert.equal(financial.bloqueioPerfil, null)
+	assert.equal(financial.podeAlterarStatus, true)
+	assert.ok(financial.perfis.includes('membro'))
+	store.administer('ana', 'bruno', { perfil: 'membro' })
+	assert.equal(store.identity('bruno')?.financial, false)
+	store.administer('ana', 'bruno', { perfil: 'gestor' })
 	assert.equal(store.identity('bruno')?.financial, true)
 })
 
@@ -1269,10 +1189,8 @@ test('administração valida duplicidade, dados próprios e mantém Capitão ati
 		() => store.administer('ana', 'ana', { nome: 'Ana' }),
 		/próprios dados/,
 	)
-	assert.throws(
-		() => store.administer('ana', 'bruno', { ativo: false }),
-		/responsabilidade financeira/,
-	)
+	store.administer('ana', 'bruno', { ativo: false })
+	assert.equal(store.identity('bruno'), null)
 	assert.equal(
 		store
 			.data()
