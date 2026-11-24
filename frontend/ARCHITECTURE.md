@@ -1,6 +1,6 @@
 # Arquitetura do frontend
 
-O frontend do ProcoBaja ERP é uma aplicação React de página única, localizada em [`frontend/`](./). A interface integrada ainda é um protótipo: a maior parte dos módulos apresenta páginas em construção, e a sessão não está conectada à autenticação do backend.
+O frontend do ProcoBaja ERP é uma aplicação React de página única, localizada em [`frontend/`](./). O módulo Equipe e Subsistemas está conectado à autenticação e à API do backend; os outros módulos ainda apresentam páginas em construção.
 
 ## Tecnologias
 
@@ -10,16 +10,16 @@ A aplicação usa React e TypeScript, com Vite para desenvolvimento e build, Tai
 
 ```text
 frontend/src/
-├── app/                   # Rotas, proteção demonstrativa e shell
+├── app/                   # Rotas, proteção de sessão e shell
 ├── assets/                # Logos da equipe
 ├── components/
 │   ├── layout/            # Sidebar e barra superior
 │   ├── pages/             # Componentes específicos de cada página
 │   └── shared/            # Componentes compartilhados
-├── contexts/              # Sessão demonstrativa e tema
+├── contexts/              # Sessão e tema
 ├── mocks/                 # Dados fictícios exclusivos do desenvolvimento
 ├── pages/                 # Composição das páginas e navegação
-├── services/              # Fronteira de consulta e regras de visibilidade
+├── services/              # APIs, adaptadores demo e regras de apresentação
 ├── App.tsx                # Provedores e roteador
 ├── main.tsx               # Inicialização do React
 └── styles.css             # Tokens, temas e estilos globais
@@ -31,26 +31,26 @@ As páginas compõem seções e coordenam dados ou navegação próprios da rota
 
 O roteador usa `createHashRouter`, portanto os caminhos aparecem após `#` no endereço, por exemplo `/#/login` e `/#/app/dashboard`.
 
-- `/` apresenta a introdução e avança automaticamente para o login; uma sessão demonstrativa existente segue para o Dashboard.
-- `/login` recebe RA e senha. Após o acesso demonstrativo, abre o Dashboard ou restaura uma rota protegida solicitada anteriormente.
+- `/` apresenta a introdução e avança automaticamente para o login; uma sessão válida existente segue para o Dashboard.
+- `/login` recebe RA e senha. Após a autenticação, abre o Dashboard ou restaura uma rota protegida solicitada anteriormente.
 - `/app/*` usa `ProtectedRoute` e `Shell`. Enquanto a identidade tiver troca de senha pendente, `ProtectedRoute` apresenta o formulário obrigatório antes de montar o `Shell`, inclusive em rotas acessadas diretamente; após o sucesso, mantém a rota solicitada. O shell reúne sidebar, barra superior e conteúdo da rota. No mobile, a navegação é apresentada em um drawer.
-- A sidebar apresenta uma entrada principal por módulo, sem subitens; ainda não adapta o menu por perfil. Equipe e Subsistemas oferece abas internas para Integrantes e Subsistemas e, para Capitão, Gestor e Líder, Histórico de auditoria. A tela de auditoria usa dados demonstrativos e aplica o escopo local apenas para exercitar a interface; a autorização real e a consulta paginada ficam no servidor e entram na última etapa de integração. A responsabilidade financeira abre pelo indicador de Gestor Financeiro na lista, em um painel lateral no desktop e uma tela adaptada ao mobile. Outras rotas ainda exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
+- A sidebar apresenta uma entrada principal por módulo, sem subitens; ainda não adapta o menu por perfil. Equipe e Subsistemas oferece abas internas para Integrantes e Subsistemas e para Histórico, quando a sessão recebe a permissão correspondente. Histórico, visibilidade e paginação são consultados no servidor. A responsabilidade financeira abre pelo indicador de Gestor Financeiro na lista, em um painel lateral no desktop e uma tela adaptada ao mobile. Outras rotas ainda exibem `PlaceholderPage`. As rotas atuais estão em [`routes.tsx`](./src/app/routes.tsx).
 
-Em desenvolvimento, as páginas do módulo consultam `services/equipe.ts`, que seleciona o serviço fictício em `mocks/equipe.ts`. O serviço aplica a visibilidade demonstrativa antes de entregar dados à tela; busca, filtros e paginação operam somente sobre os dados recebidos. O histórico demonstrativo é normalizado em campos de apresentação sem detalhes internos. O botão de simulação provoca uma falha na próxima consulta para conferir o estado de recuperação. Estas regras locais não são autorização de dados reais. No build de produção, o módulo apresenta indisponibilidade até a integração e não inclui os dados fictícios do módulo.
+As páginas do módulo consultam `services/equipe.ts`, que seleciona o adaptador demonstrativo ou o adaptador HTTP. O modo demonstrativo existe apenas em desenvolvimento e é o padrão local; `VITE_DEMO_MODE=false` permite testar o backend pelo proxy same-origin do Vite. No build de produção, a seleção é sempre a API e os dados demonstrativos não são empacotados. O adaptador HTTP converte DTOs do backend para os tipos de apresentação e não aplica regras de autorização local: filtros da interface operam sobre os resultados já autorizados pelo servidor. A API usa paginação remota para o histórico e retorna somente seus campos públicos.
 
 ## Sessão e tema
 
-`AuthContext` mantém uma sessão **apenas demonstrativa e exclusiva de desenvolvimento**. O login preserva os campos de RA numérico (até 20 caracteres) e senha não vazia, mas assume o primeiro Gestor ativo dos dados fictícios, sem conferir credenciais. O armazenamento `proco.auth.user` guarda somente ID e perspectiva; a identidade é recuperada dos dados compartilhados. A inicialização aguarda essa recuperação antes de redirecionar rotas protegidas. A senha não é armazenada. `ProtectedRoute` coordena o fluxo local de interface; isso **não é autenticação ou autorização** e não protege dados reais. Em produção, o login informa indisponibilidade, não cria nem recupera sessões demonstrativas e não oferece os controles Dev.
+`AuthContext` aguarda a recuperação da sessão antes de liberar rotas protegidas. No modo demonstrativo, o login aceita RA numérico e senha não vazia e seleciona uma identidade fictícia sem validar credenciais; `proco.auth.user` guarda apenas ID e perspectiva fictícios. No modo real, o login envia RA e senha a `/api/auth/login`; o backend mantém a sessão em cookie HttpOnly e retorna identidade, perfil, permissões e estado de troca obrigatória. A senha, o cookie e a sessão real nunca são gravados em `localStorage`. Uma falha de rede ao consultar `/api/auth/eu` é apresentada separadamente da ausência de sessão, e um `401` posterior encerra a sessão no frontend preservando a rota solicitada para novo login.
 
-Após o login, o botão **Dev** permite escolher um dos cinco perfis e uma pessoa ativa daquele perfil, inclusive identidades com troca de senha pendente. A visão adicional **Gestor Financeiro** seleciona o Gestor com atribuição financeira; não cria um sexto perfil. Header, sidebar e Conta refletem nome, perfil e situação demonstrativa. A seção Conta em Configurações permite a troca voluntária da própria senha. Na troca obrigatória e voluntária, o mock solicita a senha atual, mas não a verifica: esta sessão não autentica nem altera credenciais reais. As senhas ficam somente em memória durante a operação; os dados compartilhados persistem apenas a flag `passwordChangePending`, que é limpa após o sucesso.
+No modo demonstrativo, o botão **Dev** permite escolher um dos cinco perfis e uma pessoa ativa daquele perfil, inclusive identidades com troca de senha pendente. A visão adicional **Gestor Financeiro** seleciona o Gestor com atribuição financeira; não cria um sexto perfil. Header, sidebar e Conta refletem a identidade atual. No modo real, o frontend usa as permissões retornadas por `/api/auth/eu` para exibir ações e o backend valida cada operação. A troca obrigatória e a voluntária usam `PUT /api/auth/senha`; o backend valida a senha atual, atualiza a sessão vigente e encerra as demais sessões. Os campos não são persistidos pelo frontend.
 
-`mocks/equipeStore.ts` mantém os registros compartilhados em `proco.demo.equipe.v1`, sem senhas, e grava a versão do esquema dos dados. Ao ler dados anteriores à troca de senha, migra uma vez a flag pendente de Ana, Capitão inicial, preservando os demais registros; a versão salva impede que uma senha já trocada volte a ficar pendente após recarga. Cada leitura e alteração consulta o estado persistido, preservando alterações realizadas em outras abas. Mudanças do serviço e eventos de armazenamento atualizam a identidade e a listagem. Se a pessoa selecionada ficar indisponível para a perspectiva atual, outra da mesma perspectiva é escolhida; na ausência dela, a sessão tenta um Gestor ou outra pessoa ativa, atualiza a perspectiva e avisa. Sem pessoas ativas, volta ao login com a indicação de indisponibilidade. Uma tentativa de selecionar um perfil vazio mantém a identidade atual e apresenta um aviso.
+`mocks/equipeStore.ts` mantém os registros fictícios em `proco.demo.equipe.v1`, sem senhas, e grava a versão do esquema dos dados. Essas identidades existem apenas quando `DEMO_MODE` está habilitado. Mudanças do serviço e eventos de armazenamento atualizam a identidade e a listagem; se a pessoa selecionada ficar indisponível, a demonstração escolhe outra identidade válida e avisa.
 
-Gestor Financeiro é uma atribuição adicional a um Gestor ativo. O Capitão atribui, retira ou transfere a responsabilidade por operações específicas do serviço mock; há no máximo uma atribuição, e a transferência grava a troca em uma única operação. A atribuição é persistida junto aos dados compartilhados e sincronizada com a visão demonstrativa `financeiro`. Desativação ou troca de perfil do responsável exige retirada ou transferência prévia, inclusive em operações gerais de administração. A interface demonstra essas regras locais e não autoriza operações no servidor.
+Gestor Financeiro é uma atribuição adicional a um Gestor ativo, determinada pela associação ao subsistema Financeiro. A interface consulta esse vínculo no backend; ela não oferece uma atribuição separada. Alterações de perfil, associação ou situação são validadas pelo servidor.
 
-O controle **Restaurar dados demonstrativos** pede confirmação, restaura a base inicial e retorna ao Gestor padrão. A falha de consulta pode ser simulada uma vez pelo botão da listagem. Alterações de dados para testar reatividade podem ser feitas pela operação de desenvolvimento `equipeService.atualizarIntegranteDemo`. O cadastro, a edição, a alteração de situação e a redefinição de senha provisória são demonstrativos e atualizam a lista sem descartar busca, filtros ou página selecionada. Esses recursos não concedem permissões reais: a integração deve buscar identidade e autorização no backend.
+O controle **Restaurar dados demonstrativos** pede confirmação, restaura a base inicial e retorna ao Gestor fictício padrão. Os controles de falha simulada e alteração de dados de teste só aparecem quando a demonstração está ativa. No modo real, cadastro, edição, alteração de situação, redefinição provisória, transferências, liderança, sucessão e auditoria usam os endpoints correspondentes; o frontend atualiza a sessão a partir de `/api/auth/eu` após operações que podem alterar o perfil vigente.
 
-O backend possui migrações de banco, mas o frontend ainda não consome endpoints de autenticação ou uma API de aplicação. O formulário de login atual não testa credenciais contra o servidor. O modelo relacional proposto está em [`docs/diagramas`](../docs/diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml). Uma futura integração deve autenticar e autorizar no servidor; variáveis públicas do Vite usam o prefixo `VITE_` e não devem conter segredos.
+O cliente HTTP usa `/api` na mesma origem e envia o cookie de sessão automaticamente. Antes de cada mutação, obtém o cookie `XSRF-TOKEN` e o reenvia em `X-XSRF-TOKEN`. O Vite encaminha `/api` ao backend no desenvolvimento; em produção, o proxy HTTPS deve encaminhar `/api` e o frontend pelo mesmo domínio. Erros RFC 9457 do backend são convertidos para mensagens e erros de campo. A autorização e a visibilidade continuam no servidor. O modelo relacional está documentado em [`docs/diagramas`](../docs/diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml); variáveis públicas do Vite usam o prefixo `VITE_` e não devem conter segredos.
 
 `ThemeContext` controla as preferências claro, escuro e sistema. A preferência explícita é salva em `localStorage` como `proco.theme`; a opção sistema acompanha `prefers-color-scheme`. Os tokens e as variantes escuras ficam em `styles.css`.
 
@@ -65,6 +65,8 @@ npm run dev
 ```
 
 O Vite normalmente inicia em `http://localhost:5173`; caso a porta esteja ocupada, consulte o endereço exibido no terminal. Antes de concluir alterações, execute:
+
+Para usar o backend real em execução local, configure `VITE_DEMO_MODE=false` no ambiente do Vite. No Compose, defina essa variável no `.env` da raiz. A sessão real usa cookies same-origin e CSRF.
 
 ```bash
 npm run format:check
