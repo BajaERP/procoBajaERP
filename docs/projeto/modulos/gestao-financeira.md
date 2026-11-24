@@ -17,8 +17,8 @@
 
 | Perfil | Acesso previsto |
 |---|---|
-| Capitão/Administrador e Financeiro | Gerenciam dados financeiros, aprovam conjuntamente e podem efetivar compras e registrar pagamentos. |
-| Gestor | Consulta estado e informações administrativas permitidas; não acessa preços, orçamentos, movimentações, saldos, gastos ou previsão de caixa, mesmo com Financeiro vinculado. |
+| Capitão/Administrador e Gestor Financeiro | Gerenciam dados financeiros, aprovam conjuntamente e podem efetivar compras e registrar pagamentos. O Gestor Financeiro é o Gestor ativo associado ao Subsistema Financeiro. |
+| Gestor sem associação ao Financeiro | Consulta estado e informações administrativas permitidas; não acessa preços, orçamentos, movimentações, saldos, gastos ou previsão de caixa. |
 | Líder e Membro | Criam e acompanham solicitações do próprio subsistema e consultam preços e orçamentos das próprias solicitações durante o processo; não acessam caixa ou dados financeiros gerais. |
 | Orientador | Consulta informações gerais não financeiras disponibilizadas ao perfil; não gerencia compras ou movimentações. |
 
@@ -36,6 +36,6 @@ Diagramas de classes: [diagrama de classes 1](../../diagramas/Diagramas%20de%20C
 
 - Submeter revisão com menos de três orçamentos, registrar decisões dos dois aprovadores e conferir que uma aprovação isolada não autoriza a compra.
 - Reprovar, justificar, ajustar e reenviar preservando histórico; verificar cancelamento em cada estado permitido.
-- Confirmar saída sem duplicidade e ausência de valores restritos nas respostas destinadas ao Gestor, inclusive com Financeiro vinculado.
+- Confirmar saída sem duplicidade e ausência de valores restritos nas respostas destinadas a Gestores sem associação ao Financeiro.
 
 Estes cenários derivam das regras do PDF e não comprovam que os fluxos já existam ou estejam testados.

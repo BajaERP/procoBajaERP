@@ -41,8 +41,8 @@ COMMIT;
 -- 1. Somente Capitao e Gestor Financeiro leem/alteram informacoes monetarias protegidas.
 -- 2. Solicitacoes enviadas: >=3 cotacoes, perfis legitimados, revisao atual imutavel.
 -- 3. Aprovacao conjunta valida dos dois papeis na revisao atual antes do pagamento.
--- 4. A atribuicao financeira so vai para um Gestor ativo e so muda pelo Capitao; o Gestor Financeiro
---    nao e desativado nem troca de Perfil antes de a responsabilidade ser retirada ou transferida.
+-- 4. A responsabilidade financeira decorre da associacao do Gestor ativo ao Subsistema Financeiro.
+--    A migration Flyway V8 remove a tabela de atribuicao e cria o indice unico parcial correspondente.
 -- 5. Pagamento, compra REALIZADA_PAGA, previsao REALIZADA e movimentacao SAIDA em transacao unica.
 -- 6. Ao cancelar pagamento, reconciliar status da compra e previsao sem apagar historicos.
 -- 7. Movimentacao efetiva vinculada a previsao precisa estar ATIVA e ser apropriada

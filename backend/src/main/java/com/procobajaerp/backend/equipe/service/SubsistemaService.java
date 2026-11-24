@@ -44,13 +44,15 @@ public class SubsistemaService {
     private final UsuarioRepository usuarios;
     private final PerfilRepository perfis;
     private final AuditoriaService auditoria;
+    private final GestorFinanceiroService gestorFinanceiro;
 
     public SubsistemaService(SubsistemaRepository subsistemas, UsuarioRepository usuarios, PerfilRepository perfis,
-            AuditoriaService auditoria) {
+            AuditoriaService auditoria, GestorFinanceiroService gestorFinanceiro) {
         this.subsistemas = subsistemas;
         this.usuarios = usuarios;
         this.perfis = perfis;
         this.auditoria = auditoria;
+        this.gestorFinanceiro = gestorFinanceiro;
     }
 
     /** Nomes e Líderes dos Subsistemas ativos são de todos; os desativados, de Capitão, Gestor e de quem pertence a ele. */
@@ -98,6 +100,9 @@ public class SubsistemaService {
         Usuario ator = administrador(atorId);
         Subsistema subsistema = subsistema(id);
         String nome = dados.nome().strip();
+        if (ehFinanceiro(subsistema) && !"Financeiro".equals(nome)) {
+            throw new RegraDeNegocioException("O Subsistema Financeiro é permanente e não pode ser renomeado.");
+        }
         exigirNomeLivre(nome, subsistema);
         auditoria.registrar(ator.getId(), Entidades.SUBSISTEMA, id, "EDITADO", detalhes(
                 "nomeAnterior", subsistema.getNome(), "nome", nome,
@@ -148,8 +153,12 @@ public class SubsistemaService {
         if (!subsistema.isAtivo()) {
             throw new RegraDeNegocioException("O Subsistema já está desativado.");
         }
+        if (ehFinanceiro(subsistema)) {
+            throw new RegraDeNegocioException("O Subsistema Financeiro é permanente e não pode ser desativado.");
+        }
         List<Usuario> pessoas = usuarios.listarDoSubsistema(subsistema);
         Map<Usuario, Subsistema> destinos = destinosDaDesativacao(subsistema, pessoas, destinosInformados);
+        gestorFinanceiro.validarTransferencias(destinos);
         Usuario lider = subsistema.getLider();
         subsistema.desativar();
         // O Líder só pode sair depois que o Subsistema deixa de apontar para ele.
@@ -202,6 +211,7 @@ public class SubsistemaService {
     }
 
     private void transferir(Usuario ator, Usuario alvo, Subsistema destino, String motivo) {
+        gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), destino, alvo.isAtivo());
         Long origemId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         alvo.transferirPara(destino);
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "TRANSFERIDO", detalhes(
@@ -294,6 +304,10 @@ public class SubsistemaService {
 
     private Subsistema subsistema(Long id) {
         return subsistemas.findById(id).orElseThrow(() -> new NaoEncontradoException("Subsistema não encontrado."));
+    }
+
+    private static boolean ehFinanceiro(Subsistema subsistema) {
+        return "Financeiro".equalsIgnoreCase(subsistema.getNome());
     }
 
     private Usuario usuario(Long id) {

@@ -8,7 +8,7 @@ Esta síntese é derivada do [Documento de Projeto de Software de 2026](document
 
 O escopo contempla oito módulos:
 
-1. Equipe e Subsistemas: usuários, perfis, subsistemas e a atribuição financeira.
+1. Equipe e Subsistemas: usuários, perfis, subsistemas e a associação que determina automaticamente o Gestor Financeiro.
 2. Atividades e Sprints: backlog, planejamento, Kanban e acompanhamento.
 3. Gestão Financeira: solicitações, compras, entradas, saídas e previsões.
 4. Pessoas e Participação: presenças, horas, diário e registros de participação.
@@ -17,7 +17,7 @@ O escopo contempla oito módulos:
 7. Governança: normas, versões, publicação e aceite.
 8. Dashboard e Indicadores: visões e alertas conforme permissões.
 
-Os cinco perfis são Capitão/Administrador, Gestor, Líder, Membro e Orientador; um Gestor pode receber a responsabilidade financeira e ser o Gestor Financeiro. O PDF previa um sexto perfil, Financeiro, substituído por essa atribuição. O acesso depende do perfil, da operação, do subsistema e da confidencialidade dos dados. As regras detalhadas por módulo estão no PDF, seção 4.1.1–4.1.8, páginas 19–35.
+Os cinco perfis são Capitão/Administrador, Gestor, Líder, Membro e Orientador. Um Gestor ativo associado ao Subsistema Financeiro é automaticamente o Gestor Financeiro; essa regra substitui a proposta antiga de um Perfil Financeiro separado e da atribuição manual. O acesso depende do perfil, da operação, do subsistema e da confidencialidade dos dados. As regras detalhadas por módulo estão no PDF, seção 4.1.1–4.1.8, páginas 19–35, com esta decisão posterior prevalecendo em caso de divergência.
 
 ## Objetivos e limites
 

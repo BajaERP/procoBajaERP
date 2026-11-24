@@ -124,6 +124,40 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
     }
 
     @Test
+    void desativacaoPodeAssociarUmGestorAtivoAoFinanceiro() throws Exception {
+        long gestor = usuario("gestor-transferido", Perfil.GESTOR, chassi);
+        long liderFinanceiro = ativarFinanceiro("lider-financeiro");
+
+        long financeiro = financeiroId();
+        desativar(chassi, destinos(liderChassi, freios, gestor, financeiro))
+                .andExpect(status().isOk());
+
+        assertThat(subsistemaNoBanco(gestor)).isEqualTo(financeiro);
+        assertThat(gestorFinanceiroNoBanco()).isEqualTo(gestor);
+        assertThat(perfilNoBanco(liderFinanceiro)).isEqualTo("LIDER");
+    }
+
+    @Test
+    void desativacaoRejeitaDoisGestoresAtivosParaFinanceiroSemAlterarDados() throws Exception {
+        long primeiroGestor = usuario("gestor-um", Perfil.GESTOR, chassi);
+        long segundoGestor = usuario("gestor-dois", Perfil.GESTOR, chassi);
+        ativarFinanceiro("lider-financeiro");
+        long financeiro = financeiroId();
+
+        desativar(chassi, destinos(liderChassi, freios,
+                primeiroGestor, financeiro, segundoGestor, financeiro))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("O Subsistema Financeiro já tem um Gestor ativo."));
+
+        assertThat(jdbc.queryForObject("SELECT ativo FROM subsistemas WHERE id = ?", Boolean.class, chassi)).isTrue();
+        assertThat(perfilNoBanco(liderChassi)).isEqualTo("LIDER");
+        assertThat(subsistemaNoBanco(primeiroGestor)).isEqualTo(chassi);
+        assertThat(subsistemaNoBanco(segundoGestor)).isEqualTo(chassi);
+        assertThat(gestorFinanceiroNoBanco()).isNull();
+        assertThat(acoesAuditadas("SUBSISTEMA", chassi)).doesNotContain("DESATIVADO");
+    }
+
+    @Test
     void desativacaoExigeUmDestinoAtivoParaCadaUsuarioENadaMudaSeAlgumFalhar() throws Exception {
         long membro = usuario("membro", Perfil.MEMBRO, chassi);
         long desativado = usuario("desativado", Perfil.MEMBRO, chassi, false);
@@ -266,7 +300,7 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
 
         mvc.perform(get("/api/subsistemas/{id}", motor).session(login("orientador"))).andExpect(status().isNotFound());
         mvc.perform(get("/api/subsistemas").session(login("gestor")))
-                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios", "Motor")));
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder("Chassi", "Freios", "Motor", "Financeiro")));
     }
 
     @Test
@@ -324,5 +358,16 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
 
     private long id(String ra) {
         return jdbc.queryForObject("SELECT id FROM usuarios WHERE ra = ?", Long.class, ra(ra));
+    }
+
+    private long financeiroId() {
+        return jdbc.queryForObject("SELECT id FROM subsistemas WHERE nome = 'Financeiro'", Long.class);
+    }
+
+    private long ativarFinanceiro(String lider) {
+        long financeiro = financeiroId();
+        long liderId = usuario(lider, Perfil.LIDER, financeiro);
+        jdbc.update("UPDATE subsistemas SET lider_usuario_id = ?, ativo = true WHERE id = ?", liderId, financeiro);
+        return liderId;
     }
 }

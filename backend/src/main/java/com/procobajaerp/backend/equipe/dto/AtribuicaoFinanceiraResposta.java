@@ -1,15 +1,13 @@
 package com.procobajaerp.backend.equipe.dto;
 
-import java.time.OffsetDateTime;
+import com.procobajaerp.backend.equipe.domain.Usuario;
 
-import com.procobajaerp.backend.equipe.domain.AtribuicaoFinanceira;
+/** Quem é o Gestor Financeiro por pertencer ao Subsistema Financeiro. */
+public record AtribuicaoFinanceiraResposta(Resumo gestor) {
 
-/** Quem é o Gestor Financeiro. Com a posição vaga, os dois campos vêm nulos. */
-public record AtribuicaoFinanceiraResposta(Resumo gestor, OffsetDateTime atribuidaEm) {
+    public static final AtribuicaoFinanceiraResposta VAGA = new AtribuicaoFinanceiraResposta(null);
 
-    public static final AtribuicaoFinanceiraResposta VAGA = new AtribuicaoFinanceiraResposta(null, null);
-
-    public static AtribuicaoFinanceiraResposta de(AtribuicaoFinanceira atribuicao) {
-        return new AtribuicaoFinanceiraResposta(Resumo.de(atribuicao.getGestor()), atribuicao.getAtribuidaEm());
+    public static AtribuicaoFinanceiraResposta de(Usuario gestor) {
+        return gestor == null ? VAGA : new AtribuicaoFinanceiraResposta(Resumo.de(gestor));
     }
 }

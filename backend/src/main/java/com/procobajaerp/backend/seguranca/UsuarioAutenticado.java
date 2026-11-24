@@ -14,8 +14,7 @@ import com.procobajaerp.backend.equipe.domain.Perfil;
 import com.procobajaerp.backend.equipe.service.ContaService.DadosDeAcesso;
 
 /**
- * Quem está logado. As autoridades são os códigos de permissão do Perfil, mais os da atribuição financeira para o
- * Gestor Financeiro, recarregados a cada requisição.
+ * Quem está logado. As autoridades são os códigos de permissão do Perfil, recarregados a cada requisição.
  */
 public final class UsuarioAutenticado implements UserDetails, CredentialsContainer, Serializable {
 

@@ -48,18 +48,18 @@ public class UsuarioService {
     private final UsuarioRepository usuarios;
     private final PerfilRepository perfis;
     private final SubsistemaRepository subsistemas;
-    private final AtribuicaoFinanceiraService atribuicaoFinanceira;
+    private final GestorFinanceiroService gestorFinanceiro;
     private final AuditoriaService auditoria;
     private final PasswordEncoder codificador;
     private final GeradorDeSenhaProvisoria gerador;
 
     public UsuarioService(UsuarioRepository usuarios, PerfilRepository perfis, SubsistemaRepository subsistemas,
-            AtribuicaoFinanceiraService atribuicaoFinanceira, AuditoriaService auditoria, PasswordEncoder codificador,
+            GestorFinanceiroService gestorFinanceiro, AuditoriaService auditoria, PasswordEncoder codificador,
             GeradorDeSenhaProvisoria gerador) {
         this.usuarios = usuarios;
         this.perfis = perfis;
         this.subsistemas = subsistemas;
-        this.atribuicaoFinanceira = atribuicaoFinanceira;
+        this.gestorFinanceiro = gestorFinanceiro;
         this.auditoria = auditoria;
         this.codificador = codificador;
         this.gerador = gerador;
@@ -105,6 +105,7 @@ public class UsuarioService {
             throw raEmUso(existente);
         });
         Subsistema subsistema = subsistemaDoCadastro(perfil, dados.subsistemaId());
+        gestorFinanceiro.validarNovo(perfil, subsistema, true);
 
         String senha = gerador.gerar();
         Usuario novo = usuarios.save(new Usuario(ra, dados.nome().strip(), codificador.encode(senha),
@@ -151,8 +152,8 @@ public class UsuarioService {
         if (atual == Perfil.CAPITAO_ADMIN && alvo.isAtivo()) {
             exigirOutroCapitaoAtivo();
         }
-        atribuicaoFinanceira.exigirQueNaoSejaGestorFinanceiro(alvo, "trocar de Perfil");
         Subsistema subsistema = subsistemaDaTroca(alvo, novo, dados.subsistemaId());
+        gestorFinanceiro.validarAlteracao(alvo, novo, subsistema, alvo.isAtivo());
 
         Long subsistemaAnteriorId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         alvo.trocarPerfil(perfilEntidade(novo));
@@ -175,10 +176,10 @@ public class UsuarioService {
             case LIDER -> throw new RegraDeNegocioException(
                     "Defina outro Líder para o Subsistema antes de desativar o atual.");
             case CAPITAO_ADMIN -> exigirOutroCapitaoAtivo();
-            case GESTOR -> atribuicaoFinanceira.exigirQueNaoSejaGestorFinanceiro(alvo, "ser desativado");
             default -> {
             }
         }
+        gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), null, false);
         alvo.desativar();
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "DESATIVADO", Map.of());
         return UsuarioResposta.de(alvo, true);
@@ -186,11 +187,12 @@ public class UsuarioService {
 
     public UsuarioResposta reativar(Long atorId, Long id) {
         Usuario ator = usuario(atorId);
-        Usuario alvo = usuario(id);
+        Usuario alvo = usuarios.travar(id).orElseThrow(UsuarioService::naoEncontrado);
         ator.exigirQueAdministre(alvo.getPerfil());
         if (alvo.isAtivo()) {
             throw new RegraDeNegocioException("O Usuário já está ativo.");
         }
+        gestorFinanceiro.validarAlteracao(alvo, alvo.getPerfil(), alvo.getSubsistema(), true);
         alvo.reativar();
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "REATIVADO", Map.of());
         return UsuarioResposta.de(alvo, true);
