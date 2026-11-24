@@ -306,6 +306,29 @@ class UsuarioControllerTest extends TesteDeIntegracao {
     }
 
     @Test
+    void orientadorNaoVePessoasDeSubsistemaInativoMasMantemAcessoAoProprioPerfil() throws Exception {
+        long motor = subsistema("Motor");
+        long orientador = usuario("orientador", Perfil.ORIENTADOR, motor);
+        long membroOculto = usuario("membrooculto", Perfil.MEMBRO, motor);
+        usuario("orientadorlivre", Perfil.ORIENTADOR, null);
+
+        MockHttpSession sessao = login("orientador");
+        mvc.perform(get("/api/usuarios").session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].nome").value(containsInAnyOrder(
+                        "capitao", "gestor", "liderchassi", "liderfreios", "orientadorlivre")));
+        mvc.perform(get("/api/usuarios").param("subsistemaId", String.valueOf(motor)).session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+        mvc.perform(get("/api/usuarios/{id}", membroOculto).session(sessao)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/usuarios/{id}", orientador).session(sessao)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/auth/eu").session(sessao))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orientador))
+                .andExpect(jsonPath("$.subsistema.nome").value("Motor"));
+    }
+
+    @Test
     void gestorFiltraPorSubsistemaPerfilEAtivo() throws Exception {
         usuario("membro", Perfil.MEMBRO, chassi);
         usuario("desativado", Perfil.MEMBRO, chassi, false);

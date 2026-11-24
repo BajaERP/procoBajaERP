@@ -155,6 +155,22 @@ class SubsistemaControllerTest extends TesteDeIntegracao {
     }
 
     @Test
+    void gestorNaoDesativaSubsistemaMesmoComDestinosValidos() throws Exception {
+        mvc.perform(post("/api/subsistemas/{id}/desativacao", chassi).with(csrf())
+                        .contentType("application/json").content(destinos(liderChassi, freios)).session(login("gestor")))
+                .andExpect(status().isForbidden());
+
+        assertThat(jdbc.queryForObject("SELECT ativo FROM subsistemas WHERE id = ?", Boolean.class, chassi)).isTrue();
+        assertThat(perfilNoBanco(liderChassi)).isEqualTo("LIDER");
+        assertThat(subsistemaNoBanco(liderChassi)).isEqualTo(chassi);
+        assertThat(acoesAuditadas("SUBSISTEMA", chassi)).doesNotContain("DESATIVADO");
+
+        mvc.perform(post("/api/subsistemas/{id}/desativacao", 999_999L).with(csrf())
+                        .contentType("application/json").content("{}").session(login("gestor")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void semOutroSubsistemaAtivoSoOVazioPodeSerDesativado() throws Exception {
         long liderFreios = id("liderfreios");
         long motor = subsistema("Motor");

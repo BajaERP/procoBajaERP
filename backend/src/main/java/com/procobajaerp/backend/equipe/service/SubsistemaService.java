@@ -143,7 +143,7 @@ public class SubsistemaService {
      * qualquer mudança. Para reativar, basta uma nova Definição de Líder.
      */
     public SubsistemaResposta desativar(Long atorId, Long id, List<Destino> destinosInformados) {
-        Usuario ator = administrador(atorId);
+        Usuario ator = capitao(atorId);
         Subsistema subsistema = subsistema(id);
         if (!subsistema.isAtivo()) {
             throw new RegraDeNegocioException("O Subsistema já está desativado.");
@@ -280,6 +280,14 @@ public class SubsistemaService {
         Usuario ator = usuario(atorId);
         if (!ator.getPerfil().administraEquipe()) {
             throw new AcessoNegadoException("Só o Capitão e os Gestores administram Subsistemas.");
+        }
+        return ator;
+    }
+
+    private Usuario capitao(Long atorId) {
+        Usuario ator = usuario(atorId);
+        if (ator.getPerfil() != Perfil.CAPITAO_ADMIN) {
+            throw new AcessoNegadoException("Só o Capitão pode desativar Subsistemas.");
         }
         return ator;
     }

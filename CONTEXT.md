@@ -36,7 +36,7 @@ Perfil com administração geral da equipe e do ERP; único que atribui ou retir
 _Avoid_: Admin
 
 **Gestor**:
-Perfil que administra Integrantes, Subsistemas, Sprints e Validações. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro. As regras de administração de Usuários precisam ser revistas conforme essa atribuição.
+Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro. As regras de administração de Usuários precisam ser revistas conforme essa atribuição.
 
 **Gestor Financeiro**:
 Gestor que recebe a responsabilidade pelo caixa, pelas compras e pela previsão financeira, e aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor; conserva as funções de Gestor e recebe as funções financeiras por uma atribuição adicional. No máximo um Gestor tem essa responsabilidade por vez; a posição pode ficar vaga. Somente o Capitão pode alterar seu Nome, RA, Perfil ou situação; o próprio Gestor Financeiro pode trocar sua senha.
@@ -52,14 +52,14 @@ _Avoid_: Promoção
 Perfil do Integrante que executa Atividades, escreve seu Diário de atividades e pode abrir Solicitações de compra.
 
 **Orientador**:
-Perfil do professor que acompanha o projeto com acesso às informações não confidenciais disponibilizadas ao seu perfil; no módulo de Documentação, pode enviar arquivos conforme as permissões previstas.
+Perfil do professor que acompanha o projeto com acesso às informações não confidenciais disponibilizadas ao seu perfil. Na Equipe, vê os Subsistemas ativos e as pessoas sem Subsistema; pessoas vinculadas a Subsistemas inativos não aparecem nas listagens nem na consulta direta, mesmo que estejam ativas. Se pertencer a um Subsistema inativo, consulta o próprio perfil por `/api/auth/eu`. No módulo de Documentação, pode enviar arquivos conforme as permissões previstas.
 
 **Subsistema**:
 Divisão interna da equipe, técnica ou administrativa, coordenada por um Líder que também é seu Integrante; cada Integrante pertence a no máximo um por vez. Nasce desativado e sem Líder, já podendo receber Integrantes, e se ativa ao ganhar o primeiro Líder. Nunca é excluído: ao ser desativado, seus Integrantes, inclusive os Usuários desativados, são transferidos para Subsistemas ativos, podendo ir para destinos diferentes, e o Líder vai como Membro. Se houver Integrantes e não houver outro Subsistema ativo para recebê-los, a desativação fica bloqueada; se estiver vazio, não precisa de destino.
 _Avoid_: Setor, área, módulo
 
 **Composição**:
-Lista dos Integrantes de um Subsistema, com seu Líder. Capitão, Gestor e Orientador veem a de todos os Subsistemas; Líder e Membro, só a do próprio, inclusive quando ele está inativo. Já os nomes dos Subsistemas ativos e de seus Líderes são visíveis a todos. A visibilidade da Composição não concede acesso a Usuários desativados ou informações restritas.
+Lista dos Integrantes de um Subsistema, com seu Líder. Capitão e Gestor veem a composição de todos os Subsistemas; Orientador, somente a dos ativos; Líder e Membro, só a do próprio, inclusive quando ele está inativo. Nomes e Líderes dos Subsistemas ativos são visíveis a todos; os inativos, apenas ao Capitão, ao Gestor e a quem pertence a eles como Líder ou Membro. A visibilidade da Composição não concede acesso a Usuários desativados ou informações restritas.
 
 **Desativação**:
 Retirada de um Usuário ou de um Subsistema de uso, preservando seu histórico; Usuário desativado não acessa o ERP. É a única forma de retirada, porque o ERP não exclui Usuários nem Subsistemas. A Reativação a desfaz e exige a mesma permissão; ninguém desativa a si mesmo.
