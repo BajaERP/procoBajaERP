@@ -32,7 +32,7 @@ As decisões desta especificação e do glossário prevalecem sobre os documento
 16. Como Capitão inicial, quero trocar a senha configurada na inicialização no primeiro acesso, para usar uma senha própria.
 17. Como administrador, quero corrigir nome e identificador e alterar o perfil de contas permitidas, para manter os registros atualizados.
 18. Como administrador, quero desativar ou reativar contas permitidas, preservando seu histórico e conhecendo os bloqueios aplicáveis.
-19. Como Capitão, quero manter pelo menos um Capitão ativo, para que a equipe não perca a administração do ERP.
+19. Como Capitão, quero que a equipe mantenha um único Capitão ativo, para que a responsabilidade administrativa seja inequívoca.
 20. Como integrante, quero consultar os subsistemas ativos e seus líderes, para conhecer a organização da equipe.
 21. Como Líder ou Membro, quero consultar meu próprio subsistema e sua composição, inclusive se ele estiver inativo, sem ver usuários desativados ou dados restritos.
 22. Como usuário ativo de um subsistema inativo, quero acessar o ERP, para continuar usando as funções permitidas à minha conta.
@@ -61,6 +61,8 @@ As decisões desta especificação e do glossário prevalecem sobre os documento
 45. Como pessoa que utiliza o build de produção antes da integração, quero ver o módulo como indisponível, para não confundir dados fictícios com dados reais.
 46. Como pessoa da equipe, quero notificações de sucesso e falha e erros de validação próximos aos campos, para compreender o resultado de minhas ações.
 47. Como usuário autenticado, quero trocar minha própria senha voluntariamente em Configurações, para atualizar minha credencial quando desejar.
+48. Como Capitão, quero transferir a capitania a um Gestor ou Membro ativo e escolher o subsistema em que permanecerei como Membro, para que a responsabilidade administrativa mude sem deixar a equipe em estado parcial.
+49. Como perfil autorizado, quero consultar o histórico de auditoria dentro do meu escopo, para acompanhar alterações administrativas sem ver dados sigilosos.
 
 ## Decisões de implementação
 
@@ -71,6 +73,8 @@ As decisões desta especificação e do glossário prevalecem sobre os documento
 - Ações sem permissão ficam ocultas. Se uma ação permitida for bloqueada por regra de negócio, explicar o motivo. Dados e buscas respeitam a visibilidade: Capitão e Gestor veem todos os subsistemas e consultam usuários desativados nos fluxos administrativos autorizados; Orientador vê somente integrantes de subsistemas ativos, além do próprio registro e pessoas sem subsistema; Líder e Membro veem a composição do próprio subsistema, inclusive inativo. Os escopos de Orientador, Líder e Membro não incluem usuários desativados. Somente Capitão, Gestor e o próprio usuário veem o respectivo RA ou SIAPE.
 - A API atual de usuários retorna uma lista autorizada, sem paginação ou busca por texto no servidor; o RA pode vir ausente. Na integração, filtros, busca e paginação devem operar apenas sobre dados efetivamente recebidos e autorizados, salvo contrato novo acordado com o backend. Não inferir ou buscar identificadores ocultos.
 - Não permitir que um usuário altere seu próprio perfil, desative sua conta ou corrija seu próprio nome ou RA; a troca da própria senha é permitida. A definição de Líder é um fluxo separado de uma troca de perfil comum. A desativação de usuário ou subsistema preserva histórico; não há exclusão.
+- Só existe um Capitão ativo. Ele escolhe sucessor ativo entre Gestor e Membro e seleciona um Subsistema ativo para sua permanência como Membro; o sucessor assume sem Subsistema. As duas alterações são uma única operação. Não permitir cadastro nem troca de Perfil genérica para Capitão. Essa etapa demonstrativa deve atualizar a identidade da sessão para o Capitão anterior como Membro.
+- A consulta de auditoria é limitada ao Capitão e Gestor para todo o módulo, e ao Líder apenas para eventos que envolvam seu Subsistema. Transferências contam para os escopos de origem e destino; o escopo registrado no evento não muda retroativamente. Registros antigos sem escopo ficam restritos à administração. Não expor JSON bruto, RA/SIAPE nem credenciais na interface.
 - A desativação do subsistema transfere todos os usuários, inclusive desativados, a destinos ativos, individualmente se necessário, e o Líder passa a Membro. Sem destino ativo para usuários associados, bloquear; subsistema vazio não exige destino. Uma transferência comum pode ir para subsistema inativo.
 - Usar Sonner para toasts de sucesso e falha; erros de formulário devem ficar associados aos campos. Não gerar falhas aleatórias nos mocks: prever uma forma controlada de simulação.
 - O login demonstrativo mantém seus campos e aparência e, após entrar, assume um Gestor fictício existente. O seletor Dev escolhe perfil e usuário ativo coerente com os dados compartilhados; se uma pessoa mudar de perfil ou for desativada, selecionar outra disponível ou indicar indisponibilidade. Header, sidebar e conta devem refletir a identidade selecionada e sinalizar a demonstração. Deve permitir testar contas com troca de senha pendente. A restauração requer confirmação e retorna ao usuário padrão.

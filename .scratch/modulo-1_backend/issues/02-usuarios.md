@@ -26,4 +26,4 @@ Implementado em `UsuarioService` e `UsuarioController`. Verificado por `UsuarioC
 
 A regra do último Capitão ativo não é alcançável pela API: ninguém desativa nem troca o próprio Perfil, e só um Capitão ativo age sobre outro Capitão, então sempre resta ao menos um. A checagem fica no service como defesa.
 
-Ajuste na revisão: a Troca de Perfil para Capitão recusa um Subsistema informado, como o cadastro já fazia.
+Atualização da regra: o Capitão é único e ativo. Cadastro, reativação e Troca de Perfil comuns não podem atribuir esse Perfil; a [issue 09](09-sucessao-unica-capitao.md) define a sucessão transacional. A migration V9 também impede Capitães ativos duplicados no banco.
