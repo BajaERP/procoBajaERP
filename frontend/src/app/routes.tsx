@@ -30,7 +30,10 @@ export const router = createHashRouter([
 			{ index: true, element: <Navigate to="/app/dashboard" replace /> },
 			{ path: 'gestao', Component: GestaoPage },
 			{ path: 'dashboard', Component: DashboardPage },
-			{ path: 'equipe', Component: EquipePage },
+			{
+				path: 'equipe',
+				element: <Navigate to="/app/equipe/integrantes" replace />,
+			},
 			{
 				path: 'pessoas',
 				element: <PlaceholderPage title="Pessoas e Participação" />,
@@ -44,10 +47,15 @@ export const router = createHashRouter([
 			{ path: 'competicoes', Component: CompeticoesPage },
 			{ path: 'documentacao', Component: DocumentacaoPage },
 			{ path: 'configuracoes', Component: ConfiguracoesPage },
+			{ path: 'equipe/integrantes', Component: EquipePage },
+			{ path: 'equipe/subsistemas', Component: EquipePage },
+			{ path: 'equipe/financeiro', Component: EquipePage },
+			{ path: 'equipe/permissoes', Component: EquipePage },
+			{
+				path: 'equipe/cargos',
+				element: <Navigate to="/app/equipe/permissoes" replace />,
+			},
 			...[
-				['equipe/integrantes', 'Integrantes'],
-				['equipe/subsistemas', 'Subsistemas'],
-				['equipe/cargos', 'Cargos e permissões'],
 				['atividades/quadro', 'Quadro de atividades'],
 				['atividades/backlog', 'Backlog'],
 				['atividades/sprints', 'Sprints'],

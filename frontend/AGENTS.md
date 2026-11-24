@@ -18,7 +18,7 @@ Mantenha componentes específicos junto à respectiva página; mova-os para uma 
 
 O roteador usa hash: introdução e login ficam em `/` e `/login`, e as rotas do shell em `/app/*`. Ao alterar esses fluxos, preserve a transição automática entre introdução e login, o Dashboard como destino padrão e a restauração de uma rota protegida solicitada antes do login.
 
-A maioria dos módulos ainda está em construção. O `AuthContext` cria uma sessão local demonstrativa com RA numérico e senha não vazia; o frontend não está conectado à autenticação nem a uma API de aplicação. Não trate a sessão como proteção de dados ou autorização e não apresente dados indisponíveis como reais. Na integração, valide identidade e permissões no backend; variáveis `VITE_` são públicas e não devem conter segredos.
+A maioria dos módulos ainda está em construção. Em desenvolvimento, o `AuthContext` assume um Gestor fictício existente após receber RA numérico e senha não vazia; o seletor Dev escolhe perfis e identidades ativas dos dados compartilhados. Em produção, o acesso fica indisponível e não recupera sessões demonstrativas; o frontend não está conectado à autenticação nem a uma API de aplicação. Não trate a sessão como proteção de dados ou autorização e não apresente dados indisponíveis como reais. Na integração, valide identidade e permissões no backend; variáveis `VITE_` são públicas e não devem conter segredos.
 
 Em mudanças visuais, preserve a identidade da marca e os ajustes solicitados para o projeto. Dê suporte a temas claro e escuro, telas a partir de 320 px e alturas reduzidas, navegação por teclado, foco visível e movimento reduzido. No drawer mobile, preserve contenção e restauração do foco e fechamento por Escape. Consulte `DESIGN.md` para os demais padrões e para a validação visual.
 
@@ -30,8 +30,9 @@ Execute em `frontend/`. Consulte `package.json` para a lista completa de scripts
 npm run dev           # servidor de desenvolvimento
 npm run format:check  # verifica formatação sem alterar arquivos
 npm run build         # verifica TypeScript e gera o build
+node --experimental-strip-types --test # executa todos os testes Node
 ```
 
-Após alterar código, execute `npm run format:check` e `npm run build`. Não há script de testes configurado. Quando layout ou interação mudar, verifique no navegador os estados e tamanhos afetados; para mudanças na navegação, confira também a seleção da sidebar e os fluxos de login e retorno relevantes. Informe o que foi verificado e qualquer limitação.
+Após alterar código, execute `npm run format:check`, `npm run build` e `node --experimental-strip-types --test`, a partir de `frontend/`. A suíte usa o runner nativo do Node e não requer script ou dependência adicional. Quando layout ou interação mudar, verifique no navegador os estados e tamanhos afetados; para mudanças na navegação, confira também a seleção da sidebar e os fluxos de login e retorno relevantes. Informe o que foi verificado e qualquer limitação.
 
 `npm run format` reescreve os arquivos cobertos pelo script; revise o resultado para preservar alterações existentes. Para instalação e detalhes de execução, consulte `ARCHITECTURE.md`.

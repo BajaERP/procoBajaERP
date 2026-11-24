@@ -5,10 +5,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function WelcomePage() {
 	const navigate = useNavigate()
-	const { isAuthenticated } = useAuth()
+	const { isAuthenticated, isReady } = useAuth()
 	const [leaving, setLeaving] = useState(false)
 
 	useEffect(() => {
+		if (!isReady) return
 		if (isAuthenticated) {
 			navigate('/app/dashboard', { replace: true })
 			return
@@ -32,7 +33,7 @@ export default function WelcomePage() {
 			window.clearTimeout(fadeTimer)
 			window.clearTimeout(navigationTimer)
 		}
-	}, [isAuthenticated, navigate])
+	}, [isAuthenticated, isReady, navigate])
 
 	return (
 		<main
