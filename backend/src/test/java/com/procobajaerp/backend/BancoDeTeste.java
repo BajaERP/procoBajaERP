@@ -2,6 +2,11 @@ package com.procobajaerp.backend;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import javax.sql.DataSource;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 
@@ -19,6 +24,26 @@ public final class BancoDeTeste {
     }
 
     public static synchronized void registrar(DynamicPropertyRegistry propriedades) {
+        iniciar();
+        propriedades.add("spring.datasource.url", () -> postgres.getJdbcUrl("postgres", "postgres"));
+        propriedades.add("spring.datasource.username", () -> "postgres");
+        propriedades.add("spring.datasource.password", () -> "");
+    }
+
+    /** Banco vazio, separado do usado pela aplicação nos testes, para aplicar as migrations a partir de uma versão anterior. */
+    public static synchronized DataSource bancoVazio(String nome) {
+        iniciar();
+        try (Connection conexao = postgres.getPostgresDatabase().getConnection();
+                Statement comando = conexao.createStatement()) {
+            comando.execute("DROP DATABASE IF EXISTS " + nome);
+            comando.execute("CREATE DATABASE " + nome);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Não foi possível criar o banco " + nome + ".", e);
+        }
+        return postgres.getDatabase("postgres", nome);
+    }
+
+    private static void iniciar() {
         if (postgres == null) {
             try {
                 postgres = EmbeddedPostgres.builder().start();
@@ -27,9 +52,6 @@ public final class BancoDeTeste {
             }
             Runtime.getRuntime().addShutdownHook(new Thread(BancoDeTeste::parar));
         }
-        propriedades.add("spring.datasource.url", () -> postgres.getJdbcUrl("postgres", "postgres"));
-        propriedades.add("spring.datasource.username", () -> "postgres");
-        propriedades.add("spring.datasource.password", () -> "");
     }
 
     private static void parar() {

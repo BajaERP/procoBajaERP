@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.Formula;
+
 import com.procobajaerp.backend.shared.AcessoNegadoException;
 
 /** Conta de acesso ao ERP. Nunca é excluída, só desativada. */
@@ -43,6 +45,13 @@ public class Usuario {
 
     @Column(nullable = false)
     private boolean ativo;
+
+    /**
+     * Lido do banco junto com o Usuário, para exibição: é a {@link AtribuicaoFinanceira} que o torna Gestor Financeiro.
+     * Não muda se a atribuição mudar depois, na mesma transação; as regras consultam a atribuição diretamente.
+     */
+    @Formula("exists (select 1 from atribuicao_financeira a where a.gestor_usuario_id = id)")
+    private boolean gestorFinanceiro;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
@@ -135,5 +144,9 @@ public class Usuario {
 
     public boolean isAtivo() {
         return ativo;
+    }
+
+    public boolean isGestorFinanceiro() {
+        return gestorFinanceiro;
     }
 }

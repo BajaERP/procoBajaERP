@@ -50,7 +50,7 @@ public abstract class TesteDeIntegracao {
 
     @BeforeEach
     void esvaziarTabelasDaEquipe() {
-        jdbc.execute("TRUNCATE logs_auditoria, vinculos_financeiro_gestor, subsistemas, usuarios RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE logs_auditoria, atribuicao_financeira, subsistemas, usuarios RESTART IDENTITY CASCADE");
     }
 
     /** Usuário ativo, com nome igual ao RA e a senha {@link #SENHA}. */
@@ -81,9 +81,14 @@ public abstract class TesteDeIntegracao {
         return subsistema;
     }
 
-    protected void vinculo(long financeiro, long gestor, long capitao) {
-        jdbc.update("INSERT INTO vinculos_financeiro_gestor (financeiro_usuario_id, gestor_usuario_id, definido_por_usuario_id) "
-                + "VALUES (?, ?, ?)", financeiro, gestor, capitao);
+    /** Torna o Gestor o Gestor Financeiro, como se o Capitão tivesse feito a atribuição. */
+    protected void gestorFinanceiro(long gestor, long capitao) {
+        jdbc.update("INSERT INTO atribuicao_financeira (gestor_usuario_id, atribuida_por_usuario_id) VALUES (?, ?)",
+                gestor, capitao);
+    }
+
+    protected Long gestorFinanceiroNoBanco() {
+        return jdbc.query("SELECT gestor_usuario_id FROM atribuicao_financeira", rs -> rs.next() ? rs.getLong(1) : null);
     }
 
     protected MockHttpSession login(String ra) throws Exception {

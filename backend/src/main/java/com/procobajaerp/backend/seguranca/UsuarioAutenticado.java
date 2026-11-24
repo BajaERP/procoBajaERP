@@ -12,7 +12,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.procobajaerp.backend.equipe.domain.Perfil;
 import com.procobajaerp.backend.equipe.service.ContaService.DadosDeAcesso;
 
-/** Quem está logado. As autoridades são os códigos de permissão do Perfil, recarregados a cada requisição. */
+/**
+ * Quem está logado. As autoridades são os códigos de permissão do Perfil, mais os da atribuição financeira para o
+ * Gestor Financeiro, recarregados a cada requisição.
+ */
 public final class UsuarioAutenticado implements UserDetails, CredentialsContainer, Serializable {
 
     private final Long id;
@@ -22,6 +25,7 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
     private final Long subsistemaId;
     private final String subsistemaNome;
     private final boolean ativo;
+    private final boolean gestorFinanceiro;
     private final Set<String> permissoes;
     private String senhaHash;
 
@@ -33,6 +37,7 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
         this.subsistemaId = dados.subsistemaId();
         this.subsistemaNome = dados.subsistemaNome();
         this.ativo = dados.ativo();
+        this.gestorFinanceiro = dados.gestorFinanceiro();
         this.permissoes = Set.copyOf(dados.permissoes());
         this.senhaHash = dados.senhaHash();
     }
@@ -59,6 +64,10 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
 
     public String getSubsistemaNome() {
         return subsistemaNome;
+    }
+
+    public boolean isGestorFinanceiro() {
+        return gestorFinanceiro;
     }
 
     public Set<String> getPermissoes() {

@@ -35,8 +35,8 @@ import com.procobajaerp.backend.shared.NaoEncontradoException;
 import com.procobajaerp.backend.shared.RegraDeNegocioException;
 
 /**
- * Cadastro e administração de Usuários. O Capitão administra todos os Perfis; o Gestor, só Financeiro,
- * Líder, Membro e Orientador. O Perfil Líder só muda pela Definição de Líder, no {@link SubsistemaService}.
+ * Cadastro e administração de Usuários. O Capitão administra todos os Perfis; o Gestor, só Líder, Membro e
+ * Orientador. O Perfil Líder só muda pela Definição de Líder, no {@link SubsistemaService}.
  */
 @Service
 @Transactional
@@ -48,18 +48,18 @@ public class UsuarioService {
     private final UsuarioRepository usuarios;
     private final PerfilRepository perfis;
     private final SubsistemaRepository subsistemas;
-    private final VinculoService vinculos;
+    private final AtribuicaoFinanceiraService atribuicaoFinanceira;
     private final AuditoriaService auditoria;
     private final PasswordEncoder codificador;
     private final GeradorDeSenhaProvisoria gerador;
 
     public UsuarioService(UsuarioRepository usuarios, PerfilRepository perfis, SubsistemaRepository subsistemas,
-            VinculoService vinculos, AuditoriaService auditoria, PasswordEncoder codificador,
+            AtribuicaoFinanceiraService atribuicaoFinanceira, AuditoriaService auditoria, PasswordEncoder codificador,
             GeradorDeSenhaProvisoria gerador) {
         this.usuarios = usuarios;
         this.perfis = perfis;
         this.subsistemas = subsistemas;
-        this.vinculos = vinculos;
+        this.atribuicaoFinanceira = atribuicaoFinanceira;
         this.auditoria = auditoria;
         this.codificador = codificador;
         this.gerador = gerador;
@@ -89,8 +89,8 @@ public class UsuarioService {
     }
 
     /**
-     * Cadastra com uma Senha provisória, devolvida só nesta resposta. Um Financeiro cadastrado pelo Capitão já
-     * nasce com Vínculo e ativo; cadastrado pelo Gestor, nasce desativado até o Capitão definir o Vínculo.
+     * Cadastra com uma Senha provisória, devolvida só nesta resposta. A responsabilidade financeira não vem no
+     * cadastro: o Capitão a atribui depois a um Gestor ativo.
      */
     public UsuarioCadastradoResposta cadastrar(Long atorId, CadastroDeUsuarioRequisicao dados) {
         Usuario ator = usuario(atorId);
@@ -105,17 +105,12 @@ public class UsuarioService {
             throw raEmUso(existente);
         });
         Subsistema subsistema = subsistemaDoCadastro(perfil, dados.subsistemaId());
-        boolean capitaoVinculando = exigirGestorSoQuandoCapitaoTornaFinanceiro(ator, perfil, dados.gestorId());
-        boolean aguardandoVinculo = perfil == Perfil.FINANCEIRO && !capitaoVinculando;
 
         String senha = gerador.gerar();
         Usuario novo = usuarios.save(new Usuario(ra, dados.nome().strip(), codificador.encode(senha),
-                perfilEntidade(perfil), subsistema, !aguardandoVinculo));
+                perfilEntidade(perfil), subsistema, true));
         auditoria.registrar(ator.getId(), Entidades.USUARIO, novo.getId(), "CADASTRADO", detalhes(
                 "perfil", perfil, "subsistemaId", subsistema == null ? null : subsistema.getId(), "ativo", novo.isAtivo()));
-        if (capitaoVinculando) {
-            vinculos.vincular(ator, novo, dados.gestorId());
-        }
         return new UsuarioCadastradoResposta(UsuarioResposta.de(novo, true), senha);
     }
 
@@ -141,7 +136,7 @@ public class UsuarioService {
 
     public UsuarioResposta trocarPerfil(Long atorId, Long id, TrocaDePerfilRequisicao dados) {
         Usuario ator = usuario(atorId);
-        Usuario alvo = usuario(id);
+        Usuario alvo = usuarios.travar(id).orElseThrow(UsuarioService::naoEncontrado);
         exigirOutroUsuario(ator, alvo, "Você não pode trocar o próprio Perfil.");
         Perfil atual = alvo.getPerfil();
         Perfil novo = dados.perfil();
@@ -156,35 +151,21 @@ public class UsuarioService {
         if (atual == Perfil.CAPITAO_ADMIN && alvo.isAtivo()) {
             exigirOutroCapitaoAtivo();
         }
-        if (atual == Perfil.GESTOR) {
-            exigirGestorSemVinculos(alvo, "trocar de Perfil");
-        }
+        atribuicaoFinanceira.exigirQueNaoSejaGestorFinanceiro(alvo, "trocar de Perfil");
         Subsistema subsistema = subsistemaDaTroca(alvo, novo, dados.subsistemaId());
-        boolean capitaoVinculando = exigirGestorSoQuandoCapitaoTornaFinanceiro(ator, novo, dados.gestorId());
 
-        if (atual == Perfil.FINANCEIRO) {
-            vinculos.encerrar(ator, alvo);
-        }
         Long subsistemaAnteriorId = alvo.getSubsistema() == null ? null : alvo.getSubsistema().getId();
         alvo.trocarPerfil(perfilEntidade(novo));
         alvo.transferirPara(subsistema);
-        boolean desativadoAguardandoVinculo = novo == Perfil.FINANCEIRO && !capitaoVinculando && alvo.isAtivo();
-        if (desativadoAguardandoVinculo) {
-            alvo.desativar();
-        }
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "PERFIL_ALTERADO", detalhes(
                 "perfilAnterior", atual, "perfil", novo,
-                "subsistemaAnteriorId", subsistemaAnteriorId, "subsistemaId", subsistema == null ? null : subsistema.getId(),
-                "desativadoAguardandoVinculo", desativadoAguardandoVinculo));
-        if (capitaoVinculando) {
-            vinculos.vincular(ator, alvo, dados.gestorId());
-        }
+                "subsistemaAnteriorId", subsistemaAnteriorId, "subsistemaId", subsistema == null ? null : subsistema.getId()));
         return UsuarioResposta.de(alvo, true);
     }
 
     public UsuarioResposta desativar(Long atorId, Long id) {
         Usuario ator = usuario(atorId);
-        Usuario alvo = usuario(id);
+        Usuario alvo = usuarios.travar(id).orElseThrow(UsuarioService::naoEncontrado);
         exigirOutroUsuario(ator, alvo, "Você não pode desativar a si mesmo.");
         ator.exigirQueAdministre(alvo.getPerfil());
         if (!alvo.isAtivo()) {
@@ -194,7 +175,7 @@ public class UsuarioService {
             case LIDER -> throw new RegraDeNegocioException(
                     "Defina outro Líder para o Subsistema antes de desativar o atual.");
             case CAPITAO_ADMIN -> exigirOutroCapitaoAtivo();
-            case GESTOR -> exigirGestorSemVinculos(alvo, "ser desativado");
+            case GESTOR -> atribuicaoFinanceira.exigirQueNaoSejaGestorFinanceiro(alvo, "ser desativado");
             default -> {
             }
         }
@@ -209,10 +190,6 @@ public class UsuarioService {
         ator.exigirQueAdministre(alvo.getPerfil());
         if (alvo.isAtivo()) {
             throw new RegraDeNegocioException("O Usuário já está ativo.");
-        }
-        if (alvo.getPerfil() == Perfil.FINANCEIRO && !vinculos.temVinculo(alvo)) {
-            throw new RegraDeNegocioException(
-                    "Este Financeiro não tem Vínculo com um Gestor. A conta é reativada quando o Capitão definir o Vínculo.");
         }
         alvo.reativar();
         auditoria.registrar(ator.getId(), Entidades.USUARIO, alvo.getId(), "REATIVADO", Map.of());
@@ -281,31 +258,9 @@ public class UsuarioService {
         return null;
     }
 
-    /** Só o Capitão define Vínculos, e só ao tornar alguém Financeiro informa o Gestor. */
-    private boolean exigirGestorSoQuandoCapitaoTornaFinanceiro(Usuario ator, Perfil perfil, Long gestorId) {
-        boolean capitaoVinculando = perfil == Perfil.FINANCEIRO && ator.getPerfil() == Perfil.CAPITAO_ADMIN;
-        if (capitaoVinculando && gestorId == null) {
-            throw new RegraDeNegocioException("Informe o Gestor do Vínculo do Financeiro.");
-        }
-        if (!capitaoVinculando && gestorId != null) {
-            throw new RegraDeNegocioException("Só o Capitão define Vínculos, ao tornar alguém Financeiro.");
-        }
-        return capitaoVinculando;
-    }
-
     private void exigirOutroCapitaoAtivo() {
         if (usuarios.countByPerfilNomeAndAtivoTrue(Perfil.CAPITAO_ADMIN) <= 1) {
             throw new RegraDeNegocioException("A equipe precisa de pelo menos um Capitão ativo.");
-        }
-    }
-
-    private void exigirGestorSemVinculos(Usuario gestor, String acao) {
-        List<Usuario> financeiros = vinculos.financeirosDe(gestor);
-        if (!financeiros.isEmpty()) {
-            String nomes = String.join(", ", financeiros.stream().map(Usuario::getNome).toList());
-            throw new RegraDeNegocioException(
-                    "O Capitão precisa transferir os Vínculos de " + nomes + " antes de este Gestor " + acao + ".",
-                    Map.of("financeiros", financeiros.stream().map(Resumo::de).toList()));
         }
     }
 

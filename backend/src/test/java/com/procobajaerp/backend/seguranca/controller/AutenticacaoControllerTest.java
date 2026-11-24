@@ -3,6 +3,7 @@ package com.procobajaerp.backend.seguranca.controller;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -99,6 +100,51 @@ class AutenticacaoControllerTest extends TesteDeIntegracao {
         mvc.perform(get("/api/auth/eu").session(sessao))
                 .andExpect(jsonPath("$.perfil").value("ORIENTADOR"))
                 .andExpect(jsonPath("$.permissoes").value(not(hasItem("USUARIOS_GERENCIAR"))));
+    }
+
+    @Test
+    void atribuicaoFinanceiraValeNasSessoesAbertas() throws Exception {
+        usuario("capitao", Perfil.CAPITAO_ADMIN, null);
+        long gestor = usuario("gestor", Perfil.GESTOR, null);
+        long outroGestor = usuario("gestor2", Perfil.GESTOR, null);
+        MockHttpSession capitao = login("capitao");
+        MockHttpSession sessao = login("gestor");
+        MockHttpSession outraSessao = login("gestor2");
+        mvc.perform(get("/api/auth/eu").session(sessao)).andExpect(jsonPath("$.gestorFinanceiro").value(false));
+
+        mvc.perform(json(put("/api/atribuicao-financeira"), Map.of("gestorId", gestor)).session(capitao))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/auth/eu").session(sessao))
+                .andExpect(jsonPath("$.perfil").value("GESTOR"))
+                .andExpect(jsonPath("$.gestorFinanceiro").value(true))
+                .andExpect(jsonPath("$.permissoes").value(hasItem("USUARIOS_GERENCIAR")));
+
+        mvc.perform(json(put("/api/atribuicao-financeira"), Map.of("gestorId", outroGestor)).session(capitao))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/auth/eu").session(sessao)).andExpect(jsonPath("$.gestorFinanceiro").value(false));
+        mvc.perform(get("/api/auth/eu").session(outraSessao)).andExpect(jsonPath("$.gestorFinanceiro").value(true));
+
+        mvc.perform(delete("/api/atribuicao-financeira").with(csrf()).session(capitao)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/auth/eu").session(outraSessao)).andExpect(jsonPath("$.gestorFinanceiro").value(false));
+    }
+
+    @Test
+    void loginInformaQueOGestorEOGestorFinanceiro() throws Exception {
+        long capitao = usuario("capitao", Perfil.CAPITAO_ADMIN, null);
+        gestorFinanceiro(usuario("gestor", Perfil.GESTOR, null), capitao);
+
+        mvc.perform(json(post("/api/auth/login"), Map.of("ra", "gestor", "senha", SENHA)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gestorFinanceiro").value(true));
+    }
+
+    @Test
+    void gestorFinanceiroTrocaAPropriaSenha() throws Exception {
+        long capitao = usuario("capitao", Perfil.CAPITAO_ADMIN, null);
+        gestorFinanceiro(usuario("gestor", Perfil.GESTOR, null), capitao);
+
+        mvc.perform(json(put("/api/auth/senha"), Map.of("senhaAtual", SENHA, "novaSenha", "nova-senha-1")).session(login("gestor")))
+                .andExpect(status().isNoContent());
     }
 
     @Test

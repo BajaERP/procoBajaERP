@@ -36,10 +36,10 @@ Perfil com administração geral da equipe e do ERP; único que atribui ou retir
 _Avoid_: Admin
 
 **Gestor**:
-Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro. As regras de administração de Usuários precisam ser revistas conforme essa atribuição.
+Perfil que administra Integrantes e Subsistemas, exceto pela Desativação de Subsistema, exclusiva do Capitão; também administra Sprints e Validações. Entre os Usuários, administra só os de Perfil Líder, Membro e Orientador. Um Gestor pode receber a responsabilidade financeira e, nesse caso, passa a ser identificado como Gestor Financeiro; nessa função, tem acesso à Informação financeira restrita.
 
 **Gestor Financeiro**:
-Gestor que recebe a responsabilidade pelo caixa, pelas compras e pela previsão financeira, e aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor; conserva as funções de Gestor e recebe as funções financeiras por uma atribuição adicional. No máximo um Gestor tem essa responsabilidade por vez; a posição pode ficar vaga. Somente o Capitão pode alterar seu Nome, RA, Perfil ou situação; o próprio Gestor Financeiro pode trocar sua senha.
+Gestor que recebe a responsabilidade pelo caixa, pelas compras e pela previsão financeira, e aprova compras junto ao Capitão. Seu Perfil continua sendo Gestor; conserva as funções de Gestor e recebe as funções financeiras por uma atribuição adicional. No máximo um Gestor tem essa responsabilidade por vez; a posição pode ficar vaga. Somente o Capitão pode alterar seu Nome, RA, Perfil ou situação; o próprio Gestor Financeiro pode trocar sua senha. Quem pode ver o Gestor vê também que ele é o Gestor Financeiro. A atribuição vale na hora, inclusive nas sessões abertas.
 
 **Líder**:
 Perfil de quem lidera um Subsistema; ter o Perfil Líder e liderar um Subsistema são a mesma coisa. Gerencia as Atividades do Subsistema e registra presença e participação dos seus Integrantes.
@@ -112,7 +112,7 @@ Aviso emitido quando cerca de metade da Sprint passou, destacando Atividades com
 ### Financeiro
 
 **Informação financeira restrita**:
-Preços, Orçamentos, Movimentações, saldos, gastos e Previsões; só o Capitão e o Financeiro a veem, e o Solicitante vê apenas os preços e Orçamentos das próprias Solicitações enquanto estão em andamento.
+Preços, Orçamentos, Movimentações, saldos, gastos e Previsões; só o Capitão e o Gestor Financeiro a veem, e o Solicitante vê apenas os preços e Orçamentos das próprias Solicitações enquanto estão em andamento.
 _Avoid_: Dado sensível (genérico)
 
 **Solicitação de compra**:
@@ -141,7 +141,7 @@ Empresa ou loja que fornece Orçamentos e vende os itens comprados.
 Situação de uma Solicitação de compra: Planejada (compra futura ainda não enviada), Aguardando aprovação, Aprovada, Reprovada, Realizada/Paga ou Cancelada.
 
 **Aprovação conjunta**:
-Exigência de que o Capitão e o Financeiro aprovem a mesma Revisão; qualquer reprovação precisa de justificativa.
+Exigência de que o Capitão e o Gestor Financeiro aprovem a mesma Revisão; qualquer reprovação precisa de justificativa.
 
 **Compra**:
 Execução de uma Solicitação de compra aprovada, usando um Orçamento da Revisão aprovada.
@@ -205,7 +205,7 @@ _Avoid_: Anexo
 Classificação temática de um Documento, independente do Nível de confidencialidade.
 
 **Nível de confidencialidade**:
-Regra de leitura de um Documento: Comum (todos), Administrativo confidencial (Capitão e Gestor) ou Financeiro confidencial (Capitão e Financeiro).
+Regra de leitura de um Documento: Comum (todos), Administrativo confidencial (Capitão e Gestor) ou Financeiro confidencial (Capitão e Gestor Financeiro).
 
 **Versão de documento**:
 Estado anterior de um Documento, conforme o histórico do Google Drive, inclusive de arquivos anteriores ao ERP.
@@ -259,9 +259,6 @@ Anotação de quem fez uma operação auditável, quando e sobre qual registro, 
 _Avoid_: Log, histórico (genérico)
 
 ## Ambiguidades em aberto
-
-**Financeiro como atribuição do Gestor**:
-A regra esclarecida é que o Gestor Financeiro é a própria pessoa que já é Gestor e mantém suas funções ao receber a responsabilidade financeira. A documentação anterior, o modelo v4 e as permissões atuais descrevem duas pessoas distintas e precisam ser revistos após esclarecer os detalhes dessa atribuição, incluindo a representação e a hierarquia de permissões.
 
 **Não concluída × Não iniciada**:
 O Documento de Projeto lista "Não concluída" como Estado da atividade, mas não diz quando uma Atividade entra nele nem como ele difere de "Não iniciada" e "Pausada".
