@@ -2,6 +2,7 @@ import {
 	createContext,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 	type ReactNode,
 } from 'react'
@@ -56,6 +57,10 @@ interface AuthContextValue {
 	demoRevision: number
 	setDemoPerspective: (perspective: DemoPerspective) => void
 	setDemoIdentity: (id: string) => void
+	adotarIdentidadeDemo: (
+		id: string,
+		perspective: DemoPerspective,
+	) => Promise<void>
 	restoreDemo: () => Promise<void>
 	changeOwnPassword: (
 		currentPassword: string,
@@ -118,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		useState<DemoPerspective>('gestor')
 	const [demoNotice, setNotice] = useState<string | null>(null)
 	const [demoRevision, setRevision] = useState(0)
+	const identityRefresh = useRef(0)
 	const sessionUserId = user?.id ?? null
 
 	useEffect(() => {
@@ -181,8 +187,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			requestedId: string | null,
 			perspective: DemoPerspective | null,
 		) {
+			const refreshId = ++identityRefresh.current
 			const identities = (await equipeService.listarIdentidades?.()) ?? []
-			if (!active) return
+			if (!active || refreshId !== identityRefresh.current) return
 			setDemoIdentities(identities)
 			if (requestedId) {
 				const chosen = chooseDemoIdentity(
@@ -285,6 +292,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setNotice(null)
 	}
 
+	async function adotarIdentidadeDemo(
+		id: string,
+		perspective: DemoPerspective,
+	) {
+		if (!import.meta.env.DEV)
+			throw new Error('A troca de identidade só existe na demonstração.')
+		const refreshId = ++identityRefresh.current
+		const identities = (await equipeService.listarIdentidades?.()) ?? []
+		if (refreshId !== identityRefresh.current) return
+		const identity = identitiesForPerspective(identities, perspective).find(
+			(item) => item.id === id,
+		)
+		if (!identity)
+			throw new Error('A identidade atualizada não está disponível.')
+		setDemoIdentities(identities)
+		setUser(asAuthUser(identity))
+		setPerspective(perspective)
+		setNotice(null)
+		setRevision((value) => value + 1)
+	}
+
 	async function restoreDemo() {
 		if (!import.meta.env.DEV || !user) return
 		await equipeService.restaurarDadosDemo?.()
@@ -331,6 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				demoRevision,
 				setDemoPerspective,
 				setDemoIdentity,
+				adotarIdentidadeDemo,
 				restoreDemo,
 				changeOwnPassword,
 			}}

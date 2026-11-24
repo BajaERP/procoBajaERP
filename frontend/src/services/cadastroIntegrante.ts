@@ -9,8 +9,7 @@ import type {
 } from './equipeTypes'
 
 export function perfisParaCadastro(perfil: UserRole): PerfilCadastro[] {
-	if (perfil === 'capitao')
-		return ['capitao', 'gestor', 'membro', 'orientador']
+	if (perfil === 'capitao') return ['gestor', 'membro', 'orientador']
 	if (perfil === 'gestor') return ['membro', 'orientador']
 	return []
 }

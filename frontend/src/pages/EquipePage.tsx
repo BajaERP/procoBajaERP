@@ -15,6 +15,7 @@ import { CadastroIntegranteDialog } from '../components/pages/equipe/CadastroInt
 import { AdministrarIntegranteDialog } from '../components/pages/equipe/AdministrarIntegranteDialog'
 import { SubsistemasContent } from '../components/pages/equipe/SubsistemasContent'
 import { ResponsabilidadeFinanceiraContent } from '../components/pages/equipe/ResponsabilidadeFinanceiraContent'
+import { SucessaoCapitaoDialog } from '../components/pages/equipe/SucessaoCapitaoDialog'
 import { getEquipePageContentKeys } from './equipePageKeys'
 import { Notifications } from '../components/shared/Notifications'
 
@@ -50,6 +51,7 @@ export default function EquipePage() {
 	const [resumoSubsistemas, setResumoSubsistemas] =
 		useState<ResumoSubsistemas | null>(null)
 	const [createSubsystemRequest, setCreateSubsystemRequest] = useState(false)
+	const [sucessaoCapitaoAberta, setSucessaoCapitaoAberta] = useState(false)
 	const podeCadastrar =
 		import.meta.env.DEV &&
 		!!user &&
@@ -69,6 +71,12 @@ export default function EquipePage() {
 		<>
 			<Notifications
 				id="responsabilidade-financeira"
+				position="top-center"
+				offset={{ top: 72 }}
+				mobileOffset={{ top: 12, left: 16, right: 16 }}
+			/>
+			<Notifications
+				id="sucessao-capitao"
 				position="top-center"
 				offset={{ top: 72 }}
 				mobileOffset={{ top: 12, left: 16, right: 16 }}
@@ -95,6 +103,18 @@ export default function EquipePage() {
 							</p>
 						)}
 					</div>
+					{import.meta.env.DEV &&
+						user?.role === 'capitao' &&
+						!permissoes &&
+						!responsabilidadeFinanceira && (
+							<button
+								type="button"
+								onClick={() => setSucessaoCapitaoAberta(true)}
+								className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-hairline bg-surface-card px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-raised sm:w-auto"
+							>
+								Passar a capitania
+							</button>
+						)}
 					{import.meta.env.DEV && podeConsultar && (
 						<Link
 							ref={permissoesLinkRef}
@@ -234,6 +254,12 @@ export default function EquipePage() {
 						key={`${user.id}:${user.role}`}
 						atorId={user.id}
 						onClose={() => setCadastroAtor(null)}
+					/>
+				)}
+				{sucessaoCapitaoAberta && user?.role === 'capitao' && (
+					<SucessaoCapitaoDialog
+						atorId={user.id}
+						onClose={() => setSucessaoCapitaoAberta(false)}
 					/>
 				)}
 				{user && detalheIntegrante && !subsistemas && (

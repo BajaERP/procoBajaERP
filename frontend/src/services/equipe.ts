@@ -127,6 +127,15 @@ export const equipeService: EquipeService = import.meta.env.DEV
 				).desativarSubsistema(atorId, subsistemaId, destinos)
 				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
 			},
+			async opcoesSucessaoCapitao(atorId) {
+				return (await mockService()).opcoesSucessaoCapitao(atorId)
+			},
+			async sucederCapitao(atorId, sucessorId, subsistemaDestinoId) {
+				await (
+					await mockService()
+				).sucederCapitao(atorId, sucessorId, subsistemaDestinoId)
+				window.dispatchEvent(new Event(DEMO_DATA_CHANGED))
+			},
 			async simularFalhaNaProximaConsulta() {
 				;(await mockService()).simularFalhaNaProximaConsulta?.()
 			},
@@ -238,6 +247,16 @@ export const equipeService: EquipeService = import.meta.env.DEV
 			async desativarSubsistema() {
 				throw new Error(
 					'Administração indisponível até a integração com o servidor.',
+				)
+			},
+			async opcoesSucessaoCapitao() {
+				throw new Error(
+					'Sucessão indisponível até a integração com o servidor.',
+				)
+			},
+			async sucederCapitao() {
+				throw new Error(
+					'Sucessão indisponível até a integração com o servidor.',
 				)
 			},
 		}
