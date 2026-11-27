@@ -1,13 +1,9 @@
 package com.procobajaerp.backend.atividades.service;
 
-import java.text.Collator;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +26,6 @@ import com.procobajaerp.backend.atividades.domain.HistoricoStatusAtividade;
 import com.procobajaerp.backend.atividades.domain.PoliticaAtividades;
 import com.procobajaerp.backend.atividades.domain.PrioridadeAtividade;
 import com.procobajaerp.backend.atividades.domain.RequisitoAlocacaoPendente;
-import com.procobajaerp.backend.atividades.domain.SituacaoSprint;
 import com.procobajaerp.backend.atividades.domain.Sprint;
 import com.procobajaerp.backend.atividades.domain.TipoEntradaSprint;
 import com.procobajaerp.backend.atividades.domain.VisaoAtividades;
@@ -76,15 +71,8 @@ import tools.jackson.databind.json.JsonMapper;
 @Transactional
 public class AtividadeService {
 
-    private static final Collator COLLATOR = Collator.getInstance(Locale.of("pt", "BR"));
     private static final TypeReference<LinkedHashMap<String, Object>> MAPA_JSON = new TypeReference<>() {
     };
-    private static final Comparator<Subsistema> POR_NOME_SUBSISTEMA = Comparator
-            .comparing(Subsistema::getNome, COLLATOR)
-            .thenComparing(Subsistema::getId);
-    private static final Comparator<Usuario> POR_NOME_USUARIO = Comparator
-            .comparing(Usuario::getNome, COLLATOR)
-            .thenComparing(Usuario::getId);
     private static final Comparator<Atividade> ORDEM_ATIVIDADES = Comparator
             .comparingInt((Atividade a) -> a.getPrioridade().pesoOrdenacao())
             .thenComparing(Atividade::getPrazo, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -115,7 +103,7 @@ public class AtividadeService {
     public OpcoesAtividadesResposta opcoes(Long atorId) {
         Usuario ator = equipe.buscarUsuarioCompleto(atorId);
         List<Subsistema> todosSubsistemas = equipe.listarSubsistemas().stream()
-                .sorted(POR_NOME_SUBSISTEMA)
+                .sorted(MapeadoresAtividades.POR_NOME_SUBSISTEMA)
                 .toList();
         List<SubsistemaAtividadeResumo> disponiveis = subsistemasParaCriacao(ator, todosSubsistemas).stream()
                 .map(SubsistemaAtividadeResumo::de)
@@ -127,10 +115,11 @@ public class AtividadeService {
         List<ResponsavelResumo> responsaveis = equipe.listarUsuariosCompletos().stream()
                 .filter(Usuario::isAtivo)
                 .filter(u -> Visibilidade.podeVer(ator, u))
-                .sorted(POR_NOME_USUARIO)
+                .sorted(MapeadoresAtividades.POR_NOME_USUARIO)
                 .map(ResponsavelResumo::de)
                 .toList();
-        List<SprintResumo> sprintsOrdenadas = ordenarSprints(sprints.findAllByOrderByInicioAscIdAsc()).stream()
+        List<SprintResumo> sprintsOrdenadas = MapeadoresAtividades
+                .ordenarSprints(sprints.findAllByOrderByInicioAscIdAsc()).stream()
                 .map(SprintResumo::de)
                 .toList();
         return new OpcoesAtividadesResposta(
@@ -254,7 +243,7 @@ public class AtividadeService {
         OffsetDateTime agora = OffsetDateTime.now();
         Atividade nova = atividades.save(new Atividade(
                 dados.titulo().strip(),
-                normalizarTexto(dados.descricao()),
+                MapeadoresAtividades.normalizarTexto(dados.descricao()),
                 dados.prioridade(),
                 dados.estimativaFibonacci(),
                 dados.prazo(),
@@ -296,7 +285,7 @@ public class AtividadeService {
         }
 
         String novoTitulo = dados.titulo().strip();
-        String novaDescricao = normalizarTexto(dados.descricao());
+        String novaDescricao = MapeadoresAtividades.normalizarTexto(dados.descricao());
         PrioridadeAtividade novaPrioridade = dados.prioridade() == null ? PrioridadeAtividade.MEDIA : dados.prioridade();
 
         Map<String, Object> anteriores = new LinkedHashMap<>();
@@ -474,8 +463,8 @@ public class AtividadeService {
                 atividade.getEstimativaFibonacci(),
                 atividade.getPrazo(),
                 atividade.isCompartilhada(),
-                subsistemasOrdenados(atividade),
-                responsaveisOrdenados(atividade),
+                MapeadoresAtividades.subsistemasOrdenados(atividade),
+                MapeadoresAtividades.responsaveisOrdenados(atividade),
                 AlocacaoAtualResumo.de(aberta),
                 transferencias,
                 atividade.isArquivada(),
@@ -497,8 +486,8 @@ public class AtividadeService {
                 atividade.getEstimativaFibonacci(),
                 atividade.getPrazo(),
                 atividade.isCompartilhada(),
-                subsistemasOrdenados(atividade),
-                responsaveisOrdenados(atividade),
+                MapeadoresAtividades.subsistemasOrdenados(atividade),
+                MapeadoresAtividades.responsaveisOrdenados(atividade),
                 AlocacaoAtualResumo.de(aberta),
                 transferencias,
                 ArquivamentoResumo.de(atividade),
@@ -532,20 +521,6 @@ public class AtividadeService {
                 podeAlocar,
                 pendentes,
                 podeRetirar);
-    }
-
-    private static List<SubsistemaAtividadeResumo> subsistemasOrdenados(Atividade atividade) {
-        return atividade.getSubsistemas().stream()
-                .sorted(POR_NOME_SUBSISTEMA)
-                .map(SubsistemaAtividadeResumo::de)
-                .toList();
-    }
-
-    private static List<ResponsavelResumo> responsaveisOrdenados(Atividade atividade) {
-        return atividade.getResponsaveis().stream()
-                .sorted(POR_NOME_USUARIO)
-                .map(ResponsavelResumo::de)
-                .toList();
     }
 
     private static AlocacaoSprint alocacaoAberta(List<AlocacaoSprint> passagens) {
@@ -596,27 +571,6 @@ public class AtividadeService {
         return List.of();
     }
 
-    private static List<Sprint> ordenarSprints(List<Sprint> lista) {
-        List<Sprint> emAndamento = new ArrayList<>();
-        List<Sprint> planejadas = new ArrayList<>();
-        List<Sprint> encerradas = new ArrayList<>();
-        for (Sprint sprint : lista) {
-            switch (sprint.getSituacao()) {
-                case EM_ANDAMENTO -> emAndamento.add(sprint);
-                case PLANEJADA -> planejadas.add(sprint);
-                case ENCERRADA -> encerradas.add(sprint);
-            }
-        }
-        planejadas.sort(Comparator.comparing(Sprint::getInicio).thenComparing(Sprint::getId));
-        encerradas.sort(Comparator.comparing(Sprint::getEncerradaEm, Comparator.reverseOrder())
-                .thenComparing(Sprint::getId, Comparator.reverseOrder()));
-        List<Sprint> resultado = new ArrayList<>(lista.size());
-        resultado.addAll(emAndamento);
-        resultado.addAll(planejadas);
-        resultado.addAll(encerradas);
-        return resultado;
-    }
-
     private Map<String, Object> lerMapa(String conteudo) {
         return json.readValue(conteudo, MAPA_JSON);
     }
@@ -626,9 +580,5 @@ public class AtividadeService {
             return List.of();
         }
         return List.copyOf(new LinkedHashSet<>(ids));
-    }
-
-    private static String normalizarTexto(String texto) {
-        return texto == null || texto.isBlank() ? null : texto.strip();
     }
 }
