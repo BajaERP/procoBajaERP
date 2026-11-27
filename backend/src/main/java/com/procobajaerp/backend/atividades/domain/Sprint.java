@@ -2,6 +2,7 @@ package com.procobajaerp.backend.atividades.domain;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -68,6 +69,23 @@ public class Sprint {
         this.fim = fim;
         this.criadaPor = criadaPor;
         this.criadaEm = criadaEm;
+    }
+
+    public void atualizarPlanejamento(String nome, String objetivo, LocalDate inicio, LocalDate fim) {
+        this.nome = nome;
+        this.objetivo = objetivo;
+        this.inicio = inicio;
+        this.fim = fim;
+    }
+
+    public void iniciar(Usuario ator, OffsetDateTime agora) {
+        this.iniciadaPor = ator;
+        this.iniciadaEm = agora;
+    }
+
+    public LocalDate dataInicioAlertaPoucoProgresso() {
+        long diasInclusivos = ChronoUnit.DAYS.between(inicio, fim) + 1;
+        return inicio.plusDays(diasInclusivos / 2);
     }
 
     public SituacaoSprint getSituacao() {

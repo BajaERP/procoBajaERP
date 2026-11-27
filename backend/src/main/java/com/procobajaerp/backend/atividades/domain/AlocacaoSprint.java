@@ -72,6 +72,14 @@ public class AlocacaoSprint {
     protected AlocacaoSprint() {
     }
 
+    public AlocacaoSprint(Atividade atividade, Sprint sprint, TipoEntradaSprint origem, OffsetDateTime entradaEm) {
+        this.atividade = atividade;
+        this.sprint = sprint;
+        this.origem = origem;
+        this.entradaEm = entradaEm;
+        this.retiradaAntesEncerramento = false;
+    }
+
     public boolean isAberta() {
         return saidaEm == null;
     }

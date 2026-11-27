@@ -35,4 +35,28 @@ public interface AlocacaoSprintRepository extends JpaRepository<AlocacaoSprint, 
             order by al.entradaEm asc, al.id asc
             """)
     List<AlocacaoSprint> listarPorAtividades(Collection<Long> atividadeIds);
+
+    @Query("""
+            select distinct al from AlocacaoSprint al
+            join fetch al.sprint
+            join fetch al.atividade a
+            join fetch a.criadaPor
+            left join fetch a.arquivadaPor
+            left join fetch a.subsistemas
+            left join fetch a.responsaveis r
+            left join fetch r.subsistema
+            where al.sprint.id = :sprintId
+            order by al.entradaEm asc, al.id asc
+            """)
+    List<AlocacaoSprint> listarCompletasPorSprint(Long sprintId);
+
+    @Query("""
+            select distinct al from AlocacaoSprint al
+            join fetch al.sprint
+            join fetch al.atividade a
+            left join fetch a.subsistemas
+            left join fetch a.responsaveis
+            where al.sprint.id in :sprintIds
+            """)
+    List<AlocacaoSprint> listarComAtividadePorSprints(Collection<Long> sprintIds);
 }
