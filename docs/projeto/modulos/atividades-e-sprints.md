@@ -33,6 +33,7 @@ O servidor aplica o escopo à listagem, filtros, detalhes, histórico, indicador
 
 ## Referências
 
+- [Contrato da API](../contratos/atividades-e-sprints.md) · [Dashboard e Indicadores](dashboard-e-indicadores.md)
 - [Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-02%20-%20Atividades%20e%20Sprints.drawio.png) · [Diagrama de classes](../../diagramas/Diagramas%20de%20Classe/02%20Atividades%20e%20Sprints.drawio.png) · [Modelo relacional acadêmico](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_27_Atividades_e_Sprints.png)
 - [Requisitos funcionais](../requisitos/funcionais.md) · [Atividades e Sprints no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=124-426)
 
