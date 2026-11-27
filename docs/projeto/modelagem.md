@@ -4,8 +4,9 @@ A seção 5 do [documento de projeto](documento-de-projeto.pdf#page=57), página
 
 ## Fontes e limites
 
-- O [DBML V5](../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) representa o modelo lógico proposto; o [SQL do esquema](../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_criar_esquema_v5.sql) e o [SQL complementar](../diagramas/Diagramas%20de%20Banco%20de%20Dados/02_indices_adicionais.sql) acompanham essa modelagem.
-- A decisão posterior sobre o Gestor Financeiro está no [ADR 0002](../adr/0002-gestor-financeiro-derivado-do-subsistema.md): nesse ponto, o modelo v5 não representa o esquema efetivo. A migration Flyway V8 remove a tabela de atribuição e protege a associação ao Subsistema Financeiro.
+- O [modelo relacional V6](../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) reúne as decisões atuais. O esquema executável é a sequência Flyway V1 a V11. A [V11](../../backend/src/main/resources/db/migration/V11__alinhar_modelo_modulos_2_a_8.sql) depende da V10 integrada em `develop` e aproveita as tabelas criadas na V4.
+- Na V6, o Gestor Financeiro deriva do vínculo do Gestor ativo com o Subsistema Financeiro, conforme a migração V8. O Capitão ativo único e o escopo da auditoria continuam sob as migrações V9 e V10. O PDF conserva a modelagem histórica da V4.
+- O [DBML v5 histórico](../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) representa o modelo lógico proposto; o [SQL do esquema](../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_criar_esquema_v5.sql) e o [SQL complementar](../diagramas/Diagramas%20de%20Banco%20de%20Dados/02_indices_adicionais.sql) acompanham essa modelagem.
 - As migrações do backend ficam em [`backend/src/main/resources/db/migration/`](../../backend/src/main/resources/db/migration/). Compare-as com o modelo antes de implementar ou afirmar compatibilidade; não aplique os SQLs de referência diretamente sobre um banco existente sem avaliar o histórico Flyway.
 - O dicionário do PDF, páginas 68–87, distingue campos obrigatórios no DBML de regras condicionais de negócio. Nulidade na tabela não implica necessariamente que um valor possa faltar em toda operação.
 - Os [diagramas de classes](../diagramas/Diagramas%20de%20Classe/) são análise proposta, não um retrato obrigatório das classes já criadas. O dashboard consulta dados dos demais módulos e não tem tabelas ou classes de domínio próprias na modelagem apresentada.
@@ -22,11 +23,34 @@ A seção 5 do [documento de projeto](documento-de-projeto.pdf#page=57), página
 
 As FKs e os checks não garantem, por si só, os perfis corretos, as permissões, os três orçamentos, as duas aprovações e a integridade transacional da compra. O PDF exige verificá-los no backend e nos testes. A seção 5.1.2.10 também informa que o DBML não define contas internas do PostgreSQL, funções, procedimentos ou gatilhos.
 
+## Restrições da V11
+
+A V11 foi validada com Flyway no PostgreSQL 16.4, tanto em banco vazio quanto na atualização da V10 com dados de teste. Os cenários cobriram a preservação de presenças, diários, aprovações de compra, versões de Governança e aceites. A extensão `btree_gist` foi instalada com o usuário do ambiente descartável de teste.
+
+- O índice parcial limita a equipe a uma Sprint em andamento. A exclusão GiST impede sobreposição de turnos lançados para o mesmo usuário e de vigências publicadas para o mesmo documento de Governança. A migração instala `btree_gist`; a conta que executa o Flyway precisa poder instalar a extensão nesse banco.
+- Registros anteriores de presença com horários recebem a própria data de registro como data de saída. Versões de Governança anteriormente publicadas ganham vigência a partir da publicação até a publicação seguinte do mesmo documento.
+- Em bancos com dados anteriores dos módulos ainda em planejamento, diários duplicados por dia ou turnos com sobreposição precisam ser reconciliados antes de aplicar a V11. Nenhum desses registros é apagado pela migração. Os `CHECK`s marcados `NOT VALID` preservam linhas antigas sem os novos dados, mas são exigidos em novas gravações e atualizações.
+- Autorização, transições, histórico gravado junto à operação, aprovação conjunta e integração com o Drive serão verificados nos serviços de cada módulo. O Dashboard lê as fontes conforme as permissões dos módulos e não duplica os registros.
+
+## Base das especificações dos módulos
+
+| Módulo | Dados e restrições disponíveis |
+| --- | --- |
+| 02 · Atividades e Sprints | Datas previstas e efetivas, uma Sprint em andamento, arquivo com motivo, histórico de planejamento, estado no encerramento e distinção entre retirada e encerramento. As alocações preservam a origem e permitem consultar o destino. |
+| 03 · Gestão Financeira | Revisão atual com FK, itens e quantidades por orçamento, aprovação vinculada ao orçamento da mesma revisão, decisões anteriores preservadas, pagamento único, reembolso separado e previsão vinculada ao pagamento da própria compra. Na submissão, o serviço confirma se pelo menos três fornecedores distintos cobrem todos os itens da revisão. |
+| 04 · Pessoas e Participação | Vínculo histórico pela auditoria do Módulo 1, com revisão manual quando houver lacuna. Presença aceita horários do dia seguinte e impede sobreposição. Diário tem unicidade diária e histórico; Participações têm validação própria. Ocorrências e Advertências são confidenciais, com exposição controlada do texto formal comunicado. O banco protege esse texto após a comunicação. |
+| 05 · Documentação | Escopo de acesso por Subsistema separado das associações temáticas, autoria e datas de versões, histórico de operações e confirmação do Drive antes de marcar uma exclusão como executada. O serviço autoriza cada leitura e alteração. |
+| 06 · Competições e Eventos | Reuniões de Gestores, atribuições independentes de chamada e logística, lista sugerida de inscrições confirmadas, cancelamento e histórico de remarcações. Valores continuam no Financeiro. |
+| 07 · Governança | Preparação para publicação, vigências sem sobreposição, conteúdo publicado imutável e pendências de aceite por usuário e versão. Encerrar a vigência preserva conteúdo e aceites. |
+| 08 · Dashboard | Indicadores consultam as tabelas dos módulos 02 a 07. Períodos padrão, filtros, escopos por perfil e mensagens de indisponibilidade pertencem aos serviços e à interface. |
+
+As issues dos módulos usam este esquema como base. O trabalho de backend cobre consultas, gravações transacionais e permissões com as tabelas existentes.
+
 ## Dicionário por módulo
 
 Os nomes abaixo ajudam a localizar as tabelas do DBML e do PDF. A tabela de `usuarios` e outras entidades compartilhadas aparecem em diversos fluxos; campos, tipos, chaves e regras completas permanecem no dicionário original, seções 5.1.2.1–5.1.2.8.
 
-- **01 - Equipe e Subsistemas:** `perfis`, `permissoes`, `perfil_permissoes`, `usuarios`, `subsistemas`. A migração efetiva atualiza o modelo v5 proposto removendo `atribuicao_financeira` e reservando o Subsistema `Financeiro`.
+- **01 - Equipe e Subsistemas:** `perfis`, `permissoes`, `perfil_permissoes`, `usuarios`, `subsistemas`. O vínculo financeiro atual é derivado dos dados de `usuarios` e `subsistemas`.
 
 - **02 - Atividades e Sprints:** `sprints`, `atividades`, `atividades_responsaveis`, `atividades_subsistemas`, `atividades_sprints`, `historico_status_atividades`.
 

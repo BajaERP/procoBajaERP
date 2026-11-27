@@ -24,7 +24,7 @@ As permissões administrativas não concedem automaticamente acesso a informaç�
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-01%20-%20Equipe%20e%20Subsistemas.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_26_Equipe_e_Subsistemas.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-01%20-%20Equipe%20e%20Subsistemas.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_26_Equipe_e_Subsistemas.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
 
 No modelo proposto, as tabelas relacionadas incluem `usuarios`, `perfis`, `permissoes`, `perfil_permissoes` e `subsistemas`. A implementação atual deriva a responsabilidade financeira do perfil, da situação ativa e da associação ao Subsistema Financeiro; não mantém uma tabela de atribuição separada.
 

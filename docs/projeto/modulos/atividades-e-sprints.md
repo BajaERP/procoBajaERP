@@ -24,7 +24,7 @@ Consulte a tabela 4 do PDF para a matriz integral.
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-02%20-%20Atividades%20e%20Sprints.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_27_Atividades_e_Sprints.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-02%20-%20Atividades%20e%20Sprints.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_27_Atividades_e_Sprints.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
 
 No modelo proposto, as tabelas relacionadas incluem `atividades`, `atividades_responsaveis`, `atividades_subsistemas`, `sprints`, `atividades_sprints`, `historico_status_atividades`. A lista orienta a leitura e não substitui o dicionário de dados ou as migrações efetivas.
 

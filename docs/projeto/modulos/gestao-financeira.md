@@ -26,7 +26,7 @@ O backend deve aplicar as restrições por perfil, propriedade e estado. Consult
 
 ## Rastreabilidade
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-03%20-%20Financeiro.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_28_Financeiro_Solicitacoes_e_Revisoes.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v5.dbml) e a matriz integral no PDF.
+[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-03%20-%20Financeiro.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_28_Financeiro_Solicitacoes_e_Revisoes.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
 
 No modelo proposto, as tabelas relacionadas incluem `solicitacoes_compra`, `revisoes_solicitacoes_compra`, `solicitacoes_itens`, `orcamentos_compra`, `aprovacoes_compra`, `compras`, `movimentacoes_financeiras`, `previsoes_financeiras`. A lista orienta a leitura e não substitui o dicionário de dados ou as migrações efetivas.
 
