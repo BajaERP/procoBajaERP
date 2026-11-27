@@ -1,9 +1,9 @@
 # Documentação de domínio
 
-O projeto usa um único contexto de domínio. Seu glossário é o `CONTEXT.md` na raiz; quando uma skill mencionar `GLOSSARY.md`, consulte ou atualize `CONTEXT.md`. Mantenha o vocabulário em um único arquivo.
+O projeto usa um único contexto de domínio. Consulte ou atualize [CONTEXT.md](../../CONTEXT.md) quando uma skill mencionar `GLOSSARY.md`.
 
-Antes de trabalhar com termos ou regras de domínio, leia `CONTEXT.md` e os registros de decisão relevantes em `docs/adr/`, caso existam. Não é necessário criar a pasta de ADRs antecipadamente.
+- Para uma **regra**, consulte o [glossário](../../CONTEXT.md), o [guia do módulo](../projeto/modulos/README.md) e os [ADRs](../adr/) pertinentes.
+- Para a **implementação atual**, confira a rota, o serviço e as [migrações executadas](../../backend/src/main/resources/db/migration/) na branch de trabalho.
+- Para uma **entrega planejada**, use a issue publicada no [GitHub](https://github.com/BajaERP/procoBajaERP/issues). Se houver notas em `.scratch/`, use-as como contexto local para entender a origem da decisão.
 
-Use os termos do glossário em títulos de issues, propostas, hipóteses e testes. Se um termo estiver ausente ou divergir do código ou de outra fonte, registre a dúvida e esclareça-a antes de assumir uma regra. Ao resolver um termo, atualize o glossário. Se uma proposta contrariar um ADR existente, explicite o conflito.
-
-Se o projeto passar a ter múltiplos contextos e um `CONTEXT-MAP.md` for criado, siga seus apontamentos para os glossários relevantes e consulte também os ADRs específicos de cada contexto.
+Use os termos do glossário em issues, interface e testes. Quando houver divergência, identifique as fontes e esclareça a regra antes de alterar seu comportamento. Atualize o glossário quando uma definição mudar. Registre em ADR decisões com consequências de arquitetura e preserve o histórico dos ADRs anteriores.

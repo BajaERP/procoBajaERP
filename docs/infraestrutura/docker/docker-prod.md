@@ -1,235 +1,124 @@
 # Docker em produção
 
-Este guia explica como construir e executar o projeto em um servidor usando
-Docker Compose. A produção é construída no próprio servidor e não monta o
-código-fonte como volume.
-
-Os arquivos usados neste ambiente são:
-
-- [`compose.yaml`](../../../compose.yaml): configurações comuns dos serviços;
-- [`compose.prod.yaml`](../../../compose.prod.yaml): targets de produção, portas e política de reinício;
-- [`.env.example`](../../../.env.example): exemplo das variáveis de ambiente;
-- [`scripts/backup-postgres.sh`](../../../scripts/backup-postgres.sh): backup do PostgreSQL.
+O ambiente de produção combina o [Compose base](../../../compose.yaml) com o [Compose de produção](../../../compose.prod.yaml). O servidor constrói as imagens a partir do checkout. O frontend é compilado com `npm ci` e `npm run build` e servido por Nginx. O backend executa o JAR em Java 21. O código fica nas imagens e o PostgreSQL usa um volume persistente.
 
 ## Pré-requisitos
 
-No servidor, instale o Docker Engine com Docker Compose v2 e confirme:
+Instale Docker Engine com Docker Compose v2 ou compatível. Execute os comandos a partir da raiz do repositório com um usuário que tenha acesso ao Docker. Prepare um domínio, um proxy reverso com TLS e um diretório de backup fora do volume do banco.
 
 ```bash
 docker --version
 docker compose version
 ```
 
-O usuário que executará os comandos precisa ter permissão para usar o Docker.
-Reserve também um diretório fora do volume do PostgreSQL para os backups.
-
-## Frontend
-
-O frontend usa React `19.3.0`, TypeScript `7.0.2` e Vite `8.3.0`. Durante o
-build da imagem, o Docker executa `npm ci`, gera o diretório `dist/` com
-`npm run build` e entrega os arquivos estáticos por Nginx.
-
-O `package-lock.json` deve acompanhar o `package.json` no deploy. Não monte o
-código-fonte nem `node_modules` como volume em produção.
-
 ## Preparar o ambiente
 
-Execute os comandos a partir da raiz do projeto. Se o servidor ainda não tiver um `.env`, crie-o a partir do exemplo; preserve o arquivo existente em atualizações:
+Em uma instalação nova, copie o [arquivo de exemplo](../../../.env.example). Preserve o `.env` existente nas atualizações.
 
 ```bash
+umask 077
 cp .env.example .env
 chmod 600 .env
 ```
 
-Edite o `.env` e substitua os valores de exemplo, principalmente:
+Defina `POSTGRES_DB`, `POSTGRES_USER` e uma senha exclusiva em `POSTGRES_PASSWORD`. As variáveis inicializam um volume novo de PostgreSQL. Se o volume já contém um banco, faça alterações de credenciais no próprio banco e sincronize o `.env` com elas. Mantenha o arquivo local com acesso restrito. As variáveis `PGADMIN_*` são usadas pelo [ambiente de desenvolvimento](docker-dev.md).
+
+No banco inicial, configure as três variáveis `PROCOBAJA_CAPITAO_INICIAL_RA`, `PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`. Use um identificador de 1 a 20 dígitos e uma senha de 8 a 64 caracteres, com limite de 72 bytes em UTF-8. O backend cria a conta se o banco estiver sem Capitão ativo e as variáveis estiverem preenchidas. Após o primeiro login, troque a senha provisória, remova `PROCOBAJA_CAPITAO_INICIAL_SENHA` do `.env` e execute `up -d` para aplicar a alteração ao container.
+
+## HTTPS obrigatório
+
+O frontend de produção usa a API real. Sirva a interface e a API no mesmo domínio. O Compose de produção usa `PROCOBAJA_COOKIE_SEGURO=true` por padrão. Preserve esse valor para que o cookie de sessão e o cookie `XSRF-TOKEN` sejam marcados como `Secure`.
+
+O Compose publica por padrão o frontend na porta `80` e o backend na `8080` do host. Se o proxy roda no próprio host, publique os containers em loopback e deixe o proxy ocupar as portas públicas `80` e `443`. Configure o `.env` assim:
 
 ```dotenv
-POSTGRES_DB=procobaja
-POSTGRES_USER=procobaja
-POSTGRES_PASSWORD=uma-senha-forte
-PROCOBAJA_CAPITAO_INICIAL_RA=1234567
-PROCOBAJA_CAPITAO_INICIAL_NOME=Nome do primeiro Capitão
-PROCOBAJA_CAPITAO_INICIAL_SENHA=outra-senha-forte
-BACKEND_PORT=8080
-FRONTEND_PROD_PORT=80
+FRONTEND_PROD_PORT=127.0.0.1:8081
+BACKEND_PORT=127.0.0.1:8080
+PROCOBAJA_COOKIE_SEGURO=true
 ```
 
-O `.env` real contém credenciais e nunca deve ser commitado ou publicado. As
-variáveis `PGADMIN_*` existem para o desenvolvimento; o pgAdmin não é iniciado
-pela configuração de produção.
+Configure seu proxy para redirecionar HTTP para HTTPS e encaminhar as rotas conforme a tabela. Preserve o prefixo `/api` ao repassar as chamadas.
 
-As variáveis `PROCOBAJA_CAPITAO_INICIAL_*` criam a primeira conta
-administrativa. O `.env.example` as deixa vazias de propósito: enquanto
-estiverem vazias, o backend não cria nenhum Capitão e só avisa no log. Ele cria
-o Capitão uma única vez, ao iniciar com o banco sem nenhum Capitão ativo. O RA
-deve ter só dígitos (o RA ou SIAPE do primeiro Capitão). A senha configurada é
-provisória: no primeiro login o ERP exige trocá-la antes de liberar os módulos.
-Depois da troca, apague `PROCOBAJA_CAPITAO_INICIAL_SENHA` do `.env`.
+| Caminho público | Destino no exemplo |
+| --- | --- |
+| `/api` e seus subcaminhos | `http://127.0.0.1:8080` |
+| Demais caminhos | `http://127.0.0.1:8081` |
 
-## Construir e iniciar
+Em outra topologia, ajuste os endereços e restrinja no firewall as portas dos containers ao proxy. O domínio, o certificado, o proxy e as regras de firewall são configurados no servidor. O PostgreSQL permanece acessível pela rede do Compose em `postgres:5432`.
 
-Construa as imagens no próprio servidor:
+## Construir, iniciar e verificar
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml build
-```
-
-Depois, inicie os serviços em segundo plano:
-
-```bash
-docker compose -f compose.yaml -f compose.prod.yaml up -d
-```
-
-O frontend é compilado e servido por Nginx. O backend executa o JAR com Java
-21. Os serviços usam `restart: unless-stopped` e serão reiniciados após falhas
-ou reinicializações do servidor.
-
-## Acessar e verificar os serviços
-
-Os usuários acessam o ERP somente por HTTPS, pelo proxy descrito em
-[HTTPS obrigatório](#https-obrigatório). As portas padrão publicadas pelo
-Compose são as que o proxy usa:
-
-- frontend: porta `80` do servidor;
-- backend: porta `8080` do servidor;
-- PostgreSQL: acessível internamente apenas pelo hostname `postgres` na porta
-  `5432`.
-
-A porta do PostgreSQL não é publicada no host e o pgAdmin não faz parte da
-produção.
-
-Verifique o estado dos containers:
-
-```bash
+docker compose -f compose.yaml -f compose.prod.yaml config --quiet
+docker compose -f compose.yaml -f compose.prod.yaml up --build -d
 docker compose -f compose.yaml -f compose.prod.yaml ps
-```
-
-Acompanhe os logs:
-
-```bash
-docker compose -f compose.yaml -f compose.prod.yaml logs -f
-```
-
-Para investigar um serviço específico:
-
-```bash
 docker compose -f compose.yaml -f compose.prod.yaml logs -f backend
-docker compose -f compose.yaml -f compose.prod.yaml logs -f frontend
 ```
 
-Reinicie um serviço após verificar os logs:
+O backend inicia depois que o PostgreSQL fica saudável e aplica as migrações Flyway. Os serviços usam a política de reinício `unless-stopped`.
+
+Com o proxy ativo, abra o domínio pelo navegador, faça login e verifique a tela **Equipe**. Para verificar o encaminhamento da API, substitua o domínio de exemplo pelo domínio real. O endpoint CSRF deve responder com o status `204`.
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml restart backend
+curl -fsS -o /dev/null -w '%{http_code}\n' https://erp.exemplo.org/api/auth/csrf
 ```
 
 ## Atualizar a aplicação
 
-Depois de atualizar os arquivos do projeto no servidor, reconstrua as imagens e
-recrie os containers:
+Antes de atualizar, faça um [backup do PostgreSQL](#backup-do-postgresql) e preserve o `.env`. Depois de atualizar o checkout, reconstrua os serviços e inspecione os logs das migrações:
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml build
-docker compose -f compose.yaml -f compose.prod.yaml up -d
+docker compose -f compose.yaml -f compose.prod.yaml up --build -d
+docker compose -f compose.yaml -f compose.prod.yaml logs -f backend
 ```
 
-Antes de atualizar, confirme que o `.env` local do servidor foi preservado.
-Não é necessário nem recomendado montar o código-fonte como volume em
-produção.
-
-## Persistência e encerramento
-
-O PostgreSQL usa o volume nomeado `postgres_data`, montado em
-`/var/lib/postgresql/data`. Esse volume sobrevive à recriação dos containers.
-
-Para parar os serviços sem remover o volume:
+Verifique novamente o acesso pelo domínio HTTPS e o login. Para encerrar o ambiente preservando o volume `postgres_data`, use:
 
 ```bash
 docker compose -f compose.yaml -f compose.prod.yaml down
 ```
 
-Nunca use `docker compose down -v` em produção. A opção `-v` remove o volume
-nomeado do PostgreSQL e pode apagar todos os dados persistidos.
-
-O volume não protege contra falha do disco, perda do servidor ou corrupção dos
-dados. Backups externos são obrigatórios.
+A opção `down -v` remove o volume e seus dados.
 
 ## Backup do PostgreSQL
 
-O script [`scripts/backup-postgres.sh`](../../../scripts/backup-postgres.sh) executa
-`pg_dump` dentro do container do PostgreSQL e grava dumps no diretório definido
-por `BACKUP_DIR`. Use um caminho fora do volume principal:
+O [script de backup](../../../scripts/backup-postgres.sh) executa `pg_dump` no serviço `postgres` e grava um arquivo no formato customizado. Ele usa a data em UTC nos nomes, cria uma cópia semanal aos domingos em UTC e remove arquivos conforme a retenção diária e semanal. O container do PostgreSQL precisa estar em execução.
+
+A partir da raiz do repositório, use um diretório com acesso restrito e fora do volume do banco:
 
 ```bash
+umask 077
 BACKUP_DIR=/var/backups/procobaja \
 BACKUP_RETENTION_DAYS=7 \
 BACKUP_RETENTION_WEEKS=4 \
 ./scripts/backup-postgres.sh
 ```
 
-O script:
-
-- cria um dump diário no formato custom do PostgreSQL;
-- cria uma cópia semanal aos domingos;
-- remove dumps diários e semanais conforme as retenções configuradas;
-- exige que o container `postgres` esteja em execução.
-
-O diretório de backup deve ser copiado regularmente para outro disco ou storage
-externo. A existência dos arquivos no mesmo servidor não é suficiente para
-proteger contra a perda desse servidor.
+O script lê as opções de backup do ambiente do processo. Defina-as na chamada ou exporte-as antes de executar. Mantenha uma cópia dos arquivos em armazenamento externo e teste a restauração periodicamente.
 
 ### Agendar com cron
 
-O exemplo abaixo executa o backup todos os dias às 2h:
+Este exemplo roda o backup às 2h no horário configurado no cron:
 
 ```cron
-0 2 * * * cd /opt/procobaja && BACKUP_DIR=/var/backups/procobaja BACKUP_RETENTION_DAYS=7 BACKUP_RETENTION_WEEKS=4 ./scripts/backup-postgres.sh >> /var/log/procobaja-backup.log 2>&1
+0 2 * * * cd /opt/procobaja && umask 077 && BACKUP_DIR=/var/backups/procobaja BACKUP_RETENTION_DAYS=7 BACKUP_RETENTION_WEEKS=4 ./scripts/backup-postgres.sh >> /var/log/procobaja-backup.log 2>&1
 ```
 
-Ajuste `/opt/procobaja` e `/var/backups/procobaja` para os caminhos reais do
-servidor. Garanta que o usuário do cron tenha acesso ao Docker e ao diretório
-de backup. Teste o script manualmente antes de confiar no agendamento.
+Ajuste os caminhos para o servidor. O usuário do cron precisa de acesso ao Docker, ao repositório, ao diretório de backup e ao arquivo de log. Teste a chamada manual antes de agendar.
 
-### Restaurar um backup
+### Testar a restauração
 
-Com os serviços em execução, restaure um dump usando `pg_restore` dentro do
-container:
+Use um projeto Compose novo para iniciar apenas um PostgreSQL com volume próprio. No exemplo, substitua o arquivo de entrada pelo dump que deseja validar.
 
 ```bash
-cat /var/backups/procobaja/postgres_daily_YYYYMMDDTHHMMSSZ.dump | \
-  docker compose -f compose.yaml -f compose.prod.yaml exec -T postgres \
+docker compose -p procobaja-restauracao -f compose.yaml -f compose.prod.yaml up -d --wait postgres
+docker compose -p procobaja-restauracao -f compose.yaml -f compose.prod.yaml exec -T postgres \
   sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_restore \
-    --clean \
-    --if-exists \
+    --single-transaction \
     --no-owner \
     --host=127.0.0.1 \
     --username="$POSTGRES_USER" \
-    --dbname="$POSTGRES_DB"'
+    --dbname="$POSTGRES_DB"' < /var/backups/procobaja/postgres_daily_YYYYMMDDTHHMMSSZ.dump
 ```
 
-Esse comando usa `--clean` e pode remover objetos existentes no banco de
-destino. Prefira validar a restauração primeiro em uma base separada ou em um
-ambiente de recuperação. Faça uma confirmação explícita antes de restaurar
-sobre a base de produção.
-
-## HTTPS obrigatório
-
-O login do ERP abre uma sessão guardada num cookie. Sem HTTPS, esse cookie
-trafega sem criptografia e pode ser capturado por quem observa a rede. Por
-isso, o `compose.prod.yaml` define `PROCOBAJA_COOKIE_SEGURO=true`, e os cookies
-de sessão e `XSRF-TOKEN` saem marcados como `Secure`. O navegador só os envia
-por HTTPS: acessando por `http://`, o login não se mantém.
-
-Antes de liberar o acesso, coloque na frente dos containers um proxy reverso
-com certificado TLS, como Caddy, Nginx ou Traefik:
-
-- sirva o ERP por um domínio em `https://`;
-- encaminhe `/api` para o backend (porta `8080`) e o restante para o frontend
-  (porta `80`), no mesmo domínio, porque o frontend chama a API pela mesma
-  origem;
-- redirecione `http://` para `https://`;
-- bloqueie no firewall o acesso externo direto às portas `80` e `8080` dos
-  containers, deixando aberto apenas o proxy.
-
-Domínio, certificado, proxy e firewall não são configurados por estes arquivos.
-Não defina `PROCOBAJA_COOKIE_SEGURO=false` em produção.
+Confira se os dados esperados estão na base restaurada. Para recuperar produção, valide o dump em isolamento, interrompa as escritas e mantenha uma cópia do estado anterior antes de direcionar a aplicação para a base recuperada.

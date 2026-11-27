@@ -1,25 +1,26 @@
 # ProcoBaja ERP — Design do frontend
 
-Este guia reúne as decisões visuais e de interação do frontend. Para implementar uma tela, consulte o [Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1), a tela existente e os tokens em [`src/styles.css`](src/styles.css). Preserve os ajustes solicitados para o projeto quando diferirem do Figma. O CSS é a fonte dos valores em uso; a presença de uma tela no Figma não significa que ela esteja implementada.
+Compare os componentes existentes e os [tokens em uso](src/styles.css) com a referência visual antes de implementar uma tela. Preserve os ajustes registrados neste guia. [Figma do projeto](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1).
+
+Para conferir quais rotas estão implementadas, consulte a [arquitetura do frontend](ARCHITECTURE.md).
 
 ## Linguagem visual
 
 Priorize hierarquia clara e leitura rápida para tarefas de gestão. Use o vermelho institucional em ações principais e destaques de navegação, superfícies neutras para conteúdo e cores de estado para comunicar significado. Separe cartões e seções com bordas discretas; reserve sombras para elementos flutuantes, como menus e o drawer mobile.
 
-Use português brasileiro na interface. Apresente dados, estados e permissões de acordo com o que estiver disponível: a sessão atual é demonstrativa, e a maioria dos módulos ainda está em construção.
+Use português brasileiro na interface. Nas telas integradas, apresente os dados e as ações disponíveis para a sessão atual e dê retorno compreensível quando a API recusar uma operação.
 
 ## Marca, tipografia e ícones
 
-- **Nome:** use “ProcoBaja ERP” na identificação do sistema.
-- **Fontes:** DM Sans para a interface e JetBrains Mono para identificadores, códigos e valores quando fizer sentido. As famílias estão em `src/styles.css` e são carregadas em `index.html`.
-- **Introdução e sidebar:** `src/assets/procobaja-logo.svg`, por meio de `LogoMark` em `src/components/shared/Logo.tsx`.
-- **Login:** `src/assets/procobaja-sem-fundo.svg` no painel institucional.
-- **Rodapé da sidebar:** variante transparente de `LogoMark`, que usa `src/assets/procobaja-transparente.svg`. Preserve a proporção e a adaptação ao tema.
-- **Ícones:** use `lucide-react`; oculte ícones decorativos de tecnologias assistivas e dê nome acessível a botões que não tenham texto.
+- Use **ProcoBaja ERP** na identificação do sistema.
+- Use **DM Sans** para a interface e **JetBrains Mono** para identificadores, códigos e valores que precisem de largura uniforme. O [HTML de entrada](index.html) carrega as fontes.
+- Na introdução e na sidebar, use `LogoMark` com [`procobaja-logo.svg`](src/assets/procobaja-logo.svg). Para o rodapé da sidebar, use a variante [transparente](src/assets/procobaja-transparente.svg). Preserve a proporção e a adaptação ao tema. [Componente LogoMark](src/components/shared/Logo.tsx).
+- No painel institucional do login, use [`procobaja-sem-fundo.svg`](src/assets/procobaja-sem-fundo.svg).
+- Use `lucide-react` para ícones, oculte os decorativos de tecnologias assistivas e dê nome acessível aos botões que tenham somente ícone.
 
 ## Tokens, temas e estados
 
-Use os tokens de `src/styles.css` em vez de repetir cores em componentes. No Tailwind, os nomes correspondem às classes sem o prefixo `--color-`: por exemplo, `bg-canvas`, `text-ink` e `border-hairline`.
+Use os tokens de `src/styles.css` nos componentes. Por exemplo, os tokens `canvas`, `ink` e `hairline` geram classes do Tailwind como `bg-canvas`, `text-ink` e `border-hairline`.
 
 | Uso | Tokens principais |
 | --- | --- |
@@ -29,37 +30,41 @@ Use os tokens de `src/styles.css` em vez de repetir cores em componentes. No Tai
 | Marca e ação principal | `red`, `red-pressed`, `red-light`, `red-soft`, `red-tint`, `red-deep` |
 | Feedback | `state-success`, `state-warning`, `state-error`, `state-info` e seus respectivos sufixos `-bg` |
 
-Os tokens semânticos recebem valores para claro e escuro. Quando uma combinação nova não tiver token adequado, avalie ambos os temas antes de acrescentá-lo. Confira legibilidade e contraste de texto, bordas, foco e ícones sobre as superfícies onde aparecem; cor não deve ser o único sinal de estado.
+Os tokens semânticos recebem valores para claro e escuro. Ao acrescentar um token, avalie a combinação nos dois temas. Confira o contraste de texto, bordas, indicadores de foco e ícones sobre as superfícies em que aparecem. Combine a cor com texto, ícone rotulado ou outro sinal perceptível para comunicar estados.
 
-A preferência de tema pode ser **Claro**, **Escuro** ou **Sistema** e é controlada por `ThemeContext`. As cores `theme-preview-light` e `theme-preview-dark` são fixas: representam as opções de aparência independentemente do tema ativo. O header não tem alternador de tema; a preferência está disponível no login e em Configurações.
+A preferência de tema está disponível no login e em **Configurações → Aparência**. Ofereça as opções **Claro**, **Escuro** e **Sistema**. Use `theme-preview-light` e `theme-preview-dark` para representar cores fixas das opções de aparência em qualquer tema ativo.
 
 ## Estrutura e responsividade
 
-- **Introdução:** apresente a marca e avance automaticamente para o login. Mantenha a animação breve e respeite `prefers-reduced-motion`.
-- **Login:** no desktop, combine o painel institucional vermelho com a área de formulário. No mobile, centralize a composição, mantendo os rótulos dos campos alinhados à esquerda. O texto institucional mais longo fica oculto no mobile.
-- **Shell:** a barra superior tem 56 px; a sidebar desktop tem 240 px expandida e 64 px recolhida. Abaixo de 768 px, a navegação passa a drawer, com largura de até 240 px e espaço para o fundo em telas estreitas.
-- **Telas pequenas:** suporte a partir de 320 px e considere alturas reduzidas. Evite rolagem horizontal da página; quando necessário, mantenha tabelas densas em uma região rolável própria.
-- **Indicadores futuros:** use uma coluna no mobile, duas no tablet e quatro no desktop, adaptando o conteúdo ao espaço disponível. Essa orientação não indica que os indicadores já existam.
+- Na introdução, apresente a marca e avance automaticamente para o login. Mantenha a animação breve e respeite `prefers-reduced-motion`.
+- No desktop, combine o painel institucional vermelho com a área de formulário. No mobile, centralize a composição, mantenha os rótulos alinhados à esquerda e exiba a versão curta do painel institucional.
+- Preserve a barra superior de 56 px e a sidebar desktop de 240 px quando expandida e 64 px quando recolhida. Abaixo de 768 px, use o drawer de até 240 px com espaço para o fundo em telas estreitas.
+- Suporte telas a partir de 320 px e alturas reduzidas. Em tabelas densas, restrinja a rolagem horizontal à região da tabela quando necessário.
+- Ao implementar indicadores, use uma coluna no mobile, duas no tablet e quatro no desktop. Adapte o conteúdo ao espaço disponível.
 
 ## Padrões de interação
 
 ### Sidebar e header
 
-A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Diferencie a página ativa dos demais itens usando `bg-selected` e `text-link`; mantenha a seleção coerente com a rota. Cada módulo tem somente sua entrada principal, sem subitens. Em Equipe e Subsistemas, use as abas internas Integrantes e Subsistemas e mostre Histórico de auditoria somente a Capitão, Gestor e Líder. No modo recolhido, centralize os ícones e mantenha nomes acessíveis.
+A sidebar tem faixa vermelha à esquerda e borda neutra à direita. Use `bg-selected` e `text-link` no item ativo e mantenha sua seleção coerente com a rota. Use uma entrada principal por módulo. No modo recolhido, centralize os ícones e mantenha os nomes acessíveis.
 
-O drawer mobile fecha pelo botão, pelo fundo ou por Escape. Ao abri-lo, mova o foco para dentro e mantenha-o contido; ao fechá-lo, devolva o foco ao botão de abertura. Ao mudar para desktop, libere o conteúdo da página.
+O drawer mobile fecha pelo botão, pelo fundo ou por Escape. Ao abri-lo, mova o foco para dentro e mantenha-o contido. Ao fechar dentro do layout mobile, devolva o foco ao botão de abertura. Ao mudar para desktop, libere o conteúdo da página.
 
-O header contém o caminho de navegação e o avatar. Seu menu de conta mostra o nome, acesso a Configurações e a ação Sair; mantenha o fechamento por clique fora ou Escape e a restauração de foco ao fechar com Escape.
+A barra superior contém o caminho de navegação e o avatar. O menu da conta mostra o nome, acesso a Configurações e a ação Sair. Preserve o fechamento por clique fora ou Escape e a restauração de foco ao fechar com Escape.
 
-O seletor Dev existe apenas em desenvolvimento e separa perspectiva de pessoa ativa. Gestor Financeiro é uma visão do Gestor com atribuição adicional. Mostre a indicação de demonstração no menu da conta e na sidebar; na conta, exiba o subsistema e a situação de troca de senha. Avisos de identidade indisponível devem permanecer visíveis após fechar o seletor. A restauração exige confirmação, e o painel Dev deve caber em telas estreitas e baixas com rolagem interna.
+No modo demonstrativo, mantenha no seletor **Dev** a escolha de perspectiva e de pessoa ativa, com rolagem interna em telas estreitas ou baixas. Indique a demonstração no menu da conta e na sidebar. Em Configurações, exiba o subsistema e a situação da troca de senha. Preserve o aviso de identidade indisponível após fechar o seletor e a confirmação antes de restaurar os dados demonstrativos.
+
+### Equipe e Subsistemas
+
+Use as abas internas **Integrantes** e **Subsistemas**. Apresente **Histórico** a quem tem `AUDITORIA_CONSULTAR`. **Perfis e permissões** é uma consulta informativa aberta em diálogo. A consulta **Responsabilidade financeira** abre como painel lateral no desktop e ocupa toda a tela no mobile. Preserve a rolagem interna e o retorno de foco ao fechar os diálogos.
+
+O Histórico apresenta cartões responsivos com ação, tipo de registro, data, ator e escopo. Use a descrição fornecida pela API e mantenha a exibição limitada aos campos públicos da consulta. Inclua filtros rotulados, carregamento, vazio, recuperação de falha e paginação acessível.
 
 ### Formulários e feedback
 
-Associe cada rótulo ao campo e mantenha foco visível, áreas de toque adequadas e mensagens compreensíveis. No login, o RA aceita somente números; os campos e a validação atual fazem parte de um fluxo demonstrativo, sem conferência de credenciais no servidor.
+Associe cada rótulo ao campo e mantenha foco visível, áreas de toque adequadas e mensagens compreensíveis. No login, preserve a entrada numérica para o RA e uma indicação visível durante o envio. Em modo API, apresente separadamente a falha do login e a falha ao verificar a sessão. Quando a troca de senha for obrigatória, mantenha o formulário antes do shell e exiba orientações para concluir a troca.
 
-O histórico apresenta eventos em cartões responsivos, com ação, tipo de registro, data, ator e escopo. Nunca exiba o JSON interno nem identificadores acadêmicos ou credenciais. Inclua filtros rotulados, estados de carregamento, vazio e erro, recuperação e paginação acessível.
-
-Para erros, associe a mensagem ao contexto e use os tokens de erro com texto legível nos dois temas. Para interfaces com dados reais, trate carregamento, ausência de resultados e falha conforme o fluxo; não apresente dados fictícios como se viessem do servidor.
+Associe erros aos campos ou à ação correspondente e use os tokens de erro com texto legível nos dois temas. Trate carregamento, ausência de resultados e falha conforme o fluxo. Em modo API, mantenha cada estado coerente com o retorno do servidor.
 
 ### Controles e superfícies
 
@@ -69,10 +74,10 @@ Menus e outros elementos flutuantes devem usar fundo e borda adequados ao tema, 
 
 ## Validação de mudanças visuais
 
-Ao alterar uma interface:
+Ao alterar uma interface, siga estes passos.
 
 1. Compare a parte afetada com o Figma, as decisões deste guia e os componentes existentes.
 2. Verifique o conteúdo e os estados afetados, inclusive seleção, foco, erro e ausência de dados quando aplicáveis.
 3. Confira os temas claro e escuro, contraste, teclado e preferência por movimento reduzido.
 4. Teste em 320 px, em desktop e em telas baixas quando a mudança afetar o layout; confira o drawer nos dois lados do breakpoint quando ele for afetado.
-5. Atualize este guia se uma decisão visual duradoura mudar. Para comandos de verificação, consulte [`AGENTS.md`](AGENTS.md); para rotas e sessão, consulte [`ARCHITECTURE.md`](ARCHITECTURE.md).
+5. Atualize este guia se uma decisão visual duradoura mudar. Consulte os [comandos de verificação](AGENTS.md#verificação) e, quando aplicável, o [fluxo de navegação e sessão](ARCHITECTURE.md#rotas-e-navegação).

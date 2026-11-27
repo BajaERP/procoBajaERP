@@ -1,6 +1,7 @@
-# ADR 0003: sucessão única do Capitão
+# ADR 0003 — Sucessão única do Capitão
 
-**Status:** Aceito  
+**Status:** Aceito
+
 **Data:** 2026-11-24
 
 ## Contexto
@@ -9,20 +10,19 @@ O Capitão é a identidade administrativa geral do ERP. Permitir várias contas 
 
 ## Decisão
 
-- O banco garante no máximo um Usuário ativo com Perfil `CAPITAO_ADMIN`; a aplicação mantém um Capitão ativo e impede sua desativação ou rebaixamento por operações comuns.
+- O banco garante no máximo um Usuário ativo com Perfil `CAPITAO_ADMIN`. Depois da criação do Capitão inicial, a sucessão mantém esse Perfil ocupado.
 - Somente o Capitão ativo pode iniciar a sucessão. Ele escolhe um Gestor ou Membro ativo como sucessor e um Subsistema ativo para sua própria permanência como Membro.
 - A operação promove o sucessor a Capitão, remove-o de seu Subsistema, rebaixa o Capitão anterior a Membro e associa-o ao destino, tudo na mesma transação.
-- Cadastro e Troca de Perfil não podem atribuir o Perfil `CAPITAO_ADMIN`. A interface demonstrativa oferece a mesma operação como um fluxo único.
+- A criação do Capitão inicial e a sucessão são os caminhos para assumir `CAPITAO_ADMIN`. A API real e a demonstração oferecem o mesmo fluxo de sucessão.
 - A sucessão é auditada junto com suas alterações. Se o sucessor era o Gestor associado ao Financeiro, a responsabilidade financeira fica vaga quando ele deixa esse Subsistema.
 
 ## Consequências
 
-- Uma migration cria um índice único parcial para impedir dois Capitães ativos e falha com orientação explícita se encontrar duplicidade preexistente.
-- A API expõe opções autorizadas sem RA ou SIAPE de terceiros e um endpoint transacional para a sucessão.
-- É necessário que exista ao menos um Subsistema ativo para completar a sucessão. O Capitão não pode abandonar o cargo sem que o sucessor e o destino sejam salvos juntos.
-- Registros históricos anteriores ao escopo de auditoria podem não ter vínculo de Subsistema.
+- A [migração V9](../../backend/src/main/resources/db/migration/V9__capitao_ativo_unico.sql) cria o índice único parcial e interrompe a migração caso encontre duplicidade preexistente.
+- A API lista candidatos e destinos autorizados com os dados necessários para a seleção. A confirmação exige pelo menos um Subsistema ativo e salva sucessor e destino na mesma transação.
+- Consulte o [ADR 0004](0004-auditoria-com-escopo-historico.md) para a visibilidade dos eventos gerados pela sucessão.
 
 ## Alternativas consideradas
 
-- Permitir vários Capitães ativos: rejeitada, pois deixa a responsabilidade administrativa ambígua.
-- Rebaixar o Capitão e promover seu sucessor por duas operações: rejeitada, pois permite estados intermediários sem Capitão ou com dois Capitães e registros parciais.
+- Permitir vários Capitães ativos deixaria ambígua a responsabilidade administrativa.
+- Rebaixar o Capitão e promover seu sucessor em operações separadas permitiria estados intermediários e registros parciais.

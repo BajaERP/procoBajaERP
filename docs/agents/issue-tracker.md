@@ -1,6 +1,14 @@
-# Rastreamento de issues em Markdown local
+# Rastreamento de issues
 
-As especificações e issues ficam em `.scratch/`:
+## Trabalho compartilhado
+
+Consulte as [issues do repositório](https://github.com/BajaERP/procoBajaERP/issues) para escopo, critérios de aceitação e dependências publicadas. Consulte o [Projects procoBajaERP](https://github.com/orgs/BajaERP/projects/2) para o andamento e filtre pelo campo **Módulo**. As issues publicadas usam as labels **Frontend** e **Backend** conforme a frente de trabalho. Uma entrega compartilhada, como o contrato de API, pode usar ambas.
+
+Referencie o número da issue ou seu link ao compartilhar trabalho com a equipe. Registre o andamento no campo **Status** do Projects. Mantenha a descrição voltada para entrega, critérios verificáveis e dependências, com links para outras issues quando houver.
+
+## Planejamento local
+
+O Git ignora `.scratch/`. Use essa pasta para rascunhos e planejamento local. Quando ela estiver disponível, siga esta estrutura:
 
 - Uma pasta por funcionalidade: `.scratch/<feature-slug>/`.
 - Especificação: `.scratch/<feature-slug>/spec.md`.
@@ -8,7 +16,7 @@ As especificações e issues ficam em `.scratch/`:
 - Estado de triagem na linha `Status:` próxima ao início da issue, conforme [triage-labels.md](triage-labels.md).
 - Comentários e histórico ao final do arquivo, sob o título `## Comments`.
 
-Quando uma skill pedir para publicar uma issue, crie o arquivo na pasta da funcionalidade, criando os diretórios necessários. Para consultar uma issue, leia o arquivo correspondente ao caminho ou número informado.
+Quando a tarefa pedir uma issue local, use a pasta da funcionalidade. Quando a tarefa pedir publicação no GitHub, procure primeiro a issue existente, leve a entrega e os critérios para a descrição e converta as dependências locais em links do GitHub. Os caminhos de `.scratch/` servem ao planejamento de quem tem os arquivos. Use fontes compartilhadas para que a issue possa ser executada a partir de um clone.
 
 ## Operações de Wayfinding
 

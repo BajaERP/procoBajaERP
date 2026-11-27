@@ -1,19 +1,23 @@
 ## Descrição
 
-Qual problema ou necessidade esta alteração atende? Descreva o comportamento resultante.
+Explique a necessidade e o comportamento que muda para quem usa ou mantém o ERP.
+
+## Issue relacionada
+
+Referencie a issue quando houver. Para localizar o trabalho dos módulos, consulte o [projeto BajaERP](https://github.com/orgs/BajaERP/projects/2).
 
 ## Alterações
 
-- Descreva as mudanças principais.
+- Resuma as mudanças principais e indique as decisões que afetam a revisão.
 
 ## Verificação
 
-- [ ] Executei as verificações adequadas ou expliquei abaixo por que não foram executadas.
-- [ ] Atualizei a documentação quando necessário.
-- [ ] Revisei se o PR aponta para a branch correta.
+Registre os comandos e cenários verificados, seus resultados e qualquer limitação. Se houver mudança no banco, descreva a verificação das migrações e dos fluxos de persistência afetados.
 
-Comandos executados, resultados e limitações:
+- [ ] Registrei as verificações pertinentes à mudança.
+- [ ] Atualizei a documentação afetada, quando aplicável.
+- [ ] Confirmei a branch de destino.
 
 ## Evidências visuais
 
-Inclua imagens ou vídeos quando a alteração afetar a interface.
+Quando a mudança afetar a interface, inclua imagens ou vídeo e identifique os fluxos, temas e tamanhos de tela relevantes.

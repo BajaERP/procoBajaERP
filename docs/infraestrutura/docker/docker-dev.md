@@ -1,33 +1,96 @@
 # Docker no desenvolvimento
 
-Este guia explica como executar o projeto localmente usando Docker Compose.
-
-Os arquivos usados neste ambiente são:
-
-- [`compose.yaml`](../../../compose.yaml): configurações comuns dos serviços;
-- [`compose.dev.yaml`](../../../compose.dev.yaml): volumes, portas e comandos de desenvolvimento;
-- [`.env.example`](../../../.env.example): exemplo das variáveis de ambiente.
+O ambiente local combina o [Compose base](../../../compose.yaml) com o [Compose de desenvolvimento](../../../compose.dev.yaml). Ele sobe PostgreSQL, backend Spring Boot, frontend Vite e pgAdmin com o código-fonte montado nos containers da aplicação.
 
 ## Pré-requisitos
 
-Instale o Docker Desktop ou o Docker Engine com Docker Compose v2. Confirme a
-instalação com:
+Instale Docker Desktop ou Docker Engine com Docker Compose v2 ou compatível. Execute os comandos deste guia a partir da raiz do repositório.
 
 ```bash
 docker --version
 docker compose version
 ```
 
-Execute os comandos a partir da raiz do projeto, onde estão os arquivos
-`compose.yaml` e `compose.dev.yaml`.
+## Configurar o ambiente
 
-## Frontend
+Se ainda não houver um `.env` local, copie o [arquivo de exemplo](../../../.env.example).
 
-O frontend usa React `19.3.0`, TypeScript `7.0.2` e Vite `8.3.0`. Os arquivos
-de dependência ficam em [`frontend/package.json`](../../../frontend/package.json) e
-[`frontend/package-lock.json`](../../../frontend/package-lock.json).
+```bash
+cp .env.example .env
+```
 
-Para executar o frontend diretamente na máquina, sem Compose:
+Defina `POSTGRES_PASSWORD`, `PGADMIN_DEFAULT_EMAIL` e `PGADMIN_DEFAULT_PASSWORD`. Mantenha as credenciais no `.env` local, que é ignorado pelo Git.
+
+Escolha o modo do frontend:
+
+| Valor no `.env` | Comportamento |
+| --- | --- |
+| `VITE_DEMO_MODE=true` | Usa identidades e dados demonstrativos. É o padrão do Compose local. |
+| `VITE_DEMO_MODE=false` | Usa a sessão e os dados reais do backend. O Vite encaminha `/api` para `http://backend:8080` pela rede do Compose. |
+
+Para testar com conta real em um banco novo, preencha `PROCOBAJA_CAPITAO_INICIAL_RA`, `PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`. Use de 1 a 20 dígitos no identificador e de 8 a 64 caracteres na senha, com limite de 72 bytes em UTF-8. Quando o banco está sem Capitão ativo, o backend usa os três valores para criar a primeira conta. Se algum estiver em branco, ele registra um aviso. Após o primeiro login, troque a senha provisória para liberar os módulos e retire essa senha do `.env`.
+
+Mantenha `PROCOBAJA_COOKIE_SEGURO` ausente ou com valor `false` para o HTTP local.
+
+## Iniciar e verificar
+
+Valide a configuração e suba os serviços em segundo plano:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml config --quiet
+docker compose -f compose.yaml -f compose.dev.yaml up --build -d
+docker compose -f compose.yaml -f compose.dev.yaml ps
+```
+
+O backend aguarda o PostgreSQL ficar saudável e aplica as migrações Flyway na inicialização. A primeira construção baixa dependências Maven e npm. Para acompanhar a inicialização e investigar falhas, use:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml logs -f backend frontend
+```
+
+| Serviço | Endereço padrão no host | Variável de porta |
+| --- | --- | --- |
+| Frontend | <http://localhost:5173> | `FRONTEND_DEV_PORT` |
+| Backend | <http://localhost:8080> | `BACKEND_PORT` |
+| pgAdmin | <http://localhost:5050> | `PGADMIN_PORT` |
+| PostgreSQL | `localhost:5432` | `POSTGRES_PORT` |
+
+Em caso de conflito, altere a respectiva variável no `.env` e execute `up -d` novamente. A publicação no host muda e as portas internas continuam sendo `5173`, `8080`, `80` e `5432`, respectivamente.
+
+Para verificar o proxy em modo real, acesse o frontend, entre com uma conta ativa e abra **Equipe**. A primeira autenticação do Capitão inicial deve pedir a troca da senha. A especificação OpenAPI e a interface Swagger estão disponíveis pela porta do backend, em `/v3/api-docs` e `/swagger-ui.html`.
+
+### Conectar o pgAdmin ao PostgreSQL
+
+Entre com `PGADMIN_DEFAULT_EMAIL` e `PGADMIN_DEFAULT_PASSWORD`. Ao registrar o servidor, preencha:
+
+| Campo do pgAdmin | Valor |
+| --- | --- |
+| Host name/address | `postgres`, nome do serviço na rede do Compose |
+| Port | `5432`, porta interna do banco |
+| Maintenance database | `POSTGRES_DB` |
+| Username | `POSTGRES_USER` |
+| Password | `POSTGRES_PASSWORD` |
+
+## Alterar o código e as dependências
+
+O Vite acompanha os arquivos em `frontend/`. Para aplicar alterações Java em `backend/`, reinicie o serviço. O comando do container recompila e sobe o Spring Boot.
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml restart backend
+```
+
+Os volumes `frontend_node_modules` e `backend_maven_cache` mantêm dependências entre recriações. Após alterar `package.json` ou `package-lock.json`, reinstale as dependências do frontend no volume e reinicie o Vite:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml exec frontend npm ci
+docker compose -f compose.yaml -f compose.dev.yaml restart frontend
+```
+
+Se o `npm ci` falhar, confira se os dois manifestos são compatíveis e se o container tem acesso ao registro npm. Use `up --build -d` depois de alterar um Dockerfile. Para aplicar variáveis do `.env` aos containers, execute `up -d`.
+
+## Executar o frontend diretamente
+
+Com uma versão do Node aceita pelo [`package.json`](../../../frontend/package.json), execute:
 
 ```bash
 cd frontend
@@ -35,168 +98,14 @@ npm ci
 npm run dev
 ```
 
-O Docker executa esse mesmo fluxo no target de desenvolvimento e mantém
-`node_modules` em um volume separado.
+Para testar a API real, use `VITE_DEMO_MODE=false npm run dev` com o backend em execução. O [proxy do Vite](../../../frontend/vite.config.ts) usa `http://localhost:8080` como destino padrão. Se a porta do backend no host for outra, informe o endereço em `VITE_API_PROXY_TARGET`.
 
-Por padrão, o frontend usa identidades e dados demonstrativos. Para testar a
-integração local com o backend, defina `VITE_DEMO_MODE=false` no `.env` antes
-de iniciar o Compose. O Vite encaminha `/api` para o serviço `backend`, então
-login, sessão e chamadas da equipe continuam na mesma origem do frontend. Em
-execução direta pelo npm, use `VITE_DEMO_MODE=false npm run dev`; o destino do
-proxy padrão é `http://localhost:8080` e pode ser alterado por
-`VITE_API_PROXY_TARGET`.
+## Parar o ambiente
 
-## Configurar o ambiente
-
-Se ainda não existir um `.env` local, crie-o a partir do exemplo:
-
-```bash
-cp .env.example .env
-```
-
-Altere pelo menos `POSTGRES_PASSWORD` e
-`PGADMIN_DEFAULT_PASSWORD` no arquivo `.env`. O arquivo `.env` é ignorado pelo
-Git e não deve ser commitado.
-
-Para entrar no ERP, preencha também `PROCOBAJA_CAPITAO_INICIAL_RA`,
-`PROCOBAJA_CAPITAO_INICIAL_NOME` e `PROCOBAJA_CAPITAO_INICIAL_SENHA`, com um RA
-só de dígitos e uma senha de 8 a 64 caracteres, que é provisória: o primeiro
-login exige trocá-la. Com o banco sem nenhum Capitão ativo, o backend cria
-esse Capitão ao iniciar; enquanto as variáveis estiverem vazias, ele não cria
-nenhum e avisa no log.
-
-As principais portas podem ser alteradas caso já estejam ocupadas:
-
-```dotenv
-POSTGRES_PORT=5432
-BACKEND_PORT=8080
-FRONTEND_DEV_PORT=5173
-PGADMIN_PORT=5050
-```
-
-## Subir os serviços
-
-Para construir as imagens e iniciar o ambiente em primeiro plano:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml up --build
-```
-
-Para iniciar em segundo plano, acrescente `-d`:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml up --build -d
-```
-
-O backend aguarda o PostgreSQL ficar saudável antes de iniciar. Na primeira
-execução, o download das dependências Maven e npm pode levar mais tempo.
-
-## Acessar os serviços
-
-| Serviço | Endereço local | Observação |
-| --- | --- | --- |
-| Frontend | <http://localhost:5173> | Servido pelo Vite |
-| Backend | <http://localhost:8080> | Porta HTTP da aplicação Spring Boot |
-| pgAdmin | <http://localhost:5050> | Login definido por `PGADMIN_DEFAULT_EMAIL` e `PGADMIN_DEFAULT_PASSWORD` |
-| PostgreSQL | `localhost:5432` | Porta publicada apenas no desenvolvimento |
-
-As portas do host podem mudar conforme o `.env`. Por exemplo, se
-`FRONTEND_DEV_PORT=5174`, acesse o frontend em
-`http://localhost:5174`.
-
-### Conectar o pgAdmin ao PostgreSQL
-
-Ao cadastrar o servidor no pgAdmin, use os dados definidos no `.env`:
-
-- **Host name/address:** `postgres`
-- **Port:** `5432`
-- **Maintenance database:** valor de `POSTGRES_DB`
-- **Username:** valor de `POSTGRES_USER`
-- **Password:** valor de `POSTGRES_PASSWORD`
-
-Dentro da rede do Compose, o hostname é `postgres`, que corresponde ao nome
-do serviço. Não use `localhost` no campo de host do pgAdmin.
-
-## Volumes e atualização do código
-
-No desenvolvimento, o código local é montado dentro dos containers:
-
-- `./backend` é montado em `/app`;
-- `./frontend` é montado em `/app`;
-- `node_modules` do frontend fica em um volume separado;
-- o cache Maven fica em um volume separado.
-
-Assim, alterações no código-fonte são refletidas sem reconstruir a imagem. Mudanças no `Dockerfile` ou nas dependências da imagem exigem reconstrução. O volume nomeado de `node_modules` persiste entre recriações e pode continuar com dependências antigas mesmo após `up --build`.
-
-Depois de alterar `package.json` ou `package-lock.json`, atualize o volume no container em execução e reinicie o Vite:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml exec frontend npm ci
-docker compose -f compose.yaml -f compose.dev.yaml restart frontend
-```
-
-O `npm ci` reinstala as dependências do volume conforme o lockfile. Ele não remove o volume do banco. Se a instalação falhar, confira o lockfile e o acesso do container ao registro npm.
-
-## Comandos úteis
-
-Ver o estado dos serviços:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml ps
-```
-
-Acompanhar os logs de todos os serviços:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml logs -f
-```
-
-Acompanhar apenas o backend:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml logs -f backend
-```
-
-Parar e remover os containers, preservando os volumes nomeados:
+O comando abaixo para e remove os containers, preservando os volumes nomeados:
 
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml down
 ```
 
-Use `down -v` somente quando quiser apagar também o banco local, o cache Maven
-e o volume de `node_modules`:
-
-```bash
-docker compose -f compose.yaml -f compose.dev.yaml down -v
-```
-
-Essa última opção remove os dados persistidos do PostgreSQL e exige uma nova
-instalação das dependências na próxima inicialização.
-
-## Problemas comuns
-
-### Porta já está em uso
-
-Altere a porta do host no `.env` e suba novamente. Por exemplo:
-
-```dotenv
-POSTGRES_PORT=5433
-BACKEND_PORT=8081
-FRONTEND_DEV_PORT=5174
-PGADMIN_PORT=5051
-```
-
-As portas internas dos containers continuam sendo `5432`, `8080`, `5173` e
-`80`, conforme a configuração dos serviços.
-
-### Erro relacionado a `package.json` ou `package-lock.json`
-
-Confirme que a aplicação frontend foi adicionada em `frontend/` e que contém
-os dois arquivos de manifesto. O ambiente de produção usa `npm ci`, que exige
-um `package-lock.json` compatível com o `package.json`.
-
-### O frontend não atualizou
-
-Confirme que o serviço foi iniciado com `compose.dev.yaml` e que o arquivo foi
-salvo dentro da pasta local `frontend/`. O Compose monta essa pasta no
-container. Para mudanças no Dockerfile, reconstrua a imagem; para dependências npm, atualize também o volume de `node_modules` conforme a seção anterior.
+Acrescente `-v` somente para descartar os dados do PostgreSQL e os volumes de dependências desse projeto Compose. A próxima inicialização recria os volumes.

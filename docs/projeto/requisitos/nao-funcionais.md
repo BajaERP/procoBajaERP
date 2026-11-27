@@ -1,6 +1,6 @@
 # Requisitos não funcionais
 
-Síntese da tabela 11 do [Documento de Projeto de Software](../documento-de-projeto.pdf#page=35), seção 4.2, páginas 35–37. Os requisitos representam objetivos do sistema proposto; sua presença aqui não comprova implementação ou conformidade. O documento original não atribui prioridades a esses itens.
+A tabela resume os objetivos de usabilidade, segurança, confiabilidade e manutenção do ERP. Os IDs seguem a referência acadêmica, que lista os itens sem prioridade. As verificações abaixo se aplicam conforme os módulos forem entregues. [Tabela 11 do Documento de Projeto de Software](../documento-de-projeto.pdf#page=35) · [Estado dos módulos](../modulos/README.md)
 
 | ID | Requisito | Categoria |
 |---|---|---|
@@ -18,11 +18,11 @@ Síntese da tabela 11 do [Documento de Projeto de Software](../documento-de-proj
 | RNF12 | Código-fonte conforme os padrões de organização e nomenclatura definidos pela equipe. | Padronização |
 | RNF13 | Informar falhas ou indisponibilidade de serviços externos, como Google Drive, sem comprometer a consistência das demais informações. | Confiabilidade |
 
-## Como verificar
+## Como verificar cada grupo
 
-- RNF01–RNF02 e RNF09: avaliar fluxos representativos nos dispositivos e navegadores suportados, incluindo navegação e mensagens de erro.
-- RNF03–RNF08: testar acesso direto à API, escopo dos dados, armazenamento de senha, validações, integridade e histórico no backend; ocultar elementos na interface não é suficiente.
-- RNF10: medir operações comuns nas condições normais definidas para o ambiente; transferências de arquivos e chamadas diretamente dependentes de serviços externos ficam fora do limite informado no PDF.
-- RNF11–RNF13: revisar organização do código e simular falhas de integrações para conferir mensagens e consistência.
+- Para RNF01, RNF02 e RNF09, verificar fluxos representativos no navegador em desktop e mobile, incluindo navegação por teclado, foco e feedback de erro. Registrar os navegadores e tamanhos de tela usados. [Arquitetura do frontend](../../../frontend/ARCHITECTURE.md)
+- Para RNF03 a RNF08, exercitar a API com sessões de Perfis e Subsistemas distintos. Conferir autorização em acesso direto, campos retornados, hash das senhas, validações, gravação atômica e histórico. [Arquitetura do backend](../../../backend/ARCHITECTURE.md) · [Guia de modelagem](../modelagem.md)
+- Para RNF10, definir o ambiente, a carga e as operações comuns antes de medir. O limite de três segundos se aplica às operações elegíveis dentro das condições normais acordadas. [Seção 4.2 do documento de projeto](../documento-de-projeto.pdf#page=35)
+- Para RNF11 e RNF12, revisar a estrutura e as convenções do código com os guias de arquitetura. Para RNF13, simular uma falha de integração e verificar o feedback, a nova tentativa e a consistência entre o ERP e o serviço externo. [Documentação](../modulos/documentacao.md)
 
-O PDF não define uma matriz de dispositivos, condições de carga ou plano completo de medição; esses detalhes devem ser acordados antes de afirmar conformidade. A verificação de cada requisito deve considerar seu contexto e critérios de aceitação específicos. Consulte o PDF para o texto completo e os documentos de arquitetura do [frontend](../../../frontend/ARCHITECTURE.md) e do [backend](../../../backend/ARCHITECTURE.md) para o estado e as decisões técnicas do projeto.
+Um resultado de conformidade depende da evidência de execução e dos critérios de aceitação da entrega.

@@ -1,16 +1,16 @@
 # ProcoBaja ERP
 
-Sistema interno de gestão do PROCOBAJA, equipe Baja SAE da UTFPR Câmpus Cornélio Procópio. Reúne em um só lugar a equipe, as atividades, as finanças, a participação dos integrantes, os documentos, os eventos e a governança.
+Vocabulário do ProcoBaja ERP, sistema interno da equipe Baja SAE da UTFPR Câmpus Cornélio Procópio. As definições abrangem os oito módulos e incluem regras das entregas planejadas. Consulte o [índice dos módulos](docs/projeto/modulos/README.md) para saber o que está integrado e os [ADRs](docs/adr/) para decisões de arquitetura.
 
-## Language
+## Linguagem
 
 ### Equipe
 
 **PROCOBAJA**:
-A equipe de extensão da UTFPR-CP que projeta e constrói veículos off-road para as competições Baja SAE; é a única organização que usa o ERP.
+Equipe de extensão da UTFPR-CP que projeta e constrói veículos off-road para as competições Baja SAE. O ERP atende a essa equipe.
 
 **Usuário**:
-Conta de acesso ao ERP, identificada pelo RA, com exatamente um Perfil e ativa ou desativada; nunca é excluída. Um Usuário ativo pode acessar o sistema mesmo quando seu Subsistema está inativo. O próprio Usuário só muda sua senha; Nome e RA são corrigidos pelo Capitão ou, nos Perfis que administra, pelo Gestor.
+Conta de acesso ao ERP identificada pelo **RA**, com um **Perfil** e situação ativa ou desativada. Uma conta ativa pode acessar o ERP mesmo quando seu Subsistema está inativo. O próprio Usuário altera a senha. Capitão e Gestor corrigem nome e RA conforme seu escopo de administração. A **Desativação** preserva a conta e seu histórico.
 _Avoid_: Conta UTFPR, login
 
 **RA**:
@@ -24,7 +24,7 @@ Pessoa que faz parte da equipe. Pertence a um Subsistema, com duas exceções: o
 _Avoid_: Membro (para qualquer pessoa da equipe: Membro é um Perfil)
 
 **Perfil**:
-Papel de acesso de um Usuário, que define o que ele pode ver e fazer; são cinco (Capitão, Gestor, Líder, Membro e Orientador), cada um com permissões fixas, e cada Usuário tem um só por vez. Um Gestor ativo associado ao Subsistema Financeiro recebe automaticamente as funções financeiras.
+Papel de acesso de um **Usuário**. Cada conta tem um dos cinco Perfis do ERP, Capitão, Gestor, Líder, Membro ou Orientador. As permissões seguem o Perfil e o escopo da operação. A **Atribuição financeira** complementa o Perfil Gestor quando aplicável.
 _Avoid_: Cargo, função, role
 
 **Troca de Perfil**:
@@ -69,7 +69,7 @@ Retirada de um Usuário ou de um Subsistema de uso, preservando seu histórico; 
 _Avoid_: Exclusão, remoção
 
 **Módulo**:
-Área funcional do ERP (Equipe, Atividades, Financeiro, Pessoas, Documentação, Eventos, Governança, Dashboard); um Módulo atende vários Subsistemas.
+Área funcional do ERP, como Equipe e Subsistemas ou Gestão Financeira. Um Módulo pode atender vários **Subsistemas**.
 _Avoid_: Subsistema
 
 **Atribuição financeira**:
@@ -90,7 +90,7 @@ Trabalho da equipe vinculado a pelo menos um Subsistema, que pode estar no Backl
 _Avoid_: Tarefa, task, card
 
 **Backlog**:
-Conjunto das Atividades que não estão alocadas em nenhuma Sprint aberta.
+Conjunto das Atividades sem Alocação vigente. Uma Atividade sai do Backlog ao ser alocada, inclusive em uma Sprint ainda planejada, e volta se for retirada sem outro destino.
 
 **Responsável**:
 Usuário designado para executar uma Atividade ou conduzir um Evento; pode ser de outro Subsistema.
@@ -99,7 +99,7 @@ Usuário designado para executar uma Atividade ou conduzir um Evento; pode ser d
 Situação de uma Atividade no Kanban. Não iniciada indica que o trabalho ainda não começou. Em andamento indica trabalho ativo, Pausada indica interrupção deliberada e Concluída indica trabalho terminado. Não concluída registra, no histórico de uma Sprint encerrada, que a Atividade continuou pendente no fechamento.
 
 **Estimativa de esforço**:
-Tamanho previsto de uma Atividade, expresso em um valor da sequência de Fibonacci.
+Tamanho previsto de uma Atividade, expresso em um dos valores 1, 2, 3, 5, 8, 13 ou 21 da sequência de Fibonacci. É opcional no Backlog e obrigatório na Alocação.
 _Avoid_: Story points, horas
 
 **Alocação**:
@@ -110,16 +110,16 @@ Encerramento da Alocação de uma Atividade não concluída e sua abertura em um
 _Avoid_: Mover, reabrir
 
 **Alerta de meia sprint**:
-Aviso emitido quando cerca de metade da Sprint passou, destacando Atividades com pouco progresso e Atividades transferidas.
+Aviso de pouco progresso exibido a partir do dia que marca a metade do período planejado da Sprint para Atividades Não iniciadas ou Pausadas. A indicação de Transferida aparece separadamente.
 
 ### Financeiro
 
 **Informação financeira restrita**:
-Preços, Orçamentos, Movimentações, saldos, gastos e Previsões; só o Capitão e o Gestor Financeiro a veem, e o Solicitante vê apenas os preços e Orçamentos das próprias Solicitações enquanto estão em andamento.
+Preços, Orçamentos, Movimentações, saldos, gastos e Previsões, acessíveis ao Capitão e ao Gestor Financeiro. O Solicitante pode ver preços e Orçamentos das próprias Solicitações enquanto estiverem em andamento, inclusive após uma reprovação que permita corrigir e reenviar.
 _Avoid_: Dado sensível (genérico)
 
 **Solicitação de compra**:
-Pedido de aquisição aberto por um Integrante, que percorre os Status da compra até ser paga, reprovada ou cancelada.
+Pedido de aquisição aberto por um Integrante. Pode ser corrigido e reenviado após reprovação e é encerrado pelo Pagamento ou pelo cancelamento.
 _Avoid_: Pedido, requisição, compra (antes de aprovada)
 
 **Solicitante**:
@@ -144,13 +144,16 @@ Empresa ou loja que fornece Orçamentos e vende os itens comprados.
 Situação de uma Solicitação de compra: Planejada (compra futura ainda não enviada), Aguardando aprovação, Aprovada, Reprovada, Realizada/Paga ou Cancelada.
 
 **Aprovação conjunta**:
-Exigência de que Capitão e Gestor Financeiro aprovem a mesma Revisão e o mesmo Orçamento. Qualquer reprovação exige justificativa. Se o Gestor Financeiro mudar antes de a aprovação ser concluída, o atual precisa decidir. A decisão anterior permanece no histórico. Compras já aprovadas permanecem aprovadas.
+Exigência de que Capitão e Gestor Financeiro aprovem a mesma Revisão e o mesmo Orçamento. Qualquer reprovação exige justificativa. Se algum dos dois titulares mudar antes da conclusão, o titular atual precisa decidir. A decisão anterior permanece no histórico, e Compras já aprovadas conservam a aprovação.
 
 **Compra**:
 Execução de uma Solicitação de compra aprovada, usando um Orçamento da Revisão aprovada.
 
 **Pagamento**:
 Ato de marcar uma Compra como Realizada/Paga, que gera exatamente uma Saída ativa.
+
+**Reembolso**:
+Entrada vinculada a uma Compra que representa a devolução de dinheiro efetivamente pago. Pode ser total ou parcial e preserva a Saída original. A soma dos Reembolsos não pode exceder o valor efetivamente pago.
 
 **Movimentação financeira**:
 Entrada ou Saída de dinheiro no caixa da equipe, classificada por uma Categoria financeira; nunca é apagada, só cancelada com autor e justificativa.
@@ -171,18 +174,21 @@ Visão do caixa futuro formada pelas Previsões financeiras Pendentes.
 Situação de um Integrante em um turno de um dia (Presente, Ausente ou Justificada), registrada pelo Líder do Subsistema. Capitão e Gestores podem registrar a presença do Capitão em turno, sem vínculo com Subsistema. Das 18h às 22h é o horário sugerido. O registro pode usar o horário real do turno fora dessa faixa. Uma presença sem horários pode contar para a Frequência após a Validação e fica sem Carga horária registrada.
 _Avoid_: Participação (reservada a Eventos)
 
+**Ausência justificada**:
+Situação que exige motivo no Registro de presença ou na Participação em Evento. Na situação Ausente, o motivo é opcional.
+
 **Carga horária**:
-Horas trabalhadas por um Integrante, derivadas dos horários de início e fim dos Registros de presença. Um turno pode terminar depois da meia-noite, com data de saída explícita e duração integral atribuída à data de início.
+Horas trabalhadas por um **Integrante**, calculadas pelos horários de início e fim dos **Registros de presença** com **Validação** vigente. Um turno pode terminar depois da meia-noite, com data de saída explícita e duração integral atribuída à data de início.
 
 **Frequência**:
 Proporção de Registros de presença validados como Presente entre os validados como Presente ou Ausente. Ausências Justificadas aparecem separadamente e ficam fora desse cálculo.
 
 **Validação**:
-Confirmação, pelo Gestor ou pelo Capitão, de um Registro de presença, de um Diário de atividades ou de uma Participação com situação final. Gestor e Capitão podem validar a própria presença ou Participação. A correção de um Registro de presença ou de uma Participação já validada exige justificativa e nova Validação, com preservação do histórico.
+Confirmação, pelo Gestor ou pelo Capitão, de um Registro de presença, de um Diário de atividades ou de uma Participação com situação final. Gestor e Capitão podem validar a própria presença ou Participação. A correção de um Registro de presença ou de uma Participação já validada exige justificativa e preserva o histórico. O registro fica fora dos indicadores até ser validado novamente.
 _Avoid_: Aprovação (reservada a compras e Governança)
 
 **Diário de atividades**:
-Relato sobre um dia de trabalho no projeto, escrito e alterado apenas pelo próprio Membro. Capitão e Gestor podem validar com comentário opcional, devolver com motivo ou reabrir um Diário validado para correção, preservando a versão anterior.
+Relato sobre um dia de trabalho no projeto, escrito e alterado apenas pelo próprio Membro. Capitão e Gestor veem a última versão enviada e seu histórico. Rascunhos e alterações em andamento ficam privados até o envio. Capitão e Gestor podem validar com comentário opcional, devolver com motivo ou reabrir um Diário validado para correção.
 _Avoid_: Atividade (o item do Kanban)
 
 **Participação**:
@@ -190,7 +196,7 @@ Situação de um Usuário em um Evento: Prevista, Presente, Ausente ou Justifica
 _Avoid_: Presença, Inscrição
 
 **Observação**:
-Registro cotidiano sobre um Integrante, visível ao Integrante citado, ao Líder do Subsistema ao qual a Observação se refere, ao Capitão e aos Gestores.
+Registro cotidiano sobre um Integrante. Capitão e Gestor podem publicá-lo para qualquer Integrante da equipe. Líder pode publicá-lo para Integrantes do próprio Subsistema. A Observação é visível ao Integrante citado, ao Líder do Subsistema de referência, ao Capitão e aos Gestores.
 
 **Ocorrência**:
 Relato confidencial de um fato sobre um Integrante. O Líder pode encaminhar uma Ocorrência de seu Subsistema. Capitão e Gestores podem consultá-la.
@@ -208,13 +214,13 @@ Arquivo guardado no Google Drive e cadastrado no ERP com uma Categoria de docume
 _Avoid_: Anexo
 
 **Categoria de documento**:
-Classificação temática de um Documento, independente do Nível de confidencialidade.
+Classificação temática de um Documento, independente do Nível de confidencialidade. Capitão e Gestor podem criar e renomear Categorias; os demais Perfis escolhem entre as existentes.
 
 **Nível de confidencialidade**:
 Regra de leitura de um Documento e de suas Versões. Comum de equipe é visível a todos os perfis ativos. Comum restrito a Subsistemas é visível ao Capitão, aos Gestores e aos Integrantes dos Subsistemas indicados. Administrativo confidencial é visível ao Capitão e aos Gestores. Financeiro confidencial é visível ao Capitão e ao Gestor Financeiro.
 
 **Versão de documento**:
-Estado anterior de um Documento, conforme o histórico do Google Drive, inclusive de arquivos anteriores ao ERP.
+Estado do conteúdo de um Documento em determinado momento. O histórico reúne as Versões disponibilizadas pelo Google Drive e as já registradas no ERP, mesmo quando não for mais possível baixar uma delas. As Versões seguem o Nível de confidencialidade do Documento.
 _Avoid_: Revisão (reservada a Solicitações de compra)
 
 **Associação**:
@@ -229,16 +235,16 @@ Pedido de um Líder para excluir um Documento, analisado e executado por um Gest
 Compromisso agendado da equipe; é uma Reunião, uma Competição ou um evento geral, como palestras e apresentações.
 
 **Reunião**:
-Evento de alinhamento. Nas Reuniões semanais de Subsistemas, cada Líder registra a Participação dos Integrantes do próprio Subsistema, inclusive em Reuniões conjuntas. Nas Reuniões dos Gestores, o Gestor responsável registra a Participação.
+Evento de alinhamento. Nas Reuniões semanais de Subsistemas, cada Líder registra a Participação dos Integrantes do próprio Subsistema, inclusive em Reuniões conjuntas. Nas Reuniões dos Gestores, o Gestor responsável registra a Participação. Nas Reuniões avulsas, Capitão ou Gestor designa quem registra a Participação.
 
 **Competição**:
 Evento Baja SAE do qual a equipe participa, com edição, desafio técnico, modelo do veículo, Inscrições e Resultados.
 
 **Inscrição**:
-Registro de um Integrante em uma Competição; não implica Participação efetiva.
+Registro de um Integrante em uma Competição, nas situações Pendente, Confirmada ou Cancelada. A Inscrição confirmada sugere o Integrante para a chamada. A Participação efetiva é apurada no Evento.
 
 **Resultado**:
-Posição ou pontuação obtida em uma prova ou modalidade de uma Competição.
+Registro de desempenho em uma prova, categoria ou modalidade de uma **Competição**, com pelo menos um dado entre posição, pontuação e descrição.
 
 **Logística**:
 Arranjos operacionais de um Evento (inscrição, transporte, hospedagem, alimentação), sempre sem valores; os valores ficam no Financeiro.
@@ -253,10 +259,16 @@ Documento oficial da equipe, como regimento interno, normas e diretrizes, cujo c
 _Avoid_: Documento (o arquivo do Drive)
 
 **Versão de governança**:
-Conteúdo de um Documento de governança em Rascunho ou Publicada. Só o Capitão publica e define quando entra em vigor. Uma versão publicada pode ser lida antes de sua vigência, permanece imutável e só pode ser corrigida por uma nova Versão.
+Conteúdo versionado de um **Documento de governança**, em Rascunho ou Publicada. Só o Capitão pode publicar e definir a **Vigência**. O conteúdo publicado é imutável e correções exigem uma nova versão.
+
+**Pronto para publicação**:
+Marcação de que o conteúdo de um Rascunho está preparado para revisão final pelo Capitão. Uma alteração no conteúdo retira a marcação.
+
+**Vigência**:
+Período em que uma **Versão de governança** publicada vale como norma da equipe. A publicação torna o conteúdo disponível para leitura e a vigência pode começar naquele momento ou em data futura.
 
 **Ciência e aceite**:
-Confirmação de um Usuário de que conhece e aceita uma Versão de governança publicada.
+Confirmações do **Usuário** para uma **Versão de governança** publicada. Ciência registra que ele conhece o conteúdo. Aceite registra sua concordância. As duas confirmações podem ocorrer juntas ou em momentos diferentes.
 
 ### Auditoria
 

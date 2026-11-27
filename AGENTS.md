@@ -4,15 +4,15 @@
 
 ### Issue tracker
 
-As issues ficam em arquivos Markdown locais em `.scratch/<feature>/`. Consulte `docs/agents/issue-tracker.md`.
+Para trabalho publicado, consulte as [Issues do GitHub](https://github.com/BajaERP/procoBajaERP/issues) e o [Projects procoBajaERP](https://github.com/orgs/BajaERP/projects/2). Use `.scratch/<feature>/` para planejamento local quando estiver disponível. Consulte [o fluxo de issues](docs/agents/issue-tracker.md).
 
 ### Triage labels
 
-Use o vocabulário padrão (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) na linha `Status:` de cada issue. Consulte `docs/agents/triage-labels.md`.
+Use o vocabulário padrão (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) na linha `Status:` dos arquivos locais. No GitHub, use o campo Status do Projects. Consulte [as convenções de triagem](docs/agents/triage-labels.md).
 
 ### Domain docs
 
-Contexto único: quando uma skill mencionar `GLOSSARY.md`, use `CONTEXT.md`. Para decisões, consulte `docs/adr/` e `docs/agents/domain.md`.
+Quando uma skill mencionar `GLOSSARY.md`, use o [glossário único do projeto](CONTEXT.md). Consulte os [ADRs](docs/adr/) e a [orientação de domínio](docs/agents/domain.md) antes de alterar uma regra.
 
 ## Projeto e orientação
 
@@ -26,9 +26,9 @@ O ProcoBaja ERP é um sistema interno de gestão da equipe Baja SAE da UTFPR. O 
 
 ## Cuidados de integração
 
-O frontend usa uma sessão local demonstrativa e ainda não está conectado à autenticação ou a uma API de aplicação. Ao integrar frontend e backend, valide identidade, permissões e regras de negócio no servidor; a sessão local não protege dados reais.
+Equipe e Subsistemas usa a API real em produção. O modo demonstrativo com dados fictícios fica disponível em desenvolvimento. Para testar a sessão real localmente, use `VITE_DEMO_MODE=false` e o proxy same-origin de `/api`. Identidade, permissões, escopo e regras de negócio são validados pelo servidor.
 
-As migrações Flyway versionadas ficam em `backend/src/main/resources/db/migration/`. Preserve as migrações já aplicadas e introduza mudanças de esquema em novas migrações; o modelo proposto em `docs/diagramas/` não significa que toda funcionalidade já esteja implementada.
+O esquema executável é a sequência [Flyway V1 a V11](backend/src/main/resources/db/migration/). As issues dos módulos 2 a 7 usam as tabelas preparadas pela V11, e o Dashboard consulta as tabelas dos módulos de origem. Preserve as migrações já aplicadas. Consulte a [modelagem vigente](docs/projeto/modelagem.md) para distinguir estrutura de banco e comportamento implementado.
 
 ## Verificação
 

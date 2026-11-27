@@ -1,37 +1,46 @@
 # Dashboard e Indicadores
 
-**Requisitos:** RF30–RF31, com restrições de RF32. **Fonte:** [documento de projeto](../documento-de-projeto.pdf#page=33), seção 4.1.8, páginas 33–35. Regras planejadas; não indicam implementação.
+O Módulo 08 está planejado para atender RF30 e RF31, com as regras de acesso de RF32. A rota inicial do ERP ainda exibe uma página provisória. [Matriz acadêmica, seção 4.1.8](../documento-de-projeto.pdf#page=33) · [Guia de modelagem](../modelagem.md)
 
-## Funcionamento
+## Cartões da primeira entrega
 
-- Consolidar indicadores, alertas, resumos e atalhos dos módulos conforme perfil, subsistema e permissões.
-- Exibir acompanhamento de atividades e sprints, incluindo responsáveis, estimativas, prioridades, pouco progresso, transferências e alerta próximo à metade da sprint.
-- Apresentar, quando autorizados, indicadores de presença, carga horária, participação, reuniões, documentos, eventos e finanças.
-- Dados financeiros restritos só podem ser exibidos a perfis autorizados; atalhos e agregações não concedem permissões adicionais e devem ser protegidos no backend.
+| Cartão | Período e fonte |
+|---|---|
+| Sprint e Atividades atribuídas ou atrasadas | Sprint atual por padrão, com seleção de outra Sprint. [Atividades e Sprints](atividades-e-sprints.md) |
+| Frequência e horas validadas | Mês atual por padrão, com seleção de outro mês. [Pessoas e Participação](pessoas-e-participacao.md) |
+| Próximos Eventos | Próximos 30 dias. [Competições e Eventos](competicoes-e-eventos.md) |
+| Aceites pendentes | Pendências atuais do Usuário autenticado. [Governança](governanca.md) |
+| Saldo e Previsão de caixa | Situação atual, disponível para Capitão e Gestor Financeiro. [Gestão Financeira](gestao-financeira.md) |
 
-## Permissões resumidas
+Cada cartão informa seu período. As seleções de Sprint e mês afetam apenas os cartões que usam o respectivo recorte. Indicadores de compras, reuniões recentes e Documentação ficam para entregas posteriores.
+
+## Alertas e estados
+
+- O destaque mostra um item que o Usuário pode resolver, na ordem de Atividade atrasada, pouco progresso na Sprint e Aceite pendente. Sem ação autorizada, o destaque fica oculto. Os demais avisos permanecem nos cartões correspondentes enquanto a pendência existir. Os atalhos levam às ações autorizadas no módulo de origem.
+- Exibir zero quando houver dados e o resultado for zero. Quando faltarem registros elegíveis, exibir “Sem dados no período”, ou “Sem dados para calcular” para Frequência. Em caso de falha, exibir “Indisponível no momento” com nova tentativa no cartão afetado. Os demais cartões continuam disponíveis.
+- O frontend pode avançar com mocks após o contrato compartilhado. Cada cartão integra a consulta real da sua fonte de forma independente. Os módulos de origem calculam os resultados e definem quais registros entram nos indicadores.
+
+## Permissões
 
 | Perfil | Acesso previsto |
 |---|---|
-| Capitão/Administrador | Visão ampla operacional e financeira, conforme permissões. |
-| Gestor | Visão operacional e administrativa dos subsistemas, sem preços, orçamentos, movimentações, saldos, gastos ou previsão de caixa. |
-| Financeiro | Indicadores financeiros autorizados e informações gerais não confidenciais disponíveis ao perfil. |
-| Líder | Atividades e participação do próprio subsistema; acompanha outros como espectador e acessa preços e orçamentos de suas próprias solicitações durante o processo, conforme regras financeiras. |
-| Membro | Dados pessoais, atividades e subsistema; acompanha as próprias solicitações e seus preços e orçamentos durante o processo, conforme regras financeiras. |
-| Orientador | Indicadores gerais não confidenciais, sem alteração de registros ou acesso a dados administrativos e financeiros confidenciais. |
+| Capitão | Visão operacional da equipe, saldo e Previsão de caixa conforme as permissões de origem. |
+| Gestor | Visão operacional da equipe conforme as permissões de origem. |
+| Gestor Financeiro | Mantém a visão operacional de Gestor e consulta saldo e Previsão de caixa pela atribuição financeira. |
+| Líder | Começa pelo próprio Subsistema e consulta outros escopos conforme as permissões de origem. |
+| Membro | Começa pelos próprios dados e consulta as informações permitidas pelos módulos de origem. |
+| Orientador | Consulta indicadores agregados da equipe ou de Subsistemas ativos e somente Competições na Agenda. |
 
-Consulte a tabela 10 do PDF para a matriz integral.
+Todos os Usuários consultam seus próprios Aceites pendentes. O servidor aplica as permissões de origem às consultas, agregações, escopos selecionáveis e acessos diretos. A interface oculta cartões fora do escopo.
 
-## Rastreabilidade
+## Referências
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-08%20-%20Dashboard%20e%20Indicadores.drawio.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
+- [Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-08%20-%20Dashboard%20e%20Indicadores.drawio.png) · [Visão geral das classes](../../diagramas/Diagramas%20de%20Classe/00%20Vis%C3%A3o%20Geral%20%E2%80%94%20classes%20centrais.drawio.png)
+- [Requisitos funcionais](../requisitos/funcionais.md) · [Dashboard no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=138-426)
 
-A [visão geral das classes](../../diagramas/Diagramas%20de%20Classe/00%20Vis%C3%A3o%20Geral%20%E2%80%94%20classes%20centrais.drawio.png) representa os conceitos centrais. O modelo descrito no PDF não prevê tabelas ou classes de domínio exclusivas para o dashboard; ele consulta informações dos demais módulos sob suas regras de acesso.
+## Cenários para validar
 
-## Cenários para orientar a validação
-
-- Consultar os mesmos indicadores como Capitão, Gestor, Financeiro, Líder, Membro e Orientador, aplicando escopo e confidencialidade.
-- Garantir que agregações e atalhos não retornem dados financeiros restritos ao Gestor.
-- Testar alertas de sprint e, para solicitações próprias, respeitar a visibilidade financeira contextual do módulo de origem.
-
-Estes cenários derivam das regras do PDF e não comprovam que os fluxos já existam ou estejam testados.
+- Consultar o painel com Perfis diferentes e verificar o escopo dos indicadores, dos atalhos e dos Aceites pessoais.
+- Mudar o mês de Frequência ou a Sprint e conferir que o período dos demais cartões permanece independente.
+- Testar a prioridade entre alertas autorizados e verificar que cada atalho leva à ação correspondente.
+- Comparar zero, ausência de dados e falha de uma fonte, verificando que os cartões saudáveis continuam disponíveis e que é possível tentar novamente no cartão afetado.

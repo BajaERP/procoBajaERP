@@ -1,39 +1,42 @@
 # Equipe e Subsistemas
 
-**Requisitos:** RF01–RF05 e RF32. **Fonte:** [documento de projeto](../documento-de-projeto.pdf#page=19), seção 4.1.1, páginas 19–20. Regras planejadas; não indicam implementação. A responsabilidade financeira foi redefinida depois do PDF: um Gestor ativo associado ao Subsistema permanente Financeiro é automaticamente o Gestor Financeiro (veja [CONTEXT.md](../../../CONTEXT.md)).
+O Módulo 01 implementa os requisitos RF01 a RF05 e aplica RF32 aos dados de equipe. As telas usam a API do ERP no ambiente integrado. O modo demonstrativo está disponível em desenvolvimento. [Matriz acadêmica, seção 4.1.1](../documento-de-projeto.pdf#page=19) · [Arquitetura do frontend](../../../frontend/ARCHITECTURE.md)
 
-## Funcionamento
+## Contas e sessão
 
-- Acesso com RA e senha própria do ERP, sem autenticação institucional. Cada usuário possui um perfil ativo por vez: Capitão/Administrador, Gestor, Líder, Membro ou Orientador.
-- Cada integrante pertence a um subsistema por vez; o requisito afirma que cada subsistema deve ter um Líder que também seja seu integrante. O dicionário e o DBML permitem Líder ausente para subsistema inativo e exigem Líder para ativá-lo; o Orientador pode não ter subsistema. A obrigatoriedade depende das regras de negócio, mesmo quando a coluna admite nulo.
-- O Gestor pode alterar perfis apenas entre Líder, Membro e Orientador; não pode promover a Gestor ou Capitão nem modificar usuários que já tenham esses perfis.
-- O Subsistema Financeiro é permanente. Um Gestor ativo associado a ele é automaticamente o Gestor Financeiro, mantém o Perfil e as funções de Gestor e recebe as permissões financeiras. A posição fica vaga quando não há Gestor ativo associado.
-- A atribuição não é uma operação separada: transferir um Gestor ativo para o Financeiro concede a responsabilidade; transferi-lo para fora, mudar seu Perfil ou desativá-lo a retira. O banco impede dois Gestores ativos no Financeiro.
+- O acesso usa RA do estudante ou SIAPE do Orientador, ambos numéricos, com senha própria do ERP. O servidor mantém a sessão e aplica proteção CSRF nas operações que alteram dados. O cadastro e a redefinição geram uma senha provisória exibida uma única vez. O Usuário deve trocá-la antes de acessar os módulos. [ADR da sessão](../../adr/0001-sessao-no-servidor.md)
+- Cada Usuário tem um Perfil e pode ter um único Subsistema. O Capitão fica sem Subsistema e o vínculo é opcional para o Orientador. O Gestor, Líder e Membro precisam de Subsistema. O próprio Usuário altera a senha. As alterações de Nome, RA ou SIAPE, Perfil e status passam pela administração de contas.
+- A troca de Capitão ocorre pelo fluxo de sucessão. O Capitão ativo escolhe um Gestor ou Membro ativo como sucessor e um Subsistema ativo para seu próprio retorno como Membro. O ERP promove o sucessor, remove-o de seu Subsistema, registra o novo vínculo do antecessor e audita a operação na mesma transação. [ADR da sucessão](../../adr/0003-sucessao-unica-do-capitao.md)
 
-## Permissões resumidas
+## Subsistemas, liderança e responsabilidade financeira
 
-| Perfil | Acesso previsto |
+- Um Subsistema nasce desativado, pode receber integrantes e é ativado pela primeira definição de Líder. O Líder escolhido é um Membro ativo do próprio Subsistema. Em uma substituição, o Líder anterior volta a Membro.
+- O Capitão pode desativar um Subsistema. Se houver integrantes, a operação exige um destino ativo para cada um, inclusive para contas desativadas. O Líder volta a Membro e as transferências são gravadas juntas. A estrutura e o histórico são preservados.
+- O Subsistema Financeiro é permanente. Sua associação a um Gestor ativo concede automaticamente a responsabilidade financeira, mesmo quando o Subsistema ainda está desativado. Mudanças de vínculo, Perfil ou situação da conta recalculam a responsabilidade. A posição fica vaga sem Gestor ativo associado. O banco garante no máximo um Gestor ativo no Financeiro. [ADR do Gestor Financeiro](../../adr/0002-gestor-financeiro-derivado-do-subsistema.md)
+
+## Permissões e auditoria
+
+| Perfil | Acesso |
 |---|---|
-| Capitão/Administrador | Gerencia todos os perfis, subsistemas, lideranças e transferências; pode desativar subsistemas. |
-| Gestor | Gerencia subsistemas e usuários Líder, Membro e Orientador; não gerencia usuários Gestor ou Capitão. O Gestor associado ao Financeiro tem também as funções financeiras. |
-| Líder | Consulta seu subsistema e informações não confidenciais de seus integrantes. |
-| Membro | Consulta suas informações e a composição não confidencial do próprio subsistema. |
-| Orientador | Consulta a composição geral e informações não confidenciais; não gerencia a estrutura. |
+| Capitão | Consulta a equipe, os Subsistemas e a auditoria geral. Administra contas, liderança e transferências e pode desativar Subsistemas ou iniciar a sucessão. |
+| Gestor | Consulta a equipe, os Subsistemas e a auditoria geral. Administra Subsistemas e contas de Líder, Membro e Orientador. A promoção ou substituição de Líder ocorre pela definição de liderança. |
+| Líder | Consulta sua composição, inclusive em Subsistema inativo, e os eventos de auditoria ligados ao próprio Subsistema. |
+| Membro | Consulta sua composição, inclusive em Subsistema inativo. |
+| Orientador | Consulta a composição ativa com o recorte de Subsistemas ativos e Usuários ativos sem Subsistema. |
 
-As permissões administrativas não concedem automaticamente acesso a informações restritas de outros módulos. Consulte a tabela 3 do PDF para a matriz integral.
+Todos os Perfis consultam o catálogo de Subsistemas ativos. Apenas Capitão, Gestor e o próprio Usuário veem o RA ou SIAPE de uma conta, dentro do respectivo escopo de consulta. Contas desativadas ficam no escopo administrativo.
 
-## Rastreabilidade
+A auditoria registra os Subsistemas de origem e destino no momento de cada operação. Uma transferência pode aparecer para Líderes dos dois Subsistemas. Eventos antigos sem escopo são exclusivos da consulta geral. A API de auditoria pagina e filtra no servidor, com campos de apresentação. [ADR do escopo histórico](../../adr/0004-auditoria-com-escopo-historico.md)
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-01%20-%20Equipe%20e%20Subsistemas.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_26_Equipe_e_Subsistemas.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
+## Referências
 
-No modelo proposto, as tabelas relacionadas incluem `usuarios`, `perfis`, `permissoes`, `perfil_permissoes` e `subsistemas`. A implementação atual deriva a responsabilidade financeira do perfil, da situação ativa e da associação ao Subsistema Financeiro; não mantém uma tabela de atribuição separada.
+- [Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-01%20-%20Equipe%20e%20Subsistemas.drawio.png) · [Diagrama de classes](../../diagramas/Diagramas%20de%20Classe/01%20Equipe%20e%20Subsistemas.drawio.png) · [Modelo relacional acadêmico](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_26_Equipe_e_Subsistemas.png)
+- [Guia de modelagem](../modelagem.md) · [Requisitos funcionais](../requisitos/funcionais.md) · [Equipe e Subsistemas no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=52-400)
 
-Diagramas de classes: [diagrama de classes 1](../../diagramas/Diagramas%20de%20Classe/01%20Equipe%20e%20Subsistemas.drawio.png). São artefatos de análise e não necessariamente classes já implementadas.
+## Cenários para validar
 
-## Cenários para orientar a validação
-
-- Transferir um Gestor ativo para dentro e para fora do Subsistema Financeiro e conferir a concessão ou retirada automática da responsabilidade.
-- Tentar associar dois Gestores ativos ao Subsistema Financeiro, inclusive em operações concorrentes ou em lote; conferir a rejeição no backend.
-- Comparar consulta de equipe entre Capitão, Líder e Membro; garantir que acesso administrativo não exponha dados financeiros.
-
-Estes cenários derivam das regras do PDF e não comprovam que os fluxos já existam ou estejam testados.
+- Cadastrar um Usuário, acessar com a senha provisória e testar que a API exige a troca antes de liberar os módulos.
+- Comparar a composição e a visibilidade de RA, SIAPE e contas desativadas entre Perfis, inclusive pelo acesso direto à API.
+- Definir ou substituir um Líder e desativar um Subsistema com destinos individuais. Conferir a transferência de todos os integrantes e o retorno do Líder ao Perfil Membro.
+- Transferir um Gestor para o Financeiro e para fora dele, testar a unicidade em operações concorrentes e conferir a mudança de permissões.
+- Concluir uma sucessão com um novo Capitão e consultar a auditoria com os Perfis autorizados, incluindo as duas pontas de uma transferência.

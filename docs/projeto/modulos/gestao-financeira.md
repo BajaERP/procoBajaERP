@@ -1,41 +1,49 @@
 # Gestão Financeira
 
-**Requisitos:** RF13–RF18 e RF32. **Fonte:** [documento de projeto](../documento-de-projeto.pdf#page=22), seção 4.1.3, páginas 22–25. Regras planejadas; não indicam implementação.
+O Módulo 03 está planejado para atender RF13 a RF18 e aplicar RF32 aos dados de compras e caixa. A navegação atual oferece telas provisórias. [Matriz acadêmica, seção 4.1.3](../documento-de-projeto.pdf#page=22) · [Guia de modelagem](../modelagem.md)
 
-## Funcionamento
+## Solicitações, Revisões e aprovação
 
-- Solicitações registram itens, descrições, links e preços; para análise, são necessários pelo menos três orçamentos. Podem atender à equipe ou a um ou mais subsistemas, sem rateio; o valor integral não pode ser duplicado no total geral.
-- Estados previstos: Planejada, Aguardando aprovação, Aprovada, Reprovada, Realizada/Paga e Cancelada. A aprovação exige decisões favoráveis do Financeiro e do Capitão/Administrador.
-- No modelo proposto, itens, orçamentos e decisões pertencem à revisão da solicitação; preservar versões enviadas e ligar o orçamento escolhido à revisão autorizada.
-- Uma reprovação registra motivo e permite ajustes e reenvio; estados e decisões permanecem no histórico. Quando concluída e paga, a compra gera saída financeira sem duplicação.
-- O solicitante pode consultar preços e orçamentos das próprias solicitações durante o processo. Após pagamento, o histórico disponibilizado respeita as restrições financeiras.
-- O solicitante pode cancelar enquanto Planejada ou Aguardando aprovação. Depois de aprovada e antes de Realizada/Paga, o cancelamento é restrito ao Financeiro e ao Capitão/Administrador.
-- A saída financeira é gerada após a realização e o pagamento, e não apenas pela aprovação. O complemento SQL prevê unicidade parcial para movimentação ativa por compra; validar sua aplicação e a transação efetiva no backend.
-- Movimentações não são excluídas definitivamente: cancelamentos autorizados preservam registro, responsável e justificativa.
+- Qualquer Integrante ativo com Subsistema pode abrir uma Solicitação de compra para o próprio Subsistema. Capitão e Gestor também abrem Solicitações gerais ou para vários Subsistemas. Compras compartilhadas têm o valor integral atribuído aos Subsistemas envolvidos.
+- A Solicitação começa Planejada. Para enviar a Revisão, são necessários ao menos três Orçamentos de Fornecedores distintos para os mesmos itens e quantidades. A primeira entrega usa BRL e inclui o frete no total. O ERP preserva a Revisão enviada com seus itens, Orçamentos e decisões.
+- Capitão e Gestor Financeiro aprovam a mesma Revisão e o mesmo Orçamento. Escolhas divergentes mantêm a Solicitação Aguardando aprovação. A ausência de Gestor Financeiro aparece como pendência. Durante a análise, a decisão cabe ao titular atual de cada responsabilidade. Compras já aprovadas conservam a aprovação.
+- O Solicitante pode retirar uma Revisão da análise para preparar outra. A Reprovação exige justificativa e encerra a análise da Revisão. O reenvio inicia nova rodada e preserva as decisões anteriores.
+- O Solicitante pode cancelar a própria Solicitação em Planejada, Aguardando aprovação ou Reprovada. Entre aprovação e Pagamento, a ação fica com Capitão ou Gestor Financeiro. Todo cancelamento registra motivo.
 
-## Permissões resumidas
+## Pagamento, correção e Reembolso
 
-| Perfil | Acesso previsto |
+- Capitão ou Gestor Financeiro registra um Pagamento integral com data, valor efetivo e referência. Um total acima do aprovado, incluindo frete, ou uma troca de Fornecedor exige nova Revisão e aprovação. O desconto do mesmo Fornecedor para os mesmos itens e quantidades pode ser registrado com observação.
+- O Pagamento muda a Compra para Realizada/Paga e gera uma única Saída ativa, na mesma transação que realiza a Previsão vinculada quando houver. O banco protege a unicidade da Saída ativa de Pagamento por Compra.
+- Para corrigir um Pagamento lançado por engano, Capitão ou Gestor Financeiro cancela a Saída com motivo, autor e data, devolve a Compra para Aprovada e ajusta a Previsão vinculada. A Saída cancelada permanece no histórico.
+- Um Reembolso real gera uma Entrada vinculada à Compra e preserva a Saída original. A soma dos Reembolsos fica limitada ao valor efetivamente pago.
+- Comprovantes e notas fiscais podem ser vinculados após o Pagamento. A consulta a cada arquivo segue a autorização da biblioteca. [Documentação](documentacao.md)
+
+## Caixa, Previsões e relatórios
+
+- Capitão e Gestor Financeiro registram Entradas, Saídas e Previsões avulsas com Categoria compatível, data, valor e descrição. Cancelar uma Movimentação exige justificativa e preserva o registro com autor e data.
+- Compra aprovada com data prevista de Pagamento gera Previsão vinculada. O Pagamento realiza a Previsão e registra a Saída correspondente. Cancelar a Compra aprovada antes de pagar cancela a Previsão. A Previsão de caixa usa as Previsões pendentes.
+- Nos gastos por período e Subsistema, uma Compra compartilhada aparece pelo valor integral em cada Subsistema e é contada uma vez no total da equipe. [Dashboard e Indicadores](dashboard-e-indicadores.md)
+
+## Permissões
+
+| Perfil ou contexto | Acesso planejado |
 |---|---|
-| Capitão/Administrador e Gestor Financeiro | Gerenciam dados financeiros, aprovam conjuntamente e podem efetivar compras e registrar pagamentos. O Gestor Financeiro é o Gestor ativo associado ao Subsistema Financeiro. |
-| Gestor sem associação ao Financeiro | Consulta estado e informações administrativas permitidas; não acessa preços, orçamentos, movimentações, saldos, gastos ou previsão de caixa. |
-| Líder e Membro | Criam e acompanham solicitações do próprio subsistema e consultam preços e orçamentos das próprias solicitações durante o processo; não acessam caixa ou dados financeiros gerais. |
-| Orientador | Consulta informações gerais não financeiras disponibilizadas ao perfil; não gerencia compras ou movimentações. |
+| Capitão e Gestor Financeiro | Consultam valores restritos, decidem sobre Revisões, cancelam Compras aprovadas ainda sem Pagamento e operam Pagamentos, caixa e Previsões. |
+| Gestor | Abre Solicitações gerais ou de vários Subsistemas e acompanha as informações administrativas autorizadas. A consulta de valores nas próprias Solicitações segue a regra do Solicitante. |
+| Líder e Membro | Abrem e acompanham Solicitações no escopo autorizado do próprio Subsistema. |
+| Orientador | Consulta informações gerais não financeiras disponibilizadas ao Perfil. |
+| Solicitante | Consulta preços e Orçamentos da própria Solicitação durante o processo, inclusive em Reprovada quando puder corrigir e reenviar. Após Pagamento ou cancelamento, consulta itens, situação e o histórico permitido. |
 
-O backend deve aplicar as restrições por perfil, propriedade e estado. Consulte a tabela 5 do PDF para a matriz integral.
+O servidor aplica o escopo em consultas, relatórios e comandos, inclusive links, anexos e justificativas que revelem valores. A responsabilidade financeira acompanha o Gestor ativo do Subsistema Financeiro. [ADR do Gestor Financeiro](../../adr/0002-gestor-financeiro-derivado-do-subsistema.md)
 
-## Rastreabilidade
+## Referências
 
-[Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-03%20-%20Financeiro.drawio.png), [modelo relacional principal](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_28_Financeiro_Solicitacoes_e_Revisoes.png). Consulte também os [requisitos funcionais](../requisitos/funcionais.md), o [DBML v6 vigente](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/modelo_relacional_v6.dbml) e a matriz integral no PDF.
+- [Caso de uso](../../diagramas/Diagramas%20de%20Caso%20de%20Uso/Casos_de_Uso-03%20-%20Financeiro.drawio.png) · [Diagrama de Compras e Aprovações](../../diagramas/Diagramas%20de%20Classe/03A%20Financeiro%20%E2%80%94%20Compras%20e%20Aprova%C3%A7%C3%B5es.drawio.png) · [Diagrama de Pagamentos e Previsões](../../diagramas/Diagramas%20de%20Classe/03B%20Financeiro%20%E2%80%94%20Pagamentos%20e%20Previs%C3%B5es.drawio.png) · [Modelo relacional acadêmico](../../diagramas/Diagramas%20de%20Banco%20de%20Dados/01_Figuras_Principais/Figura_28_Financeiro_Solicitacoes_e_Revisoes.png)
+- [Requisitos funcionais](../requisitos/funcionais.md) · [Gestão Financeira no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=127-426)
 
-No modelo proposto, as tabelas relacionadas incluem `solicitacoes_compra`, `revisoes_solicitacoes_compra`, `solicitacoes_itens`, `orcamentos_compra`, `aprovacoes_compra`, `compras`, `movimentacoes_financeiras`, `previsoes_financeiras`. A lista orienta a leitura e não substitui o dicionário de dados ou as migrações efetivas.
+## Cenários para validar
 
-Diagramas de classes: [diagrama de classes 1](../../diagramas/Diagramas%20de%20Classe/03A%20Financeiro%20%E2%80%94%20Compras%20e%20Aprova%C3%A7%C3%B5es.drawio.png), [diagrama de classes 2](../../diagramas/Diagramas%20de%20Classe/03B%20Financeiro%20%E2%80%94%20Pagamentos%20e%20Previs%C3%B5es.drawio.png). São artefatos de análise e não necessariamente classes já implementadas.
-
-## Cenários para orientar a validação
-
-- Submeter revisão com menos de três orçamentos, registrar decisões dos dois aprovadores e conferir que uma aprovação isolada não autoriza a compra.
-- Reprovar, justificar, ajustar e reenviar preservando histórico; verificar cancelamento em cada estado permitido.
-- Confirmar saída sem duplicidade e ausência de valores restritos nas respostas destinadas a Gestores sem associação ao Financeiro.
-
-Estes cenários derivam das regras do PDF e não comprovam que os fluxos já existam ou estejam testados.
+- Enviar uma Revisão incompleta e depois uma com três Orçamentos de Fornecedores distintos. Exercitar a divergência de Orçamento, a troca de titulares durante a análise e a aprovação conjunta.
+- Reprovar, corrigir e reenviar, preservando o histórico. Conferir o escopo do Solicitante antes e depois do encerramento, inclusive nos vínculos, anexos e justificativas.
+- Registrar um Pagamento concorrente ou repetido e confirmar uma única Saída ativa. Exercitar correção de lançamento, novo Pagamento, Reembolso parcial e limite do total reembolsado.
+- Conferir o ciclo da Previsão no Pagamento, na correção e no cancelamento e verificar o total da equipe com uma Compra compartilhada.

@@ -1,157 +1,72 @@
 # Arquitetura do backend
 
-Este documento apresenta a **direção planejada** para o backend. O repositório contém a aplicação Spring Boot e migrações Flyway; as funcionalidades e endpoints descritos abaixo devem ser confirmados no código antes de serem considerados implementados. Para escopo e requisitos, consulte a [documentação do projeto](../docs/projeto/visao-geral.md).
+O backend usa Java 21, Spring Boot, Spring Security, Spring Data JPA, Flyway e PostgreSQL 16. A aplicação organiza suas camadas por funcionalidade no pacote `com.procobajaerp.backend`.
 
-## Direção geral
+## O que está implementado
 
-O backend do Proco Baja ERP seguirá o padrão **Feature-Oriented Layered
-Architecture**, ou arquitetura em camadas organizada por funcionalidade
-(*package by feature*).
+| Pacote | Responsabilidade |
+| --- | --- |
+| `seguranca` | Login com RA ou SIAPE, sessão no servidor, proteção CSRF, logout e troca de senha. |
+| `equipe` | Contas, Perfis, Permissões, Subsistemas, vínculos, liderança, atribuição de Gestor Financeiro e sucessão do Capitão. |
+| `auditoria` | Gravação e consulta paginada do histórico de alterações do Módulo 1. |
+| `shared` | Exceções e tratamento HTTP usados por mais de uma funcionalidade. |
 
-Essa abordagem mantém as regras de cada módulo próximas umas das outras,
-facilita a manutenção e permite que cada funcionalidade evolua sem criar um
-pacote global de controllers, services e repositories difíceis de navegar.
+Em um banco sem Capitão ativo, `CapitaoInicial` tenta criar a conta inicial com as variáveis documentadas no [guia de desenvolvimento](../docs/infraestrutura/docker/docker-dev.md#configurar-o-ambiente). O [Módulo 1](../docs/projeto/modulos/equipe-e-subsistemas.md) descreve o escopo de Equipe e Subsistemas.
 
-A arquitetura deve permanecer simples. Não será adotada uma arquitetura
-hexagonal, CQRS ou qualquer outra abordagem que não seja necessária para o
-escopo atual do projeto.
+### API HTTP
 
-## Estrutura de funcionalidades
+| Rotas | Operações |
+| --- | --- |
+| `/api/auth` | `GET /csrf`, `POST /login`, `GET /eu`, `PUT /senha` e `POST /logout`. |
+| `/api/usuarios` | Listagem, consulta individual, cadastro, edição, alteração de Perfil, desativação, reativação e redefinição de senha provisória. |
+| `/api/subsistemas` | Listagem, consulta individual, cadastro, edição, mudança de liderança, desativação, listagem e gestão de integrantes. |
+| `GET /api/atribuicao-financeira` | Consulta da atribuição obtida pelo vínculo do Gestor ativo com o Subsistema Financeiro. |
+| `GET /api/equipe/sucessao-capitao/opcoes` e `POST /api/equipe/sucessao-capitao` | Consulta de candidatos e execução da sucessão. |
+| `GET /api/equipe/auditoria` | Consulta com `page`, `size`, `entidade` e `acao`. A primeira página é `0` e o tamanho máximo é `100`. |
 
-O pacote raiz atual é `com.procobajaerp.backend`. As funcionalidades serão
-criadas conforme forem implementadas:
+O backend publica a especificação OpenAPI em `/v3/api-docs` e a interface Swagger em `/swagger-ui.html`. Controllers recebem DTOs e retornam DTOs. O `TratadorDeErros` formata falhas de validação e regras de negócio como `ProblemDetail`. Na validação do corpo, o mapa `erros` identifica os campos com problema.
 
-```text
-com.procobajaerp.backend
-├── config
-├── shared
-├── seguranca
-├── equipe
-├── atividades
-├── financeiro
-├── participacao
-├── documentacao
-├── competicoes
-├── governanca
-└── dashboard
-```
+### Autenticação e escopo
 
-`config` concentra configurações da aplicação, como OpenAPI, CORS e beans
-gerais. `seguranca` concentra autenticação e autorização. `shared` deve conter
-somente recursos realmente transversais, como tratamento global de exceções e
-objetos de paginação.
+- O login abre uma sessão no servidor com cookie `HttpOnly`. O cliente obtém o cookie `XSRF-TOKEN` em `GET /api/auth/csrf` e envia seu valor no cabeçalho `X-XSRF-TOKEN` nas requisições de escrita, inclusive no login e no logout. O login renova o identificador da sessão e o token CSRF.
+- O backend recarrega os dados de acesso a cada requisição autenticada. Mudanças de Perfil valem na requisição seguinte. Desativação ou redefinição de senha invalida a sessão. A troca da própria senha atualiza a sessão em uso e invalida as demais.
+- Uma conta com senha provisória pode consultar a própria sessão, trocar a senha e sair. O acesso aos módulos exige a troca.
+- `@PreAuthorize` exige as permissões do Perfil. Os serviços validam hierarquia, escopo dos dados e regras de cada operação. Na auditoria, Capitão e Gestor têm consulta geral. O Líder vê apenas eventos que registraram seu Subsistema atual como origem ou destino. A resposta expõe campos de apresentação.
+- O frontend usa a API real na mesma origem quando a demonstração está desabilitada. O proxy do Vite atende esse fluxo no desenvolvimento. Em produção, o frontend sempre usa a API real e o proxy HTTPS encaminha `/api` ao backend.
 
-Não é necessário criar todos os pacotes antecipadamente. Cada funcionalidade
-deve ser adicionada quando entrar no ciclo de desenvolvimento correspondente.
+Consulte os ADRs sobre [sessão](../docs/adr/0001-sessao-no-servidor.md), [Gestor Financeiro](../docs/adr/0002-gestor-financeiro-derivado-do-subsistema.md), [sucessão](../docs/adr/0003-sucessao-unica-do-capitao.md) e [auditoria](../docs/adr/0004-auditoria-com-escopo-historico.md).
 
-## Camadas dentro de uma funcionalidade
+## Camadas e dependências
 
-Exemplo para a funcionalidade `equipe`:
+| Camada | Responsabilidade |
+| --- | --- |
+| `controller` | Recebe requisições, aciona a validação dos DTOs, aplica a autorização por permissão e chama os serviços. |
+| `dto` | Define o contrato de entrada e saída e os campos expostos pela API. |
+| `service` | Coordena os casos de uso, verifica escopo, aplica regras de negócio e delimita as transações. |
+| `domain` | Concentra entidades JPA, objetos de valor, enums e regras do domínio. |
+| `repository` | Encapsula consultas e operações de persistência com Spring Data JPA. |
 
-```text
-equipe
-├── controller
-├── dto
-├── domain
-├── repository
-└── service
-```
+Para novos casos de uso, mantenha cada operação perto do seu domínio e use serviços para a comunicação entre funcionalidades. Já existe um acesso direto de `ConsultaAuditoriaService` a `UsuarioRepository` para buscar o Perfil e o Subsistema do ator. O pacote `seguranca` obtém os dados da conta por `ContaService`. Use `shared` para código transversal e crie abstrações quando houver uma necessidade concreta.
 
-### `controller`
+## Persistência e próximos módulos
 
-Responsável pelos endpoints HTTP, recebimento das requisições, validação de
-entrada e retorno das respostas. Controllers não devem concentrar regras de
-negócio.
+O [arquivo de configuração](src/main/resources/application.properties) recebe a conexão pelas variáveis `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`. O Flyway aplica as [migrações versionadas](src/main/resources/db/migration/) e o Hibernate valida o mapeamento com `ddl-auto=validate`. Preserve migrações aplicadas e acrescente uma versão para cada mudança de esquema.
 
-### `dto`
+A V4 introduziu tabelas para os Módulos 2 a 7. A [V11](src/main/resources/db/migration/V11__alinhar_modelo_modulos_2_a_8.sql) atualizou esse esquema com restrições e históricos para atividades, compras, participação, eventos, documentação e governança. Essas tabelas são fontes planejadas para o Dashboard do Módulo 8. O código de aplicação atual cobre o Módulo 1. As APIs, permissões e regras transacionais dos outros módulos seguem o [planejamento do projeto](../docs/projeto/visao-geral.md).
 
-Define os objetos de entrada e saída da API. Os DTOs protegem o contrato HTTP
-e evitam que entidades JPA sejam expostas diretamente aos consumidores.
-
-### `service`
-
-Implementa os casos de uso e coordena as regras de negócio da funcionalidade.
-As transações devem ser definidas nessa camada, normalmente com
-`@Transactional`.
-
-### `domain`
-
-Contém as entidades, enums e regras próprias da funcionalidade. As entidades
-podem ser entidades JPA diretamente nesta etapa; não é necessário criar uma
-segunda representação das mesmas classes.
-
-### `repository`
-
-Responsável pelo acesso e persistência dos dados, normalmente usando Spring
-Data JPA. O repository de uma funcionalidade não deve ser usado diretamente
-por outra funcionalidade.
-
-## Regras simples de dependência
-
-- `controller` chama `service`.
-- `service` usa `domain` e `repository` da própria funcionalidade.
-- `repository` cuida somente da persistência.
-- Funcionalidades não devem acessar diretamente o repository umas das outras.
-- Quando uma funcionalidade precisar de outra, deve depender de um serviço ou
-  caso de uso bem definido.
-- Entidades JPA não devem ser retornadas diretamente pelos controllers.
-- Validações simples de entrada ficam nos DTOs; regras de negócio ficam nos
-  services ou no domínio.
-
-## Como evitar overengineering
-
-- Não criar `BaseService`, `BaseController` ou repositories genéricos sem uma
-  necessidade concreta.
-- Não transformar `shared` em um depósito de classes sem dono.
-- Não criar mappers ou abstrações extras antes de existir duplicação real.
-- Não criar módulos vazios apenas para completar a árvore de diretórios.
-- Preferir uma solução direta e fácil de testar.
-- Extrair uma abstração somente quando ela resolver uma necessidade repetida e
-  comprovada.
-
-## Ordem recomendada de implementação
-
-A implementação pode seguir os incrementos definidos no projeto:
-
-1. `seguranca` e `equipe`, incluindo usuários, cargos, permissões e
-   subsistemas;
-2. `atividades`, incluindo backlog, sprints, responsáveis e Kanban;
-3. `financeiro`, incluindo entradas, saídas, compras e planejamento;
-4. `participacao`, incluindo presença, carga horária e diário de atividades;
-5. `documentacao`, `competicoes` e `governanca`;
-6. `dashboard`, consumindo os serviços das funcionalidades já implementadas.
-
-O `dashboard` não deve duplicar regras de negócio. Ele deve consultar os
-serviços dos módulos responsáveis pelos dados e apenas organizar as
-informações para apresentação.
-
-## Banco e integração
-
-As migrações Flyway ficam em `src/main/resources/db/migration/`. Preserve migrações já aplicadas e acrescente novas versões para alterações de esquema. O [modelo relacional proposto](../docs/projeto/modelagem.md) e os SQLs de referência precisam ser comparados às migrações e ao estado do banco; eles não substituem validações de autorização e regras transacionais no backend.
-
-O frontend ainda usa uma sessão demonstrativa local. Qualquer futura autenticação deve validar identidade, autorização e escopo dos dados no servidor; o estado visual da interface não é uma barreira de segurança.
+Compare o [modelo relacional de referência](../docs/projeto/modelagem.md) com as migrações antes de usar tabelas ou assumir restrições. Implemente as regras dependentes de identidade e de transições nos serviços. O Dashboard deve buscar os dados nos módulos responsáveis e organizá-los para apresentação.
 
 ## Testes
 
-Os testes devem acompanhar a mesma organização das funcionalidades:
+Na raiz do repositório, execute com JDK 21:
 
-```text
-src/test/java/com/procobajaerp/backend
-├── equipe
-│   ├── controller
-│   └── service
-├── atividades
-└── financeiro
+```bash
+cd backend
+./mvnw test
 ```
 
-Prioridades de teste:
+Os testes de integração usam PostgreSQL 16 embutido, aplicam as migrações Flyway e exercitam a API com MockMvc. Esse ambiente dispensa Docker e as variáveis do PostgreSQL da aplicação. Mantenha os testes nos pacotes das respectivas funcionalidades e cubra validação, autorização, regras de negócio e persistência conforme o fluxo afetado.
 
-- testes unitários para regras dos services;
-- testes de controller para contratos HTTP e validações;
-- testes de repository quando houver consultas ou regras de persistência
-  específicas;
-- testes de integração para os fluxos principais de cada módulo.
+Ao trocar de branch, se a suíte carregar classes de entidades ou testes que já saíram do código, execute `./mvnw clean test` para recompilar a partir dos fontes atuais.
 
-O objetivo é manter cada funcionalidade compreensível, testável e independente
-o suficiente para evoluir sem criar dependências desnecessárias entre os
-módulos.
+Para executar a aplicação completa, consulte os guias de [desenvolvimento](../docs/infraestrutura/docker/docker-dev.md) e [produção](../docs/infraestrutura/docker/docker-prod.md).

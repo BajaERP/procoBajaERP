@@ -1,9 +1,25 @@
-# Sessão no servidor em vez de JWT
+# ADR 0001 — Sessão no servidor
 
-O login do ERP usa uma sessão guardada no servidor pelo Spring Security, com cookie HttpOnly e proteção CSRF, e não JWT. Uma Troca de Perfil ou uma Desativação precisa valer na hora: um Gestor rebaixado ou um Usuário desativado não pode continuar agindo até um token expirar. Além disso, o ERP tem um único backend e nenhum outro consumidor da API, então a principal vantagem do JWT, a autenticação sem estado entre serviços, não se aplica.
+**Status:** Aceito
+
+## Contexto
+
+Uma Troca de Perfil ou Desativação precisa valer na próxima requisição. O ERP tem um backend e um frontend que consome a API pela mesma origem.
+
+## Decisão
+
+O Spring Security mantém a sessão no servidor. O navegador envia o cookie de sessão HttpOnly e o backend atualiza identidade e permissões ao atender requisições autenticadas. Uma sessão de conta desativada perde o acesso.
 
 ## Consequências
 
-- O navegador não guarda nada de autenticação no `localStorage`. O frontend chama a API pela mesma origem, pelo proxy do Vite no desenvolvimento, e, nas requisições que alteram dados, lê o cookie `XSRF-TOKEN` e reenvia o valor no cabeçalho `X-XSRF-TOKEN`.
-- Em produção o ERP precisa de HTTPS: os cookies de sessão e `XSRF-TOKEN` são `Secure`, e um proxy com TLS serve o frontend e a API no mesmo domínio.
-- Para rodar mais de uma instância do backend, as sessões precisam ir para um armazenamento compartilhado, como o Spring Session JDBC no próprio PostgreSQL.
+- A SPA usa `/api` na mesma origem. Para requisições que alteram dados, ela lê `XSRF-TOKEN` e envia o valor no cabeçalho `X-XSRF-TOKEN`. Os dados fictícios de desenvolvimento usam armazenamento local próprio.
+- Em produção, o proxy serve frontend e API por HTTPS no mesmo domínio. Os cookies de sessão e de CSRF são `Secure`. [Guia de produção](../infraestrutura/docker/docker-prod.md)
+- Um ambiente com várias instâncias de backend precisaria compartilhar as sessões, por exemplo, com Spring Session JDBC. A topologia atual usa uma instância.
+
+## Alternativa considerada
+
+JWT foi considerado pela autenticação sem estado. A sessão no servidor resolve a revogação de acesso para a topologia atual sem depender da expiração de um token.
+
+## Implementação
+
+Consulte a [arquitetura do backend](../../backend/ARCHITECTURE.md) e o [fluxo de sessão no navegador](../../frontend/ARCHITECTURE.md).

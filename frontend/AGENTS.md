@@ -1,38 +1,29 @@
 # ProcoBaja ERP — Frontend
 
-Siga também o `AGENTS.md` da raiz. Para fluxos, estado atual e Docker, consulte [`ARCHITECTURE.md`](ARCHITECTURE.md); para identidade visual, componentes, responsividade e acessibilidade, consulte [`DESIGN.md`](DESIGN.md) e o [Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1&t=baEGJUvpkYT1JrQA-1). Preserve as decisões do projeto que diferem do Figma.
+Siga também o [AGENTS.md da raiz](../AGENTS.md).
 
-## Organização e implementação
+## Referências por mudança
 
-- `src/app/`: roteador, proteção demonstrativa e shell compartilhado.
-- `src/pages/`: composição das páginas e coordenação de seus fluxos.
-- `src/components/pages/<pagina>/`: componentes usados apenas pela página correspondente.
-- `src/components/layout/`: estrutura compartilhada, como sidebar e header.
-- `src/components/shared/`: componentes reutilizados por diferentes páginas.
-- `src/contexts/`: estado compartilhado de sessão demonstrativa e tema.
-- `src/styles.css`: tokens, temas e estilos globais.
+- Para rotas, sessão, API ou execução local, consulte a [arquitetura do frontend](ARCHITECTURE.md).
+- Para layout, componentes, temas, responsividade ou acessibilidade, consulte o [guia de design](DESIGN.md). Ele registra os ajustes do projeto em relação ao Figma.
 
-Mantenha componentes específicos junto à respectiva página; mova-os para uma área compartilhada quando houver reutilização real. Use `lucide-react` nos ícones e os tokens semânticos do CSS para cores. O Prettier usa tabs com largura de quatro colunas; consulte sua configuração e `package.json` para as demais opções, versões e requisitos de Node.
+## Implementação
 
-## Navegação, dados e interface
+- Componha rotas em `src/pages/` e mantenha seus componentes exclusivos em `src/components/pages/<pagina>/`. Use `src/components/layout/` para a estrutura do aplicativo e `src/components/shared/` quando houver reutilização entre páginas.
+- Em Equipe e Subsistemas, use a interface de `src/services/equipe.ts` e preserve o comportamento nos dois modos. Use as permissões da sessão para apresentar ações e trate as recusas da API. O backend valida identidade, permissão, escopo e regras de negócio.
+- Use os tokens semânticos de `src/styles.css` para cores e `lucide-react` para ícones. Siga a [configuração do Prettier](.prettierrc.json) ao editar código.
 
-O roteador usa hash: introdução e login ficam em `/` e `/login`, e as rotas do shell em `/app/*`. Ao alterar esses fluxos, preserve a transição automática entre introdução e login, o Dashboard como destino padrão e a restauração de uma rota protegida solicitada antes do login.
+## Verificação
 
-A maioria dos módulos ainda está em construção. O módulo Equipe e Subsistemas usa a API real em produção; os demais permanecem em construção. Em desenvolvimento, `VITE_DEMO_MODE` é `true` por padrão: o `AuthContext` usa identidades demonstrativas, e o seletor Dev altera apenas essa perspectiva local. Defina `VITE_DEMO_MODE=false` para testar a sessão real no backend pelo proxy same-origin `/api`. A sessão real usa cookies HttpOnly e CSRF e não guarda credenciais ou sessão no armazenamento local. O servidor continua sendo a fonte de identidade, permissões, escopo e regras de negócio. Variáveis `VITE_` são públicas e não devem conter segredos.
-
-Em mudanças visuais, preserve a identidade da marca e os ajustes solicitados para o projeto. Dê suporte a temas claro e escuro, telas a partir de 320 px e alturas reduzidas, navegação por teclado, foco visível e movimento reduzido. No drawer mobile, preserve contenção e restauração do foco e fechamento por Escape. Consulte `DESIGN.md` para os demais padrões e para a validação visual.
-
-## Comandos e verificação
-
-Execute em `frontend/`. Consulte `package.json` para a lista completa de scripts.
+Execute em `frontend/` após mudanças de código. Para instalação e versão de Node, consulte a seção de [execução local](ARCHITECTURE.md#execução-local).
 
 ```bash
-npm run dev           # servidor de desenvolvimento
-npm run format:check  # verifica formatação sem alterar arquivos
-npm run build         # verifica TypeScript e gera o build
-node --experimental-strip-types --test # executa todos os testes Node
+npm run format:check
+npm run build
+node --experimental-strip-types --test
 ```
 
-Após alterar código, execute `npm run format:check`, `npm run build` e `node --experimental-strip-types --test`, a partir de `frontend/`. A suíte usa o runner nativo do Node e não requer script ou dependência adicional. Quando layout ou interação mudar, verifique no navegador os estados e tamanhos afetados; para mudanças na navegação, confira também a seleção da sidebar e os fluxos de login e retorno relevantes. Informe o que foi verificado e qualquer limitação.
-
-`npm run format` reescreve os arquivos cobertos pelo script; revise o resultado para preservar alterações existentes. Para instalação e detalhes de execução, consulte `ARCHITECTURE.md`.
+- Em mudanças de layout ou interação, confira no navegador os estados e tamanhos afetados e siga a [validação visual](DESIGN.md#validação-de-mudanças-visuais).
+- Em mudanças de navegação ou de sessão, confira a seleção da sidebar, o destino padrão após login, o retorno à rota solicitada e a troca obrigatória de senha, conforme o fluxo afetado.
+- Em mudanças na integração, use `VITE_DEMO_MODE=false` com o backend ativo e uma conta de teste. Confira o caminho de sucesso e as recusas relevantes para o perfil e o escopo.
+- Informe os comandos e cenários verificados, os resultados e as limitações do ambiente.

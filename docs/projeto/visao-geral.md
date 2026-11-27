@@ -1,47 +1,25 @@
 # Visão geral do projeto
 
-O ProcoBaja ERP é um sistema interno proposto para reunir as informações operacionais e administrativas da equipe PROCOBAJA, projeto de extensão Baja SAE da UTFPR em Cornélio Procópio. A proposta busca reduzir a dispersão entre ferramentas de atividades, planilhas e armazenamento de documentos e preservar o histórico da equipe ao longo da entrada e saída de integrantes.
+O ProcoBaja ERP é o sistema interno da equipe PROCOBAJA, projeto de extensão Baja SAE da UTFPR em Cornélio Procópio. O objetivo é reunir as informações operacionais e administrativas da equipe e preservar seu histórico entre gestões.
 
-## Origem e escopo
+## Escopo
 
-Esta síntese é derivada do [Documento de Projeto de Software de 2026](documento-de-projeto.pdf), páginas 3–10. O PDF é uma **cópia de referência da versão recebida**, sem data de revisão identificada no conteúdo consultado. Os requisitos descrevem o sistema pretendido, não a implementação atual. Em caso de dúvida sobre regras ou permissões resumidas aqui, consulte a seção correspondente do PDF e registre decisões posteriores de forma explícita.
+O sistema reúne oito módulos para organizar a composição da equipe, planejar atividades, acompanhar compras e caixa, registrar participação, manter documentos e eventos, publicar normas e exibir indicadores conforme as permissões de cada pessoa. As Sprints da equipe têm duração sugerida de 15 dias. O cronograma acadêmico descreve as entregas de desenvolvimento do ERP. [Índice dos módulos](modulos/README.md) · [Documento de Projeto de Software, páginas 3–16](documento-de-projeto.pdf#page=3)
 
-O escopo contempla oito módulos:
+Cada conta tem um Perfil. São cinco Perfis no ERP, Capitão, Gestor, Líder, Membro e Orientador. O Gestor Financeiro é o Gestor ativo associado ao Subsistema Financeiro. O servidor aplica as permissões de cada operação conforme Perfil, Subsistema, responsabilidade e confidencialidade. A autenticação usa RA ou SIAPE numérico e senha própria do ERP. [Vocabulário do domínio](../../CONTEXT.md) · [ADR do Gestor Financeiro](../adr/0002-gestor-financeiro-derivado-do-subsistema.md) · [Equipe e Subsistemas](modulos/equipe-e-subsistemas.md)
 
-1. Equipe e Subsistemas: usuários, perfis, subsistemas e a associação que determina automaticamente o Gestor Financeiro.
-2. Atividades e Sprints: backlog, planejamento, Kanban e acompanhamento.
-3. Gestão Financeira: solicitações, compras, entradas, saídas e previsões.
-4. Pessoas e Participação: presenças, horas, diário e registros de participação.
-5. Documentação: organização, versões e integração prevista com Google Drive.
-6. Competições e Eventos: reuniões, eventos, competições e informações associadas.
-7. Governança: normas, versões, publicação e aceite.
-8. Dashboard e Indicadores: visões e alertas conforme permissões.
+A aplicação usa React, Spring Boot e PostgreSQL. A integração planejada com Google Drive guarda arquivos em um Drive compartilhado e mantém metadados, histórico e vínculos no ERP. [Arquitetura do frontend](../../frontend/ARCHITECTURE.md) · [Arquitetura do backend](../../backend/ARCHITECTURE.md) · [Documentação](modulos/documentacao.md)
 
-Os cinco perfis são Capitão/Administrador, Gestor, Líder, Membro e Orientador. Um Gestor ativo associado ao Subsistema Financeiro é automaticamente o Gestor Financeiro; essa regra substitui a proposta antiga de um Perfil Financeiro separado e da atribuição manual. O acesso depende do perfil, da operação, do subsistema e da confidencialidade dos dados. As regras detalhadas por módulo estão no PDF, seção 4.1.1–4.1.8, páginas 19–35, com esta decisão posterior prevalecendo em caso de divergência.
+## Estado da entrega
 
-## Objetivos e limites
+Equipe e Subsistemas está implementado no frontend e no backend, com autenticação, gestão de integrantes e subsistemas, sucessão do Capitão, identificação do Gestor Financeiro e consulta de auditoria. O desenvolvimento local também oferece modo demonstrativo. [Equipe e Subsistemas](modulos/equipe-e-subsistemas.md) · [Arquitetura do frontend](../../frontend/ARCHITECTURE.md)
 
-O objetivo é centralizar informações administrativas e operacionais e facilitar o acompanhamento da equipe. Os objetivos específicos incluem organizar integrantes e subsistemas, planejar atividades, acompanhar compras e caixa, registrar participação, preservar documentos e histórico de eventos e disponibilizar indicadores conforme as permissões.
+Os módulos 02 a 08 estão planejados. A navegação já oferece entradas com telas provisórias, e o esquema Flyway chega à V11, que fornece as estruturas de banco para as próximas entregas. O acompanhamento compartilhado das issues e suas dependências fica no GitHub. [Guia de modelagem](modelagem.md) · [Projeto no GitHub](https://github.com/orgs/BajaERP/projects/2) · [Issues do repositório](https://github.com/BajaERP/procoBajaERP/issues)
 
-O PDF descreve uma aplicação web de uso interno; não prevê inicialmente acesso do público externo nem autenticação institucional UTFPR. React, Spring Boot, PostgreSQL e integração com Google Drive são escolhas previstas. O Drive armazena arquivos; o ERP mantém metadados e relações. A indisponibilidade do serviço externo precisa ser tratada sem comprometer a consistência do restante do sistema. O prazo de 12 semanas e seis sprints de desenvolvimento é uma previsão do documento, não uma garantia atual. Veja seções 2.1–2.2 e 3.1–3.3, páginas 6–16.
+## Referências do projeto
 
-As **sprints de desenvolvimento do ERP** do cronograma acadêmico não devem ser confundidas com as **sprints da equipe PROCOBAJA** gerenciadas pelo produto, cuja duração prevista é de 15 dias.
-
-## Situação e leitura das fontes
-
-O PDF é um retrato dos requisitos e modelos propostos, não um inventário do que está pronto. A seção 4.4 contém protótipos descritos como de baixa fidelidade; o Figma pode evoluir independentemente. O capítulo 5 apresenta análise e modelagem; o documento informa 50 tabelas, 345 atributos e 19 domínios enumerados no modelo daquela versão. A seção 5.1.2.10 destaca que índices parciais, permissões, três orçamentos, duas aprovações e integridade transacional exigem SQL complementar e/ou validação no backend. Consulte as páginas 57–87 e os arquivos DBML e SQL em `docs/diagramas/` antes de implementar.
-
-O documento acadêmico não contém revisão identificada além do ano 2026. A cópia em `documento-de-projeto.pdf` corresponde ao arquivo fornecido para esta documentação; isso não estabelece uma data de aprovação. Se modelos, código ou decisões posteriores divergirem, registre a divergência e valide a fonte vigente com a equipe, sem presumir que o PDF ou um protótipo esteja automaticamente atualizado.
-
-## Documentação relacionada
-
-- [Detalhamento dos oito módulos](modulos/README.md).
-- [Requisitos funcionais e prioridades](requisitos/funcionais.md).
-- [Requisitos não funcionais](requisitos/nao-funcionais.md).
-- [Vocabulário do domínio](../../CONTEXT.md).
-- [Guia da modelagem e integridade](modelagem.md).
-- [Diagramas e modelo relacional](../diagramas/).
-- [Arquitetura do frontend](../../frontend/ARCHITECTURE.md) e [arquitetura do backend](../../backend/ARCHITECTURE.md).
-- [Design system no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1).
-
-O PDF contém protótipos e diagramas de uma versão do projeto; os arquivos editáveis e as implementações podem evoluir. Os capítulos de implementação, considerações finais e referências do PDF recebido ainda contêm instruções de preenchimento, e não devem ser interpretados como descrição de funcionalidades concluídas.
+- O [Documento de Projeto de Software](documento-de-projeto.pdf), datado de 2026, preserva o escopo, os requisitos e a modelagem acadêmicos. Consulte a tabela 2 para prioridades e as seções 4.1.1 a 4.1.8 para as matrizes originais de permissões.
+- As páginas dos [módulos](modulos/README.md) registram as regras vigentes, incluindo as decisões posteriores ao PDF. Consulte também o [vocabulário do domínio](../../CONTEXT.md) e os [ADRs](../adr/).
+- Os [requisitos funcionais](requisitos/funcionais.md) e [não funcionais](requisitos/nao-funcionais.md) permitem localizar o requisito e sua fonte.
+- Os [diagramas](../diagramas/) e o [guia de modelagem](modelagem.md) orientam o desenho de dados. As [migrações Flyway](../../backend/src/main/resources/db/migration/) definem o esquema executado.
+- O [design system no Figma](https://www.figma.com/design/NhEuGEDcNqW2NNMnP614YV/PROCOBAJA-ERP-%C2%B7-UI-Kit---Design-System?node-id=0-1) orienta a apresentação e os fluxos de interface.
