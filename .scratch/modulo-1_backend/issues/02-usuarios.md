@@ -1,0 +1,29 @@
+# Cadastro e administração de Usuários
+
+Status: resolved
+Blocked by: 01
+
+> Implementação original incorporada à `develop` pelo PR #36, a partir do #32. As regras de Gestor Financeiro, RA e senha provisória mudaram depois e serão ajustadas nas [issues 06](06-correcao-gestor-financeiro-banco.md) e [07](07-identificacao-e-senha-provisoria.md). Os critérios abaixo registram o escopo original.
+
+Parte de [spec.md](../spec.md), seções "Usuários", "Visibilidade" e "Auditoria".
+
+## O que fazer
+
+- Endpoints de cadastro, edição de Nome e RA, Troca de Perfil, desativação, reativação e redefinição de senha.
+- Consulta de Usuários respeitando a visibilidade de cada Perfil, incluindo o RA.
+- Registro de auditoria de cada operação.
+
+## Pronto quando
+
+- O Gestor não consegue cadastrar nem alterar Gestor ou Capitão.
+- Financeiro cadastrado pelo Gestor nasce desativado. Cadastrado pelo Capitão, nasce com Vínculo e ativo.
+- O último Capitão ativo, um Gestor com Vínculos e um Líder não podem ser desativados nem trocar de Perfil.
+- Líder e Membro só veem Usuários do próprio Subsistema, e ninguém além do próprio Usuário, do Capitão e do Gestor vê o RA.
+
+## Comments
+
+Implementado em `UsuarioService` e `UsuarioController`. Verificado por `UsuarioControllerTest`.
+
+A regra do último Capitão ativo não é alcançável pela API: ninguém desativa nem troca o próprio Perfil, e só um Capitão ativo age sobre outro Capitão, então sempre resta ao menos um. A checagem fica no service como defesa.
+
+Atualização da regra: o Capitão é único e ativo. Cadastro, reativação e Troca de Perfil comuns não podem atribuir esse Perfil; a [issue 09](09-sucessao-unica-capitao.md) define a sucessão transacional. A migration V9 também impede Capitães ativos duplicados no banco.
