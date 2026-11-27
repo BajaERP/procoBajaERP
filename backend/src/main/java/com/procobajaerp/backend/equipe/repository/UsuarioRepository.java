@@ -1,5 +1,6 @@
 package com.procobajaerp.backend.equipe.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("select u from Usuario u join fetch u.perfil left join fetch u.subsistema where u.ra = :ra")
     Optional<Usuario> buscarCompletoPorRa(String ra);
+
+    @Query("select u from Usuario u join fetch u.perfil left join fetch u.subsistema where u.id in :ids")
+    List<Usuario> buscarCompletosPorIds(Collection<Long> ids);
 
     /** A equipe é pequena: as consultas filtram a visibilidade em memória, sobre a lista completa. */
     @Query("select u from Usuario u join fetch u.perfil left join fetch u.subsistema")

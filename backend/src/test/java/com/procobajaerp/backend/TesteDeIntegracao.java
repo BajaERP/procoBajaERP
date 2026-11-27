@@ -51,7 +51,10 @@ public abstract class TesteDeIntegracao {
 
     @BeforeEach
     void esvaziarTabelasDaEquipe() {
-        jdbc.execute("TRUNCATE logs_auditoria, subsistemas, usuarios RESTART IDENTITY CASCADE");
+        jdbc.execute("""
+                TRUNCATE historico_planejamento_atividades, historico_status_atividades, atividades_sprints,
+                    atividades_responsaveis, atividades_subsistemas, atividades, sprints,
+                    logs_auditoria, subsistemas, usuarios RESTART IDENTITY CASCADE""");
         jdbc.update("INSERT INTO subsistemas (nome, descricao) VALUES ('Financeiro', 'Gestão administrativa e financeira da equipe.')");
     }
 
