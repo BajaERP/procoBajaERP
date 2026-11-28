@@ -5,6 +5,7 @@ backups/
 node_modules/
 dist/
 *.local
+/.scratch/
 
 # IntelliJ IDEA
 **/.idea/
